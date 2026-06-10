@@ -1,0 +1,145 @@
+/* Linear Dark — animation presets.
+   Same 8-preset vocabulary and mechanism as swiss-modern, re-skinned: softer ease,
+   slightly quicker base, restrained motion. Prefix .ld-anim-*, vars --ld-ease / --ld-duration-*. */
+
+.ld-deck {
+  --ld-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ld-duration-fast: 200ms;
+  --ld-duration-base: 480ms;
+  --ld-duration-slow: 700ms;
+  --ld-stagger: 70ms;
+}
+
+.ld-anim-none {
+  animation: none;
+}
+
+.ld-anim-gentle-rise {
+  animation: ldGentleRise var(--ld-duration-base) var(--ld-ease) both;
+}
+
+.ld-anim-soft-scale {
+  animation: ldSoftScale var(--ld-duration-base) var(--ld-ease) both;
+}
+
+.ld-anim-masked-reveal {
+  clip-path: inset(0 100% 0 0);
+  animation: ldMaskedReveal var(--ld-duration-slow) var(--ld-ease) both;
+}
+
+.ld-anim-staggered-list > * {
+  animation: ldGentleRise var(--ld-duration-base) var(--ld-ease) both;
+}
+
+.ld-anim-staggered-list > *:nth-child(2) {
+  animation-delay: calc(var(--ld-stagger) * 1);
+}
+
+.ld-anim-staggered-list > *:nth-child(3) {
+  animation-delay: calc(var(--ld-stagger) * 2);
+}
+
+.ld-anim-staggered-list > *:nth-child(4) {
+  animation-delay: calc(var(--ld-stagger) * 3);
+}
+
+.ld-anim-staggered-list > *:nth-child(5) {
+  animation-delay: calc(var(--ld-stagger) * 4);
+}
+
+.ld-anim-staggered-list > *:nth-child(6) {
+  animation-delay: calc(var(--ld-stagger) * 5);
+}
+
+.ld-anim-line-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: ldLineDraw var(--ld-duration-slow) var(--ld-ease) both;
+}
+
+.ld-anim-image-drift {
+  animation: ldImageDrift 900ms var(--ld-ease) both;
+}
+
+/* spotlight adds a brief accent-glow pulse — used on hero metrics */
+.ld-anim-spotlight {
+  animation:
+    ldSpotlight var(--ld-duration-slow) var(--ld-ease) both,
+    ldGlowPulse 1400ms var(--ld-ease) both;
+}
+
+@keyframes ldGentleRise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes ldSoftScale {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes ldMaskedReveal {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes ldLineDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes ldImageDrift {
+  from {
+    opacity: 0;
+    transform: scale(1.04) translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+}
+
+@keyframes ldSpotlight {
+  from {
+    opacity: 0;
+    transform: translate3d(-18px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes ldGlowPulse {
+  0% {
+    filter: drop-shadow(0 0 8px rgba(94, 106, 210, 0.1));
+  }
+  40% {
+    filter: drop-shadow(0 0 36px var(--ld-accent-glow));
+  }
+  100% {
+    filter: drop-shadow(0 0 32px var(--ld-accent-soft));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [class*="ld-anim"] {
+    animation: none;
+    clip-path: none;
+    transform: none;
+  }
+}

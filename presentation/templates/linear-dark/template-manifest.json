@@ -1,0 +1,62 @@
+{
+  "name": "linear-dark",
+  "displayName": "Linear Dark",
+  "templateVersion": "1.0.0",
+  "contentSchemaVersion": "1.1.0",
+  "slideTypeCatalog": "v2",
+  "runtime": ["react", "static-html"],
+  "iconFamily": "phosphor-react",
+  "defaultAnimation": "gentle-rise",
+  "designTokens": {
+    "color": true,
+    "typography": true,
+    "spacing": true,
+    "grid": true,
+    "radii": true,
+    "stroke": true,
+    "shadow": true
+  },
+  "supportedSlideTypes": [
+    "title",
+    "section-divider",
+    "closing",
+    "agenda",
+    "text-statement",
+    "text-list",
+    "two-column-text",
+    "quote",
+    "numbered-framework",
+    "full-bleed-image",
+    "image-text-split",
+    "image-grid",
+    "icon-grid",
+    "diagram",
+    "metric-highlight",
+    "chart",
+    "evidence-stack",
+    "case-study",
+    "process-flow",
+    "before-after",
+    "ui-showcase",
+    "timeline",
+    "code-snippet",
+    "terminal-output",
+    "architecture-overview",
+    "data-flow",
+    "api-endpoint",
+    "spec-table",
+    "comparison-table",
+    "decision-record"
+  ],
+  "layoutSource": {
+    "react": "layouts/react",
+    "specs": "layouts/specs"
+  },
+  "qualityRules": {
+    "oneIdeaPerSlide": true,
+    "maxAccentColors": 1,
+    "cornerRadius": "rounded-8",
+    "iconWeight": "regular",
+    "motionLevel": "restrained"
+  }
+}
