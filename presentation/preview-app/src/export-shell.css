@@ -1,0 +1,172 @@
+/* Standalone deck export shell.
+   Screen: the active slide renders inside a fixed 1600x900 iframe (so viewport units like `vw`
+   resolve to the canvas, never the window) and the iframe is uniformly zoomed to fit — a fixed
+   presentation canvas, not a responsive page.
+   Print/PDF (?print): every slide is stacked at native size, one per page; Chrome's print page
+   becomes the viewport so the same vw-based sizing resolves to the 1600x900 canvas. */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: #000;
+  color: #f7f8f8;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+/* ---- Screen (interactive) ---- */
+
+.deck-export {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+/* Absolute-centered fixed canvas: translate(-50%,-50%) anchors the 1600x900 center to the
+   viewport center, then scale() zooms uniformly around that center (set inline from JS). */
+.deck-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1600px;
+  height: 900px;
+  border: 0;
+  display: block;
+  background: transparent;
+  transform-origin: center center;
+}
+
+/* Bottom-right control cluster: prev / position / jump-by-number / dropdown / next. */
+.deck-controls {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(15, 16, 17, 0.82);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 45%);
+  opacity: 0.35;
+  transition: opacity 160ms ease;
+}
+
+.deck-controls:hover,
+.deck-controls:focus-within {
+  opacity: 1;
+}
+
+.deck-controls button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #f7f8f8;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.deck-controls button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.deck-controls button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.deck-controls .deck-jump {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #8a8f98;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13px;
+}
+
+.deck-controls .deck-jump input {
+  width: 44px;
+  padding: 5px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #f7f8f8;
+  text-align: center;
+}
+
+.deck-controls .deck-select {
+  max-width: 200px;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #f7f8f8;
+  cursor: pointer;
+}
+
+/* ---- Print / PDF (?print) ---- */
+
+.print-deck .deck-page {
+  width: 1600px;
+  height: 900px;
+  overflow: hidden;
+}
+
+/* Pin the slide to the canvas regardless of the template's viewport-relative sizing. */
+.print-deck .deck-page .ld-slide,
+.print-deck .deck-page .swiss-slide {
+  width: 1600px !important;
+  min-height: 0 !important;
+  height: 900px !important;
+  margin: 0 !important;
+}
+
+@page {
+  size: 1600px 900px;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body {
+    height: auto;
+    background: #000;
+  }
+
+  .print-deck .deck-page {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .print-deck .deck-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  /* Freeze entrance animations at their resolved final state for a clean capture. */
+  [class*="ld-anim"],
+  [class*="swiss-anim"] {
+    animation: none !important;
+    clip-path: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}

@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useMemo, useState, type ComponentType } from "react";
+import { StrictMode, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "@fontsource/inter/300.css";
 import "@fontsource/inter/400.css";
@@ -12,23 +12,18 @@ import "../../templates/swiss-modern/design-system.css";
 import "../../templates/swiss-modern/animation-presets.css";
 import "../../templates/linear-dark/design-system.css";
 import "../../templates/linear-dark/animation-presets.css";
-import { swissModernSlides } from "./swiss-modern-preview";
-import { linearDarkSlides } from "./linear-dark-preview";
-import { vivimoonWebsiteSlides } from "../../working-files/vivimoon-website/source/vivimoon-website-deck";
+import { SOURCES } from "./deck-registry";
 
-// A preview source is any registered slide set (template preview today, deck preview later).
-// Adding a new source = one entry here; nothing else in the shell changes.
-type PreviewSlide = { type: string; Component: ComponentType<any>; props: Record<string, unknown> };
-type PreviewSource = { id: string; label: string; deckClass: string; slides: PreviewSlide[] };
+function getDefaultSourceId() {
+  if (typeof window !== "undefined" && window.location.pathname.includes("/working-files/vivimoon-website/export/")) {
+    return "vivimoon-website";
+  }
 
-const SOURCES: PreviewSource[] = [
-  { id: "swiss-modern", label: "Swiss Modern", deckClass: "swiss-deck", slides: swissModernSlides as PreviewSlide[] },
-  { id: "linear-dark", label: "Linear Dark", deckClass: "ld-deck", slides: linearDarkSlides as PreviewSlide[] },
-  { id: "vivimoon-website", label: "VIVIMOON Website", deckClass: "ld-deck", slides: vivimoonWebsiteSlides as PreviewSlide[] },
-];
+  return SOURCES[0].id;
+}
 
 function PreviewApp() {
-  const [sourceId, setSourceId] = useState(SOURCES[0].id);
+  const [sourceId, setSourceId] = useState(getDefaultSourceId);
   const [activeIndex, setActiveIndex] = useState(0);
 
   const source = useMemo(() => SOURCES.find((s) => s.id === sourceId) ?? SOURCES[0], [sourceId]);
