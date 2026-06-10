@@ -51,14 +51,14 @@ export function LinearIconGridSlide(props: LinearSlideProps) {
   const items = (props.items ?? []).slice(0, 6);
   return (
     <LinearFrame animation={props.animation}>
-      <div className="ld-rule-top" style={{ gridColumn: "1 / 5", gridRow: "1 / 4" }}>
+      <div className="ld-rule-top" style={{ gridColumn: "1 / 6", gridRow: "1 / 4" }}>
         {props.kicker ? <LinearSmallLabel>{props.kicker}</LinearSmallLabel> : null}
         <h1 className="ld-section-title">{props.title}</h1>
         {props.body ? <p className="ld-body">{props.body}</p> : null}
       </div>
       <div
         className="ld-anim-staggered-list"
-        style={{ gridColumn: "6 / 13", gridRow: "1 / 9", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "24px", alignContent: "center" }}
+        style={{ gridColumn: "7 / 13", gridRow: "1 / 9", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "24px", alignContent: "center" }}
       >
         {items.map((item, i) => (
           <div className="ld-panel" key={item} style={{ padding: "24px", display: "grid", gap: "16px" }}>

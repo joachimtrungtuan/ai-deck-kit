@@ -89,11 +89,16 @@ export function LinearArchitectureOverviewSlide(props: LinearSlideProps) {
           <div style={{ display: "flex", alignItems: "center", gap: "0", width: "100%", justifyContent: "center" }}>
             {(props.items ?? []).slice(0, 5).map((item, i, arr) => (
               <Fragment key={item}>
-                <span className="ld-node" style={{ flexDirection: "column", gap: "10px", padding: "20px" }}>
+                <span
+                  className="ld-node ld-anim-gentle-rise"
+                  style={{ flexDirection: "column", gap: "10px", padding: "20px", animationDelay: `calc(var(--ld-stagger) * ${i})` }}
+                >
                   <LinearIconTile name={props.icons?.[i]} />
                   {item}
                 </span>
-                {i < arr.length - 1 ? <span className="ld-connector" style={{ maxWidth: "72px" }} /> : null}
+                {i < arr.length - 1 ? (
+                  <span className="ld-connector ld-anim-gentle-rise" style={{ maxWidth: "72px", animationDelay: `calc(var(--ld-stagger) * ${i} + 40ms)` }} />
+                ) : null}
               </Fragment>
             ))}
           </div>
@@ -117,20 +122,51 @@ export function LinearDataFlowSlide(props: LinearSlideProps) {
   const steps = (props.flowSteps ?? []).slice(0, 5);
   return (
     <LinearFrame animation={props.animation}>
-      <header className="ld-rule-top" style={{ gridColumn: "1 / 6", gridRow: "1 / 4" }}>
+      <header className="ld-rule-top" style={{ gridColumn: "1 / 8", gridRow: "1 / 4" }}>
         <LinearSmallLabel>{props.kicker ?? "Data Flow"}</LinearSmallLabel>
         <h1 className="ld-section-title" style={{ fontSize: "calc(var(--ld-type) * clamp(28px, 3vw, 48px))" }}>{props.title}</h1>
       </header>
-      <div className="ld-anim-staggered-list" style={{ gridColumn: "1 / 13", gridRow: "4 / 9", display: "grid", gap: "12px", alignContent: "start" }}>
+      <div className="ld-anim-staggered-list" style={{ gridColumn: "1 / 13", gridRow: "4 / 8", display: "grid", gap: "10px", alignContent: "start", alignSelf: "start" }}>
         {steps.map((s, i) => (
-          <div className="ld-panel ld-flow-row" key={`${i}-${s.label}`} style={{ padding: "18px 24px", display: "grid", gridTemplateColumns: "32px 44px 1fr auto 1fr", alignItems: "center", columnGap: "20px" }}>
+          <div className="ld-panel ld-flow-row" key={`${i}-${s.label}`} style={{ padding: "10px 18px", display: "grid", gridTemplateColumns: "28px 44px minmax(0, 0.9fr) auto minmax(0, 1.1fr)", alignItems: "center", columnGap: "18px" }}>
             <span className="ld-index" style={{ color: "var(--ld-accent)" }}>{String(i + 1).padStart(2, "0")}</span>
-            <LinearIconTile name={props.icons?.[i]} size={24} />
-            <span style={{ fontFamily: "var(--ld-font-mono)", color: "var(--ld-ink)" }}>{s.from}</span>
+            <LinearIconTile name={props.icons?.[i]} size={20} compact />
+            <span
+              style={{
+                minWidth: 0,
+                paddingLeft: "2px",
+                fontFamily: "var(--ld-font-mono)",
+                fontSize: "calc(var(--ld-type) * 13px)",
+                color: "var(--ld-ink)",
+                ...props.dataFlowPrimaryTextStyle,
+              }}
+            >
+              {s.from}
+            </span>
             <span className="ld-connector-arrow ld-flow-arrow" style={{ fontSize: "calc(var(--ld-type) * 20px)" }}>&rarr;</span>
-            <span style={{ fontFamily: "var(--ld-font-mono)", color: "var(--ld-ink)" }}>
+            <span
+              style={{
+                minWidth: 0,
+                fontFamily: "var(--ld-font-mono)",
+                fontSize: "calc(var(--ld-type) * 13px)",
+                color: "var(--ld-ink)",
+                ...props.dataFlowPrimaryTextStyle,
+              }}
+            >
               {s.to}
-              <span className="ld-body" style={{ display: "block", fontSize: "calc(var(--ld-type) * 13px)", fontFamily: "var(--ld-font-body)" }}>{s.label}</span>
+              <span
+                className="ld-body"
+                style={{
+                  display: "block",
+                  marginTop: "2px",
+                  fontSize: "calc(var(--ld-type) * 12px)",
+                  lineHeight: 1.3,
+                  fontFamily: "var(--ld-font-body)",
+                  ...props.dataFlowSecondaryTextStyle,
+                }}
+              >
+                {s.label}
+              </span>
             </span>
           </div>
         ))}

@@ -1,5 +1,5 @@
 /* Linear Dark — design system.
-   Linear.app-inspired: near-black canvas, hairline translucent borders, one indigo accent,
+   Linear.app-inspired: near-black canvas, hairline translucent borders, one energy-blue accent,
    soft top glow, tight Inter typography. All tokens prefixed --ld-, all classes .ld-.
    Global styles are scoped under .ld-deck / .ld-slide so swiss-modern CSS is unaffected. */
 
@@ -14,10 +14,10 @@
   --ld-ink: #f7f8f8;
   --ld-muted: #8a8f98;
   --ld-soft: #62666d;
-  --ld-accent: #5e6ad2;
-  --ld-accent-soft: rgba(94, 106, 210, 0.16);
-  --ld-accent-glow: rgba(94, 106, 210, 0.35);
-  --ld-spotlight: #2f4cff;
+  --ld-accent: #0f8cff;
+  --ld-accent-soft: rgba(15, 140, 255, 0.16);
+  --ld-accent-glow: rgba(15, 140, 255, 0.34);
+  --ld-spotlight: #066dff;
   --ld-emphasis-ink: #ffffff;
 
   /* Typography — Inter only (display + body), JetBrains Mono for code/labels. Max weight 700.
@@ -28,11 +28,11 @@
   --ld-font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   /* Code token colors — muted; accent reserved for highlighted line/emphasis */
-  --ld-code-keyword: #b4bcf0;
+  --ld-code-keyword: #7fc4ff;
   --ld-code-string: #9ece9e;
   --ld-code-comment: #62666d;
-  --ld-code-fn: #d2a8ff;
-  --ld-code-highlight-bg: rgba(94, 106, 210, 0.12);
+  --ld-code-fn: #42b6ff;
+  --ld-code-highlight-bg: rgba(15, 140, 255, 0.12);
   --ld-terminal-bg: #0a0b0c;
 
   /* Spacing */
@@ -66,7 +66,7 @@
   /* Full-bleed static grain (desaturated fractal noise, rendered once) over the surface. */
   /* Full-bleed static grain (rendered once). Desaturated + luminance-lowered (slope 0.45) so the
      grain reads as DARK texture, not light speckle — this keeps the surface from going pale.
-     It sits beneath the spotlight (::before), so the indigo depth is unaffected. */
+     It sits beneath the spotlight (::before), so the blue depth is unaffected. */
   background-color: var(--ld-surface);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
   background-repeat: repeat;
@@ -75,7 +75,7 @@
   color: var(--ld-ink);
 }
 
-/* Signature spotlight — one soft indigo radial anchored top-center (brand accent, single hue). */
+/* Signature spotlight — one soft energy-blue radial anchored top-center (brand accent, single hue). */
 .ld-slide::before {
   content: "";
   position: absolute;
@@ -271,6 +271,17 @@
   line-height: 1.18;
 }
 
+.ld-list-compact-tall-text {
+  margin-top: 18px;
+  gap: 18px;
+}
+
+.ld-list-compact-tall-text li {
+  padding-top: 16px;
+  font-size: calc(var(--ld-type) * clamp(21px, 1.55vw, 26px));
+  line-height: 1.18;
+}
+
 /* Media — rounded hairline frame, slight brightness reduction (NO grayscale) */
 .ld-media {
   position: relative;
@@ -415,6 +426,11 @@
   border: var(--ld-rule);
   background: var(--ld-panel);
   color: var(--ld-accent);
+}
+
+.ld-icon-tile-compact {
+  width: 44px;
+  height: 44px;
 }
 
 /* Unfilled icon slot — dashed hairline + muted glyph signals "place an icon here". */

@@ -62,6 +62,9 @@ export type LinearSlideProps = {
   icon?: string;
   icons?: string[];
   titleMeta?: { label: string; value: string }[];
+  beforeAfterItemTextStyle?: React.CSSProperties;
+  dataFlowPrimaryTextStyle?: React.CSSProperties;
+  dataFlowSecondaryTextStyle?: React.CSSProperties;
 };
 
 // Curated Phosphor set. Authoring agents pass these names via `icon` / `icons`.
@@ -94,10 +97,10 @@ export function resolveIcon(name?: string): IconComponent {
 
 // Icon placeholder tile. Renders the named icon, or a neutral placeholder glyph
 // signalling "an icon belongs here" when no name is supplied.
-export function LinearIconTile({ name, size = 32 }: { name?: string; size?: number }) {
+export function LinearIconTile({ name, size = 32, compact = false }: { name?: string; size?: number; compact?: boolean }) {
   const Icon = resolveIcon(name);
   return (
-    <span className={`ld-icon-tile${name ? "" : " ld-icon-tile-empty"}`} aria-hidden>
+    <span className={`ld-icon-tile${compact ? " ld-icon-tile-compact" : ""}${name ? "" : " ld-icon-tile-empty"}`} aria-hidden>
       <Icon size={size} weight="regular" />
     </span>
   );
@@ -121,13 +124,21 @@ export function LinearTextBlock({ kicker, title, body }: Pick<LinearSlideProps, 
   );
 }
 
-export function LinearList({ items = [] }: { items?: string[] }) {
+export function LinearList({
+  items = [],
+  className = "",
+  itemTextStyle,
+}: {
+  items?: string[];
+  className?: string;
+  itemTextStyle?: React.CSSProperties;
+}) {
   return (
-    <ol className="ld-list ld-anim-staggered-list">
+    <ol className={`ld-list ld-anim-staggered-list ${className}`.trim()}>
       {items.map((item, itemIndex) => (
         <li key={item}>
           <span className="ld-index">{String(itemIndex + 1).padStart(2, "0")}</span>
-          <span>{item}</span>
+          <span style={itemTextStyle}>{item}</span>
         </li>
       ))}
     </ol>

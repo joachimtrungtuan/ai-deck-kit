@@ -24,12 +24,12 @@ export function LinearApiEndpointSlide(props: LinearSlideProps) {
   );
 }
 
-function LinearTable(props: LinearSlideProps & { recommendedColumn?: number }) {
+function LinearTable(props: LinearSlideProps & { recommendedColumn?: number; gridRow?: string }) {
   const columns = (props.tableColumns ?? []).slice(0, 5);
   const rows = (props.tableRows ?? []).slice(0, 6);
   const rec = props.recommendedColumn;
   return (
-    <div className="ld-panel" style={{ gridColumn: "1 / 13", gridRow: "3 / 9", padding: "8px 24px", overflow: "hidden" }}>
+    <div className="ld-panel" style={{ gridColumn: "1 / 13", gridRow: props.gridRow ?? "3 / 9", padding: "8px 24px 14px", overflow: "hidden", alignSelf: "start" }}>
       <table className="ld-table">
         <thead>
           <tr>
@@ -59,7 +59,7 @@ export function LinearSpecTableSlide(props: LinearSlideProps) {
         <LinearSmallLabel>{props.kicker ?? "Specification"}</LinearSmallLabel>
         <h1 className="ld-section-title" style={{ fontSize: "calc(var(--ld-type) * clamp(28px, 3vw, 48px))" }}>{props.title}</h1>
       </header>
-      <LinearTable {...props} />
+      <LinearTable {...props} gridRow="3 / 8" />
     </LinearFrame>
   );
 }

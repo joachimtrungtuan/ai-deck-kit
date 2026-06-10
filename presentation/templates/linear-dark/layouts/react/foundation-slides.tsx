@@ -10,10 +10,10 @@ export function LinearTitleSlide(props: LinearSlideProps) {
 
   return (
     <LinearFrame animation={props.animation}>
-      <div style={{ gridColumn: "1 / 8", gridRow: "2 / 8" }}>
+      <div style={{ gridColumn: "1 / 9", gridRow: "2 / 8" }}>
         <LinearTextBlock kicker={props.kicker} title={props.title} body={props.body} />
       </div>
-      <dl className="ld-meta-row" style={{ gridColumn: "8 / 13", gridRow: "2 / 4" }}>
+      <dl className="ld-meta-row" style={{ gridColumn: "9 / 13", gridRow: "2 / 4" }}>
         {meta.map((item) => (
           <div key={item.label}>
             <dt>{item.label}</dt>
@@ -43,10 +43,10 @@ export function LinearSectionDividerSlide(props: LinearSlideProps) {
 export function LinearClosingSlide(props: LinearSlideProps) {
   return (
     <LinearFrame animation={props.animation}>
-      <div style={{ gridColumn: "1 / 8", gridRow: "2 / 8" }}>
+      <div style={{ gridColumn: "1 / 9", gridRow: "2 / 8" }}>
         <LinearTextBlock kicker={props.kicker ?? "Closing"} title={props.title} body={props.body} />
       </div>
-      <aside className="ld-panel" style={{ gridColumn: "8 / 13", gridRow: "5 / 8", padding: "32px" }}>
+      <aside className="ld-panel" style={{ gridColumn: "9 / 13", gridRow: "5 / 8", padding: "32px" }}>
         <LinearList items={props.items} />
       </aside>
     </LinearFrame>
@@ -56,7 +56,7 @@ export function LinearClosingSlide(props: LinearSlideProps) {
 export function LinearAgendaSlide(props: LinearSlideProps) {
   return (
     <LinearFrame animation={props.animation}>
-      <div style={{ gridColumn: "1 / 6", gridRow: "1 / 4" }}>
+      <div style={{ gridColumn: "1 / 7", gridRow: "1 / 4" }}>
         <LinearTextBlock kicker={props.kicker ?? "Agenda"} title={props.title} body={props.body} />
       </div>
       <div style={{ gridColumn: "7 / 13", gridRow: "3 / 8" }}>
