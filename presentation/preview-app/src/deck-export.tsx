@@ -11,10 +11,9 @@ const SLIDE_H = 900;
 // iframe pins the viewport: `100vw` is always 1600px there, so the deck is a truly fixed canvas
 // that only zooms (never reflows) as the window changes.
 //
-// PDF (?print) renders every slide stacked, one per page, in the main document. The same slide
-// components and CSS are used, and during printing Chrome's print page (@page 1600x900) is the
-// viewport — so `vw`-based sizing resolves to exactly the same values as the on-screen iframe,
-// making each printed slide a faithful match of the interactive view.
+// PDF (?print) renders every slide stacked, one per 1600x900 page, in the main document. The PDF
+// exporter captures this stacked layout as pixels and crops it into one flattened page per slide,
+// avoiding heavy vector/CSS PDFs that macOS Preview can render poorly.
 
 export function DeckExport({ source }: { source: PreviewSource }) {
   const isPrint =
@@ -170,8 +169,8 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
   );
 }
 
-// Print/PDF layout: every slide stacked at native 1600x900, one per page. Same components and CSS
-// as the screen view; Chrome's print page becomes the viewport so vw-based sizing matches exactly.
+// Print/PDF capture layout: every slide stacked at native 1600x900, one per page. The flattened PDF
+// exporter screenshots this layout, then crops each .deck-page into a PDF page.
 function PrintDeck({ source }: { source: PreviewSource }) {
   return (
     <div className="print-deck">

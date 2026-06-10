@@ -2,8 +2,8 @@
    Screen: the active slide renders inside a fixed 1600x900 iframe (so viewport units like `vw`
    resolve to the canvas, never the window) and the iframe is uniformly zoomed to fit — a fixed
    presentation canvas, not a responsive page.
-   Print/PDF (?print): every slide is stacked at native size, one per page; Chrome's print page
-   becomes the viewport so the same vw-based sizing resolves to the 1600x900 canvas. */
+   Print/PDF (?print): every slide is stacked at native size, one per page. The PDF exporter
+   screenshots this stacked layout and crops it into flattened 16:9 PDF pages. */
 
 * {
   box-sizing: border-box;
