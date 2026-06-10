@@ -14,6 +14,7 @@ import "../../templates/linear-dark/design-system.css";
 import "../../templates/linear-dark/animation-presets.css";
 import { swissModernSlides } from "./swiss-modern-preview";
 import { linearDarkSlides } from "./linear-dark-preview";
+import { vivimoonWebsiteSlides } from "../../working-files/vivimoon-website/source/vivimoon-website-deck";
 
 // A preview source is any registered slide set (template preview today, deck preview later).
 // Adding a new source = one entry here; nothing else in the shell changes.
@@ -23,6 +24,7 @@ type PreviewSource = { id: string; label: string; deckClass: string; slides: Pre
 const SOURCES: PreviewSource[] = [
   { id: "swiss-modern", label: "Swiss Modern", deckClass: "swiss-deck", slides: swissModernSlides as PreviewSlide[] },
   { id: "linear-dark", label: "Linear Dark", deckClass: "ld-deck", slides: linearDarkSlides as PreviewSlide[] },
+  { id: "vivimoon-website", label: "VIVIMOON Website", deckClass: "ld-deck", slides: vivimoonWebsiteSlides as PreviewSlide[] },
 ];
 
 function PreviewApp() {
