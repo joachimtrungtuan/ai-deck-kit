@@ -1,14 +1,16 @@
 # Export Workflow
 
-Two deliverables ship from a finished deck, both produced by scripts so every deck exports the
-same way:
+Two deliverables ship from a finished deck, both produced by scripts so every deck exports the same way:
 
 1. **Standalone HTML** — one self-contained `.html` file that opens by double-click, no server.
 2. **PDF** — one landscape page per slide, for clients who want a flat document.
 
-Both build from the same React source the preview app already renders, so layouts, elements, and
-the template's CSS entrance animations carry over unchanged — there is no second rendering path to
-drift out of sync.
+Both start from the same React source the preview app renders. HTML keeps the interactive deck.
+PDF uses the same `?print` React render, then flattens it into images so macOS Preview can render the file cleanly.
+
+Before editing preview/export shell code, read `references/export-runtime-contract.md`. Reuse or
+restore files from `templates/export-runtime/`; do not invent a new canvas, controls, registry, or
+PDF `.deck-page` structure per deck.
 
 ## Prerequisite: register the deck
 
@@ -41,6 +43,24 @@ What the script does and **why it matters**:
 - **`base: './'`** so any remaining relative URL resolves next to the file, not at server root.
 - **Renames `export.html` → `index.html`** and drops the orphan favicon, leaving exactly one file
   to hand over.
+- **Keeps the fixed-canvas export shell** from `presentation/preview-app/src/deck-export.tsx` and
+  `export-shell.css`: the active slide renders in a 1600×900 iframe, then zooms to fit.
+- **Uses reusable source templates** from `templates/export-runtime/` if the runtime is missing.
+  These templates are bundled into the final file; the exported HTML does not depend on the
+  preview app folder at runtime.
+
+HTML is finalized when a temp export matches the canonical file behavior:
+
+```bash
+node skill-engineering/presentation-crafting/scripts/export-standalone-html.mjs \
+  --deck vivimoon-website --slug vivimoon-website --out /tmp/vivimoon-html-export-check
+find /tmp/vivimoon-html-export-check -maxdepth 2 -type f -print
+cmp -s /tmp/vivimoon-html-export-check/index.html \
+  presentation/working-files/vivimoon-website/export/index.html
+```
+
+Expected: one file (`index.html`), no external `assets/`, and `cmp` exit code `0` when comparing
+against the current canonical VIVIMOON export.
 
 ### Fixed canvas, not a responsive page
 
@@ -63,24 +83,50 @@ remounts the slide (`key={index}`) so its entrance animation replays, matching t
 
 ```bash
 node skill-engineering/presentation-crafting/scripts/export-pdf.mjs \
-  --slug <slug> [--out <path.pdf>] [--chrome <path>]
+  --slug <slug> [--out <path.pdf>] [--chrome <path>] [--imagemagick <path>]
 # or point at a built file directly: --html <path/to/index.html>
 ```
 
-Run the HTML export first; the PDF script loads that file. It uses the **system Chrome/Chromium**
-headless (`--print-to-pdf`) — no npm dependency, no version coupling. It auto-detects Chrome on
-macOS/Linux/Windows; override with `--chrome` or `CHROME_PATH`. A throwaway `--user-data-dir` keeps
-it clear of the user's real Chrome profile.
+Run the HTML export first; the PDF script loads that `index.html`. It uses **system
+Chrome/Chromium** plus **ImageMagick** (`magick`). Chrome is auto-detected on macOS/Linux/Windows;
+override with `--chrome`. ImageMagick is found with `which magick`; override with `--imagemagick`.
 
-The script opens the deck with `?print`, which switches it to a stacked layout — every slide in the
-main document, one per page. This is a separate path from the on-screen iframe on purpose: during
-printing, Chrome's print page (`@page { size: 1600px 900px }`) becomes the viewport, so the same
-`vw`-based sizing resolves correctly without the iframe. `@media print` hides the nav controls and
-freezes entrance animations at their final state for a clean capture. Output is a 16:9 page per
-slide (1600×900px → 1200×675pt at 96dpi).
+The script opens the deck with `?print`, which switches to `PrintDeck`: every slide appears in the
+main document as a 1600×900 `.deck-page`. Then it:
+
+1. Dumps the rendered DOM to a temp file and counts `class="deck-page"` occurrences.
+2. Screenshots the full stacked print deck at `1600 × (slideCount * 900)`.
+3. Crops the tall PNG into 1600×900 slide images.
+4. Assembles those images into a lightweight 16:9 PDF.
+
+Why not `--print-to-pdf`: Chrome renders that vector/CSS PDF, but macOS Preview can lag or clip it.
+The flattened image PDF is smaller and more stable for client review.
+
+Use the progress lines as health checks:
+
+```text
+counting slides...
+capturing <N> slides...
+assembling PDF...
+```
+
+If the script hangs on DOM capture, do not add profile reuse. Chrome finished reliably without a
+custom `--user-data-dir`; profile isolation caused hangs in local testing.
 
 ## Validate before handoff
 
 - HTML: open the file by **double-click** (`file://`) and confirm it renders — that is the exact
   condition that previously failed. Resize the window and confirm the deck only zooms (no reflow).
-- PDF: confirm page count equals slide count and slides are not blank / mid-animation.
+- PDF metadata:
+  `pdfinfo presentation/working-files/<slug>/export/<slug>.pdf`
+  Check page count equals slide count, page size is 16:9, and file size is reasonable.
+- PDF visual QA: rasterize and inspect, because the PDF's value is usability, not code success.
+
+```bash
+mkdir -p /tmp/<slug>-pdf-check
+pdftoppm -png -r 120 presentation/working-files/<slug>/export/<slug>.pdf /tmp/<slug>-pdf-check/page
+```
+
+Inspect at least: a contact sheet, page 1, a dense middle page, and the final page. Confirm no
+blank pages, no clipping, no mid-animation state, no cropped title, and readable content in macOS
+Preview-like raster output.
