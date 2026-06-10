@@ -90,9 +90,8 @@
   );
 }
 
-/* Soft line grid with a gentle top-anchored radial fade. Kept at z-index 0 — strictly BEHIND the
-   content frame (z-index 1) — so it can never overlay or lower the contrast of foreground elements.
-   Lines toned to ~half and slate-tinted; the fade matches the reference. */
+/* Soft dot grid with a gentle top-anchored radial fade. Kept at z-index 0 — strictly BEHIND the
+   content frame (z-index 1) — so it can never overlay or lower the contrast of foreground elements. */
 .ld-slide::after {
   content: "";
   position: absolute;
@@ -100,9 +99,8 @@
   z-index: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(to right, rgba(148, 163, 184, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
-  background-size: 22px 22px;
+    radial-gradient(circle, rgba(148, 163, 184, 0.08) 0 0.7px, transparent 0.8px);
+  background-size: 18px 18px;
   -webkit-mask-image: radial-gradient(ellipse 85% 55% at 50% 15%, #000 70%, transparent 100%);
   mask-image: radial-gradient(ellipse 85% 55% at 50% 15%, #000 70%, transparent 100%);
   -webkit-mask-repeat: no-repeat;

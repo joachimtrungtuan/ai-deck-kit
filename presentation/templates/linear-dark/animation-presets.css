@@ -57,6 +57,31 @@
   animation: ldLineDraw var(--ld-duration-slow) var(--ld-ease) both;
 }
 
+.ld-anim-staggered-list > .ld-flow-row .ld-icon-tile,
+.ld-anim-staggered-list > .ld-flow-row .ld-flow-arrow {
+  animation: ldFlowPulse var(--ld-duration-slow) var(--ld-ease) both;
+}
+
+.ld-anim-staggered-list > .ld-flow-row:nth-child(2) .ld-icon-tile,
+.ld-anim-staggered-list > .ld-flow-row:nth-child(2) .ld-flow-arrow {
+  animation-delay: calc(var(--ld-stagger) * 1);
+}
+
+.ld-anim-staggered-list > .ld-flow-row:nth-child(3) .ld-icon-tile,
+.ld-anim-staggered-list > .ld-flow-row:nth-child(3) .ld-flow-arrow {
+  animation-delay: calc(var(--ld-stagger) * 2);
+}
+
+.ld-anim-staggered-list > .ld-flow-row:nth-child(4) .ld-icon-tile,
+.ld-anim-staggered-list > .ld-flow-row:nth-child(4) .ld-flow-arrow {
+  animation-delay: calc(var(--ld-stagger) * 3);
+}
+
+.ld-anim-staggered-list > .ld-flow-row:nth-child(5) .ld-icon-tile,
+.ld-anim-staggered-list > .ld-flow-row:nth-child(5) .ld-flow-arrow {
+  animation-delay: calc(var(--ld-stagger) * 4);
+}
+
 .ld-anim-image-drift {
   animation: ldImageDrift 900ms var(--ld-ease) both;
 }
@@ -99,6 +124,23 @@
 @keyframes ldLineDraw {
   to {
     stroke-dashoffset: 0;
+  }
+}
+
+@keyframes ldFlowPulse {
+  from {
+    opacity: 0;
+    transform: translate3d(-10px, 0, 0) scale(0.94);
+    filter: drop-shadow(0 0 0 rgba(94, 106, 210, 0));
+  }
+  55% {
+    opacity: 1;
+    filter: drop-shadow(0 0 18px var(--ld-accent-glow));
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: drop-shadow(0 0 8px var(--ld-accent-soft));
   }
 }
 

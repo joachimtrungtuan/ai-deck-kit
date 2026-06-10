@@ -1,28 +1,25 @@
 import { LinearFrame, LinearList, LinearTextBlock, type LinearSlideProps } from "./shared";
 
 export function LinearTitleSlide(props: LinearSlideProps) {
+  const meta = props.titleMeta ?? [
+    { label: "Template", value: "Linear Dark" },
+    { label: "System", value: "Dark SaaS" },
+    { label: "Typography", value: "Inter / JetBrains Mono" },
+    { label: "Emphasis", value: "Hairlines and glow" },
+  ];
+
   return (
     <LinearFrame animation={props.animation}>
       <div style={{ gridColumn: "1 / 8", gridRow: "2 / 8" }}>
         <LinearTextBlock kicker={props.kicker} title={props.title} body={props.body} />
       </div>
       <dl className="ld-meta-row" style={{ gridColumn: "8 / 13", gridRow: "2 / 4" }}>
-        <div>
-          <dt>Template</dt>
-          <dd>Linear Dark</dd>
-        </div>
-        <div>
-          <dt>System</dt>
-          <dd>Dark SaaS</dd>
-        </div>
-        <div>
-          <dt>Typography</dt>
-          <dd>Inter / JetBrains Mono</dd>
-        </div>
-        <div>
-          <dt>Emphasis</dt>
-          <dd>Hairlines and glow</dd>
-        </div>
+        {meta.map((item) => (
+          <div key={item.label}>
+            <dt>{item.label}</dt>
+            <dd>{item.value}</dd>
+          </div>
+        ))}
       </dl>
     </LinearFrame>
   );

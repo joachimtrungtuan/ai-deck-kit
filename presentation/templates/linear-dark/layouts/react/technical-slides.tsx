@@ -123,10 +123,11 @@ export function LinearDataFlowSlide(props: LinearSlideProps) {
       </header>
       <div className="ld-anim-staggered-list" style={{ gridColumn: "1 / 13", gridRow: "4 / 9", display: "grid", gap: "12px", alignContent: "start" }}>
         {steps.map((s, i) => (
-          <div className="ld-panel" key={`${i}-${s.label}`} style={{ padding: "18px 24px", display: "grid", gridTemplateColumns: "32px 1fr auto 1fr", alignItems: "center", columnGap: "20px" }}>
+          <div className="ld-panel ld-flow-row" key={`${i}-${s.label}`} style={{ padding: "18px 24px", display: "grid", gridTemplateColumns: "32px 44px 1fr auto 1fr", alignItems: "center", columnGap: "20px" }}>
             <span className="ld-index" style={{ color: "var(--ld-accent)" }}>{String(i + 1).padStart(2, "0")}</span>
+            <LinearIconTile name={props.icons?.[i]} size={24} />
             <span style={{ fontFamily: "var(--ld-font-mono)", color: "var(--ld-ink)" }}>{s.from}</span>
-            <span className="ld-connector-arrow" style={{ fontSize: "calc(var(--ld-type) * 20px)" }}>&rarr;</span>
+            <span className="ld-connector-arrow ld-flow-arrow" style={{ fontSize: "calc(var(--ld-type) * 20px)" }}>&rarr;</span>
             <span style={{ fontFamily: "var(--ld-font-mono)", color: "var(--ld-ink)" }}>
               {s.to}
               <span className="ld-body" style={{ display: "block", fontSize: "calc(var(--ld-type) * 13px)", fontFamily: "var(--ld-font-body)" }}>{s.label}</span>

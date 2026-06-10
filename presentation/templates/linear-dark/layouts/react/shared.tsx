@@ -61,6 +61,7 @@ export type LinearSlideProps = {
   // `icons` parallel to `items` for multi-slot slides. Unset slots render a placeholder.
   icon?: string;
   icons?: string[];
+  titleMeta?: { label: string; value: string }[];
 };
 
 // Curated Phosphor set. Authoring agents pass these names via `icon` / `icons`.
