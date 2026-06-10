@@ -1,0 +1,117 @@
+:root {
+  --swiss-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --swiss-duration-fast: 220ms;
+  --swiss-duration-base: 520ms;
+  --swiss-duration-slow: 760ms;
+}
+
+.swiss-anim-none {
+  animation: none;
+}
+
+.swiss-anim-gentle-rise {
+  animation: swissGentleRise var(--swiss-duration-base) var(--swiss-ease) both;
+}
+
+.swiss-anim-soft-scale {
+  animation: swissSoftScale var(--swiss-duration-base) var(--swiss-ease) both;
+}
+
+.swiss-anim-masked-reveal {
+  clip-path: inset(0 100% 0 0);
+  animation: swissMaskedReveal var(--swiss-duration-slow) var(--swiss-ease) both;
+}
+
+.swiss-anim-staggered-list > * {
+  animation: swissGentleRise var(--swiss-duration-base) var(--swiss-ease) both;
+}
+
+.swiss-anim-staggered-list > *:nth-child(2) {
+  animation-delay: 80ms;
+}
+
+.swiss-anim-staggered-list > *:nth-child(3) {
+  animation-delay: 160ms;
+}
+
+.swiss-anim-staggered-list > *:nth-child(4) {
+  animation-delay: 240ms;
+}
+
+.swiss-anim-line-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: swissLineDraw var(--swiss-duration-slow) var(--swiss-ease) both;
+}
+
+.swiss-anim-image-drift {
+  animation: swissImageDrift 900ms var(--swiss-ease) both;
+}
+
+.swiss-anim-spotlight {
+  animation: swissSpotlight var(--swiss-duration-slow) var(--swiss-ease) both;
+}
+
+@keyframes swissGentleRise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes swissSoftScale {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes swissMaskedReveal {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes swissLineDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes swissImageDrift {
+  from {
+    opacity: 0;
+    transform: scale(1.04) translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+}
+
+@keyframes swissSpotlight {
+  from {
+    opacity: 0;
+    transform: translate3d(-18px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [class*="swiss-anim"] {
+    animation: none;
+    clip-path: none;
+    transform: none;
+  }
+}

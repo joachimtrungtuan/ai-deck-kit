@@ -1,0 +1,4 @@
+interface:
+  display_name: "Presentation Crafting"
+  short_description: "Craft browser slide decks from templates"
+  default_prompt: "Use $presentation-crafting to normalize my content into a canonical slide-content file and create a consistent browser presentation."
