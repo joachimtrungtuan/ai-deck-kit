@@ -21,9 +21,9 @@ animation: "masked-reveal"
 icons: ["globe", "stack"]
 assets: []
 override:
-  layout: "none"
+  layout: "before-after-item-text-size"
   animation: "none"
-  reason: ""
+  reason: "Tạm thời tăng gấp đôi cỡ chữ item trong 2 panel để dễ đọc khi review deck Vivimoon."
 ```
 
 ### On-Slide Text
@@ -61,9 +61,9 @@ animation: "gentle-rise"
 icons: ["target", "stack", "shield", "rocket"]
 assets: []
 override:
-  layout: "none"
+  layout: "data-flow-text-size"
   animation: "none"
-  reason: ""
+  reason: "Tạm thời tăng khoảng 10% cho text chính trong các row data flow của deck Vivimoon; text mô tả nhỏ giữ nguyên cỡ gốc để không bị nặng."
 ```
 
 ### On-Slide Text
@@ -131,7 +131,7 @@ Dùng process flow làm visual chính, không biến thành slide bullet dày.
 
 - Không có.
 
-## Slide 04: Yêu cầu kinh doanh -> năng lực website
+## Slide 04: Yêu cầu kinh doanh ▶︎ năng lực website
 
 ```yaml
 id: "slide-04"
@@ -174,7 +174,7 @@ Giữ bảng 6 dòng để đảm bảo dễ đọc trong template.
 
 - Không có.
 
-## Slide 05: Mapping giải pháp
+## Slide 05: Business goal được develop thành solution kỹ thuật
 
 ```yaml
 id: "slide-05"
@@ -203,7 +203,7 @@ Flow 4 bước thể hiện logic chuyển đổi yêu cầu.
 
 ### Speaker Notes
 
-Ví dụ: tăng conversion -> mobile-first UX và checkout tối ưu; giảm mua sai -> filter, variant logic, account profile; tăng trust -> review, UGC, video; tối ưu quảng cáo -> event tracking; retention -> customer account, email automation; ổn định -> cache, CDN, security layer.
+Ví dụ: tăng conversion ▶︎ mobile-first UX và checkout tối ưu; giảm mua sai ▶︎ filter, variant logic, account profile; tăng trust ▶︎ review, UGC, video; tối ưu quảng cáo ▶︎ event tracking; retention ▶︎ customer account, email automation; ổn định ▶︎ cache, CDN, security layer.
 
 ### Design Notes
 
@@ -213,7 +213,7 @@ Giữ flow đơn giản để presenter giải thích bằng lời.
 
 - Không có.
 
-## Slide 06: Tech stack đề xuất
+## Slide 06: Phân chia theo trải nghiệm, e-commerce và mục tiêu marketing
 
 ```yaml
 id: "slide-06"
@@ -333,7 +333,7 @@ Gộp thành 5 bước vì layout data-flow tối ưu cho tối đa 5 row.
 
 - Không có.
 
-## Slide 09: Khả năng mở rộng
+## Slide 09: Sẵn sàng cho tất cả những tình huống vận hành khác nhau
 
 ```yaml
 id: "slide-09"
@@ -429,6 +429,8 @@ override:
 ```
 
 ### On-Slide Text
+
+- Yêu cầu kinh doanh ▶︎ giải pháp kỹ thuật
 
 | Yêu cầu | Giải pháp đề xuất |
 | --- | --- |

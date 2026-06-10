@@ -62,7 +62,7 @@ export const vivimoonWebsiteSlides: VivimoonSlide[] = [
     Component: LinearSpecTableSlide,
     props: {
       kicker: "Yêu cầu",
-      title: "Yêu cầu kinh doanh -> năng lực website",
+      title: "Yêu cầu kinh doanh ▶︎ năng lực website",
       tableColumns: ["Yêu cầu kinh doanh", "Yêu cầu website"],
       tableRows: [
         ["Chọn lens nhanh hơn", "Bộ lọc sản phẩm + PDP rõ ràng"],
@@ -80,7 +80,7 @@ export const vivimoonWebsiteSlides: VivimoonSlide[] = [
     props: {
       animation: "line-draw",
       kicker: "Mapping giải pháp",
-      title: "Nhu cầu business được chuyển thành lựa chọn kỹ thuật",
+      title: "Business goal được develop thành solution kỹ thuật",
       items: ["Yêu cầu kinh doanh", "Yêu cầu chức năng", "Giải pháp kỹ thuật", "Tech stack"],
       icons: ["target", "branch", "plugs", "stack"],
     },
@@ -90,7 +90,7 @@ export const vivimoonWebsiteSlides: VivimoonSlide[] = [
     Component: LinearArchitectureOverviewSlide,
     props: {
       kicker: "Tech stack đề xuất",
-      title: "Phân lớp theo trải nghiệm, thương mại, nội dung và marketing",
+      title: "Phân chia theo trải nghiệm, e-commerce và mục tiêu marketing",
       items: ["Bricks Builder", "WooCommerce", "WordPress CMS", "CDN / Cache / Security", "GA4 / Meta / TikTok / CRM"],
       icons: ["globe", "stack", "plugs", "shield", "chart"],
     },
@@ -112,6 +112,7 @@ export const vivimoonWebsiteSlides: VivimoonSlide[] = [
       animation: "line-draw",
       kicker: "Data flow",
       title: "Traffic chuyển thành đơn hàng và tín hiệu retention",
+      dataFlowPrimaryTextStyle: { fontSize: "110%", lineHeight: 1.05 },
       flowSteps: [
         { from: "Traffic", to: "Website", label: "Ghi nhận nguồn truy cập" },
         { from: "Website", to: "Tracking", label: "GA4 / Meta / TikTok" },
@@ -127,7 +128,8 @@ export const vivimoonWebsiteSlides: VivimoonSlide[] = [
     Component: LinearBeforeAfterSlide,
     props: {
       kicker: "Khả năng mở rộng",
-      title: "Sẵn sàng cho traffic thường ngày và campaign spike",
+      title: "Sẵn sàng cho tất cả những tình huống vận hành khác nhau",
+      beforeAfterItemTextStyle: { fontSize: "150%", lineHeight: 1.08 },
       leftTitle: "Kịch bản thông thường",
       rightTitle: "Kịch bản campaign",
       leftItems: ["Traffic ổn định", "Người dùng xem sản phẩm", "Hạ tầng tiêu chuẩn"],
@@ -150,7 +152,7 @@ export const vivimoonWebsiteSlides: VivimoonSlide[] = [
     Component: LinearComparisonTableSlide,
     props: {
       kicker: "Tóm tắt đề xuất",
-      title: "Yêu cầu kinh doanh -> giải pháp kỹ thuật",
+      title: "Yêu cầu kinh doanh ▶︎ giải pháp kỹ thuật",
       recommendedColumn: 1,
       tableColumns: ["Yêu cầu", "Giải pháp đề xuất"],
       tableRows: [
