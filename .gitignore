@@ -101,3 +101,6 @@ worktrees/
 .agents
 .opencode
 .codex
+
+# Transient browser-automation output
+playwright-output/
