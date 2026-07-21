@@ -1,16 +1,18 @@
 # CLAUDE.md
 
-Guidance for Claude Code in this repository. This file is the **source of truth**; `AGENTS.md` is a mirror adapted for other AI agents — when updating one, update both.
+Guidance for Claude Code in this repository. This file is the **source of truth**; `AGENTS.md` mirrors it for other AI agents (Codex, Gemini CLI, …). **AI Deck Kit treats non-Claude agents as first-class runtimes, so keep both in lockstep** — when updating one, update both. The two intentionally differ only where a mechanism is Claude-specific: skill invocation (slash command + Skill tool) here vs plain "READ the `SKILL.md`" in `AGENTS.md`, and Claude Code hooks / `.claude/` wiring that other agents ignore.
 
 ## Project Overview
 
-**AI Presentation** is a presentation-generation workspace. The agent and user collaborate to create beautifully crafted, browser-based slide decks (React source, with static HTML export) through a controlled, content-first workflow.
+**AI Deck Kit** (evolving from "AI Presentation") is a **portable, agent-native presentation toolkit**. It installs into any project on any machine; the AI agent (Claude Code, Codex, …) is the runtime, a deterministic Node/TS CLI (`aideck`) owns repeatable/boilerplate work, agent skills own the creative content work, and decks are portable `.deck` folder bundles. It stays content-first: the agent edits source, the user reviews content + rendered output. This is **not** a Google Slides clone.
 
-This is **not** a Google Slides clone. The agent edits source; the user reviews content and rendered output. Goal: lightweight, beautiful, consistent presentations in a short time.
+**Core principles:** consistency, flexibility, portability, user control.
 
-**Core principles:** consistency, flexibility, and user control.
+> **In transition (2026-07-22).** Vision, architecture, `.deck` format, per-module PRDs, and an 8-phase migration plan live in `docs/` and `plans/260722-0258-ai-deck-kit-restructure/`. The engine/decks split, CLI, and `.deck` format are **planned, not yet executed** — the on-disk layout is still pre-migration. Read `docs/project-overview-pdr.md` + `docs/system-architecture.md` before migration work.
 
-## Structure
+## Structure (current — pre-migration)
+
+> Target layout (`engine/` + `decks/` + project `templates/`, `.deck` bundles) is specified in `docs/system-architecture.md` §2 and delivered by Phase 01. The tree below is what is on disk today.
 
 ```
 AI Presentation/
@@ -50,6 +52,27 @@ ALWAYS activate the `karpathy-guidelines` skill (`/karpathy-guidelines`) when wr
 - **Surgical changes** — touch only what the task requires; preserve surrounding style and structure.
 - **Surface assumptions** — state them explicitly instead of silently guessing.
 - **Verifiable success criteria** — define how the change will be checked before writing it, then verify.
+
+## Token Discipline (non-negotiable)
+
+Context is scarce; flooding it makes you thrash — more searches, more noise, wrong or stuck. Spend deliberately.
+
+- **Bounded search.** Cap `Grep`/`Glob` output at ~50 matches. More than that → refine (scope `path`/`glob`, `head_limit`, sharper pattern). "Too many results" means *be more specific*, not read further.
+- **Bounded reads.** Small files whole; large files in ~100-line windows via `Read` `offset`/`limit`, targeting the range you need. Use the line numbers `Read` prepends. **Never re-read a file already in context.**
+- **Lint/compile after every edit** — fix a syntax error before anything else, not after tests fail and ten steps are burned.
+- **Recon to one cheap subagent.** Broad/unknown surface or >10 files at once → delegate the sweep to a single `Explore`/`general-purpose` agent (prefer `model: haiku`) that returns only a distilled brief (paths, line ranges, facts). Cheap model locates/extracts; root-cause and design calls stay in the main context. Small, knowable surface → read it directly, don't spawn.
+- **Subagents run one at a time.** Several needed → sequential, never simultaneous. Concurrent subagents need explicit user approval + genuine necessity. This overrides the "Parallel Work" guidance in `.claude/rules/orchestration-protocol.md`.
+- **Right-size the ceremony, never skip it.** Plan → implement → test → review, update-log entries, and docs sync stay mandatory; what scales is their *depth*. A one-line fix still earns an update-log entry with a terse inline plan; a real feature warrants the full chain.
+
+## Coding Rules
+
+Full rules: `.claude/rules/development-rules.md`. The ones that bite hardest:
+
+- **Minimum code that solves the actual problem** — no speculative features, single-use abstractions, or unrequested flexibility (YAGNI/KISS/DRY).
+- **Surgical changes** — every changed line traces to the request; don't refactor adjacent code; match existing style. Clean up only orphans your change created; flag pre-existing dead code rather than deleting it.
+- **One concern per file**, ~200-line soft cap; split when either trips. Long descriptive kebab-case filenames (respect language conventions).
+- **Think before coding** — state assumptions explicitly; multiple interpretations → present them, don't pick silently; unclear → stop, name it, ask.
+- **Never hide or weaken a failing check** (lint, typecheck, build, test) to make it pass.
 
 ## Update Logs (required)
 

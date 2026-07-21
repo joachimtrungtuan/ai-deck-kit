@@ -1,16 +1,18 @@
 # AGENTS.md
 
-Guidance for AI agents (OpenCode, Codex, Gemini CLI, and others) working in this repository. **`CLAUDE.md` is the source of truth** — this file mirrors it with agent-neutral adaptations. When updating one, update both.
+Guidance for AI agents (OpenCode, Codex, Gemini CLI, and others) working in this repository. **`CLAUDE.md` is the source of truth** — this file mirrors it with agent-neutral adaptations, and AI Deck Kit treats these agents as first-class runtimes. When updating one, update both. Differences from `CLAUDE.md` are only where a mechanism is Claude-specific: skills are invoked by READING their `SKILL.md` (no Skill tool or slash commands), and Claude Code hooks / `.claude/` wiring do not apply here.
 
 ## Project Overview
 
-**AI Presentation** is a presentation-generation workspace. The agent and user collaborate to create beautifully crafted, browser-based slide decks (React source, with static HTML export) through a controlled, content-first workflow.
+**AI Deck Kit** (evolving from "AI Presentation") is a **portable, agent-native presentation toolkit**. It installs into any project on any machine; the AI agent (Claude Code, Codex, …) is the runtime, a deterministic Node/TS CLI (`aideck`) owns repeatable/boilerplate work, agent skills own the creative content work, and decks are portable `.deck` folder bundles. It stays content-first: the agent edits source, the user reviews content + rendered output. This is **not** a Google Slides clone.
 
-This is **not** a Google Slides clone. The agent edits source; the user reviews content and rendered output. Goal: lightweight, beautiful, consistent presentations in a short time.
+**Core principles:** consistency, flexibility, portability, user control.
 
-**Core principles:** consistency, flexibility, and user control.
+> **In transition (2026-07-22).** Vision, architecture, `.deck` format, per-module PRDs, and an 8-phase migration plan live in `docs/` and `plans/260722-0258-ai-deck-kit-restructure/`. The engine/decks split, CLI, and `.deck` format are **planned, not yet executed** — the on-disk layout is still pre-migration. Read `docs/project-overview-pdr.md` + `docs/system-architecture.md` before migration work.
 
-## Structure
+## Structure (current — pre-migration)
+
+> Target layout (`engine/` + `decks/` + project `templates/`, `.deck` bundles) is specified in `docs/system-architecture.md` §2 and delivered by Phase 01. The tree below is what is on disk today.
 
 ```
 AI Presentation/
@@ -50,6 +52,27 @@ Apply these behavioral guidelines whenever writing, reviewing, or refactoring co
 - **Surgical changes** — touch only what the task requires; preserve surrounding style and structure.
 - **Surface assumptions** — state them explicitly instead of silently guessing.
 - **Verifiable success criteria** — define how the change will be checked before writing it, then verify.
+
+## Token Discipline (non-negotiable)
+
+Context is scarce; flooding it makes you thrash. Spend deliberately.
+
+- **Bounded search.** Cap search-tool output at ~50 matches; more → refine scope/pattern, don't read further.
+- **Bounded reads.** Small files whole; large files in ~100-line windows targeting the range you need. **Never re-read a file already in context.**
+- **Lint/compile after every edit** — fix a syntax error before anything else.
+- **Delegate broad recon cheaply.** Broad/unknown surface or >10 files → if your harness supports sub-runs, delegate the sweep to a single cheap one that returns only a distilled brief (paths, line ranges, facts); root-cause/design stays in the main context. Small, knowable surface → read directly.
+- **Sub-runs one at a time.** If your harness supports parallel sub-runs, run them sequentially unless the user explicitly approves concurrency.
+- **Right-size the ceremony, never skip it.** Plan → implement → test → review, update-log entries, and docs sync stay mandatory; what scales is their depth.
+
+## Coding Rules
+
+Full rules: `.claude/rules/development-rules.md`. The ones that bite hardest:
+
+- **Minimum code that solves the actual problem** — no speculative features or single-use abstractions (YAGNI/KISS/DRY).
+- **Surgical changes** — every changed line traces to the request; don't refactor adjacent code; match existing style.
+- **One concern per file**, ~200-line soft cap; split when either trips. Long descriptive kebab-case filenames (respect language conventions).
+- **Think before coding** — state assumptions; multiple interpretations → present them; unclear → stop and ask.
+- **Never hide or weaken a failing check** (lint, typecheck, build, test) to make it pass.
 
 ## Update Logs (required)
 

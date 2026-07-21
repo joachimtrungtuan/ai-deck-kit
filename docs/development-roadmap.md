@@ -1,0 +1,36 @@
+# AI Deck Kit — Development Roadmap
+
+**Status:** Draft (2026-07-22). Continuous-development / CI-CD project — this roadmap is a living document.
+Companion specs: `project-overview-pdr.md`, `system-architecture.md`, `deck-format-spec.md`.
+Migration plan: `plans/260722-0258-ai-deck-kit-restructure/plan.md`.
+
+## Delivery Model
+
+Continuous integration + continuous delivery of the **engine**. Each milestone ships a tagged engine version; installed copies upgrade via `aideck upgrade` with `decks/` untouched. Restructure proceeds **foundation-first, incremental** so the workspace stays usable throughout.
+
+## Milestones
+
+| # | Milestone | Outcome | Plan phase |
+|---|---|---|---|
+| M1 | Two-root workspace | `engine/` + `decks/` split, root pointer, workspace resolution, project config | Phase 01 |
+| M2 | `.deck` format live | Bundle format + validators; VIVIMOON migrated to `.deck` | Phase 02 |
+| M3 | Design primitives | Block library (`block-catalog v1`), motion vocabulary incl. morph, base tokens | Phase 03 |
+| M4 | CLI core | `aideck` Node/TS: init/new/slide/template/gen/export/serve/pack/doctor/upgrade | Phase 04 |
+| M5 | Skills + generation | Skill bundles reworked to `.deck`+CLI; outline-first generation; annotation reuse | Phase 05 |
+| M6 | Preview + export + morph | Runtime renders `.deck`; HTML/PDF export; morph animation in runtime; `pack` sharing | Phase 06 |
+| M7 | Distribution + CI/CD | `npx ai-deck-kit init` (root or subfolder), release pipeline, upgrade path | Phase 07 |
+| M8 | Migration + QA | swiss-modern & linear-dark migrated; end-to-end validation; docs finalized | Phase 08 |
+
+## Post-v1 Backlog (deferred)
+
+- PPTX export (via runtime → pptx bridge or pandoc/marp reference path).
+- Local WYSIWYG web editor (optional module; architecture already leaves room).
+- Audience-interactive on-slide elements (polls, hotspots).
+- Cloud share/hosting for exported decks.
+- Template marketplace / shareable template sets.
+
+## Maintenance Cadence
+
+- Update this roadmap + `project-changelog.md` at each milestone completion.
+- Update `docs/` whenever module boundaries, the `.deck` schema, or CLI surface change.
+- Every engine release runs the CI gate (lint, typecheck, validators, export smoke test).
