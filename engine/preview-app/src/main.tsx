@@ -15,7 +15,7 @@ import "../../templates/linear-dark/animation-presets.css";
 import { SOURCES } from "./deck-registry";
 
 function getDefaultSourceId() {
-  if (typeof window !== "undefined" && window.location.pathname.includes("/vivimoon-website.deck/export/")) {
+  if (typeof window !== "undefined" && window.location.pathname.includes("/vivimoon-website.deck/.build/export/")) {
     return "vivimoon-website";
   }
 

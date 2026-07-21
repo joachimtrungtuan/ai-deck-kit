@@ -31,7 +31,7 @@ node engine/skills/presentation-crafting/scripts/export-standalone-html.mjs \
   --deck <deck-id> [--slug <slug>] [--out <dir>]
 ```
 
-Defaults: `--slug` = `--deck`; output = `decks/<slug>.deck/export/index.html`.
+Defaults: `--slug` = `--deck`; output = `decks/<slug>.deck/.build/export/index.html`.
 
 What the script does and **why it matters**:
 
@@ -56,7 +56,7 @@ node engine/skills/presentation-crafting/scripts/export-standalone-html.mjs \
   --deck vivimoon-website --slug vivimoon-website --out /tmp/vivimoon-html-export-check
 find /tmp/vivimoon-html-export-check -maxdepth 2 -type f -print
 cmp -s /tmp/vivimoon-html-export-check/index.html \
-  decks/vivimoon-website.deck/export/index.html
+  decks/vivimoon-website.deck/.build/export/index.html
 ```
 
 Expected: one file (`index.html`), no external `assets/`, and `cmp` exit code `0` when comparing
@@ -118,13 +118,13 @@ custom `--user-data-dir`; profile isolation caused hangs in local testing.
 - HTML: open the file by **double-click** (`file://`) and confirm it renders — that is the exact
   condition that previously failed. Resize the window and confirm the deck only zooms (no reflow).
 - PDF metadata:
-  `pdfinfo decks/<slug>.deck/export/<slug>.pdf`
+  `pdfinfo decks/<slug>.deck/.build/export/<slug>.pdf`
   Check page count equals slide count, page size is 16:9, and file size is reasonable.
 - PDF visual QA: rasterize and inspect, because the PDF's value is usability, not code success.
 
 ```bash
 mkdir -p /tmp/<slug>-pdf-check
-pdftoppm -png -r 120 decks/<slug>.deck/export/<slug>.pdf /tmp/<slug>-pdf-check/page
+pdftoppm -png -r 120 decks/<slug>.deck/.build/export/<slug>.pdf /tmp/<slug>-pdf-check/page
 ```
 
 Inspect at least: a contact sheet, page 1, a dense middle page, and the final page. Confirm no

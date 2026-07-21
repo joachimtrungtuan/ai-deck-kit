@@ -1,7 +1,7 @@
 import type { ComponentType } from "react";
 import { swissModernSlides } from "./swiss-modern-preview";
 import { linearDarkSlides } from "./linear-dark-preview";
-import { vivimoonWebsiteSlides } from "../../../decks/vivimoon-website.deck/source/vivimoon-website-deck";
+import { vivimoonWebsiteSlides } from "../../../decks/vivimoon-website.deck/.build/source/vivimoon-website-deck";
 
 // A preview/export source is any registered slide set (template preview or deck).
 // Adding a new source = one entry here; the dev shell and the standalone export both read this list.

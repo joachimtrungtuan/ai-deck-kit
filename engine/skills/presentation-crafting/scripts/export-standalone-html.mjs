@@ -9,7 +9,7 @@
 //
 //   --deck   Registered deck/source id from preview-app/src/deck-registry.tsx (required).
 //   --slug   Deck folder name (without .deck suffix). Defaults to --deck.
-//   --out    Output directory. Defaults to decks/<slug>.deck/export/.
+//   --out    Output directory. Defaults to decks/<slug>.deck/.build/export/.
 
 import { spawnSync } from "node:child_process";
 import { existsSync, renameSync, rmSync } from "node:fs";
@@ -34,7 +34,7 @@ if (!deckId) {
 const slug = getArg("slug") ?? deckId;
 const outDir = getArg("out")
   ? resolve(getArg("out"))
-  : resolve(decksDir, `${slug}.deck`, "export");
+  : resolve(decksDir, `${slug}.deck`, ".build", "export");
 
 console.log(`Building standalone HTML export\n  deck: ${deckId}\n  out:  ${outDir}`);
 

@@ -33,4 +33,4 @@ Use when the user provides notes, a transcript, a memo, a rough outline, or top-
 
 ## Output
 
-Always produce or update `decks/{presentation-slug}.deck/content/{presentation-slug}.slides.md` before generating source code.
+Always produce or update `decks/{presentation-slug}.deck/content.md` (slide prose) and `deck.json` (manifest: order/type/template) before generating source code. See `docs/deck-format-spec.md`.

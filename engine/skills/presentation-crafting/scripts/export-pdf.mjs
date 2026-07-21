@@ -14,7 +14,7 @@
 //   node engine/skills/presentation-crafting/scripts/export-pdf.mjs --html <path/to/index.html> [--out <path.pdf>]
 //
 //   --html   Path to the standalone export HTML.
-//   --slug   Shortcut: uses decks/<slug>.deck/export/index.html.
+//   --slug   Shortcut: uses decks/<slug>.deck/.build/export/index.html.
 //   --out    Output PDF path. Defaults to <html-dir>/<slug-or-deck>.pdf.
 //   --chrome Path to a Chrome/Chromium binary. Overrides auto-detection / CHROME_PATH env.
 //   --imagemagick Path to ImageMagick `magick`. Overrides `which magick`.
@@ -93,7 +93,7 @@ const slug = getArg("slug");
 const htmlPath = getArg("html")
   ? resolve(getArg("html"))
   : slug
-    ? resolve(decksDir, `${slug}.deck`, "export", "index.html")
+    ? resolve(decksDir, `${slug}.deck`, ".build", "export", "index.html")
     : undefined;
 
 if (!htmlPath) {
