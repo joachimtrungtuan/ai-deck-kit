@@ -11,7 +11,7 @@ const presentationRoot = dirname(fileURLToPath(import.meta.url));
 const deckId = process.env.EXPORT_DECK ?? "vivimoon-website";
 const outDir = process.env.EXPORT_OUT_DIR
   ? resolve(process.env.EXPORT_OUT_DIR)
-  : resolve(presentationRoot, "working-files", deckId, "export");
+  : resolve(presentationRoot, "..", "decks", `${deckId}.deck`, "export");
 
 export default defineConfig({
   root: "preview-app",

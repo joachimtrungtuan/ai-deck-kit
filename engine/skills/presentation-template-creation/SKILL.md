@@ -23,11 +23,11 @@ This skill handles template-set authoring and slide-type catalog evolution. It d
 ## Workflow
 
 1. Gather the style brief: aesthetic direction, target presentation domain, typography constraints, accent policy.
-2. Read `presentation/templates/template-system.md` and the newest `presentation/templates/slide-types-v*.md`; read one existing template set (e.g. `swiss-modern/`) as the structural reference.
+2. Read `engine/templates/template-system.md` and the newest `engine/templates/slide-types-v*.md`; read one existing template set (e.g. `swiss-modern/`) as the structural reference.
 3. Decide catalog version: reuse the newest catalog, or — if the domain needs new slide types — create the next `slide-types-v(N+1).md` (copy previous catalog verbatim, append new categories/types with purpose + required props). See `references/template-system-and-versioning.md`.
 4. Scaffold the template folder per `references/template-authoring-workflow.md`.
 5. Write `template-manifest.json` and validate:
-   - `node skill-engineering/presentation-template-creation/scripts/validate-template-manifest.mjs <template-manifest>`
+   - `node engine/skills/presentation-template-creation/scripts/validate-template-manifest.mjs <template-manifest>`
 6. Build `design-system.css` (tokens + class inventory) and `animation-presets.css` (re-skin the shared preset vocabulary in `presentation-crafting/references/animation-presets.md` — same preset names, template-specific timing/easing).
 7. Write the template's `icon-policy.md`, applying `presentation-crafting/references/icon-policy.md` (Phosphor-first) with template-specific treatment.
 8. Implement React layouts per `references/react-layout-conventions.md`; document layout rules in `layouts/specs/layout-contracts.md`; map every slide type in `layouts/layout-index.json`.
@@ -37,7 +37,7 @@ This skill handles template-set authoring and slide-type catalog evolution. It d
 ## Required Output Per Template Set
 
 ```text
-presentation/templates/{template-name}/
+engine/templates/{template-name}/
 ├── template-manifest.json
 ├── design-system.css
 ├── animation-presets.css
@@ -48,7 +48,7 @@ presentation/templates/{template-name}/
     └── specs/layout-contracts.md
 ```
 
-Plus, when a new catalog version is created: `presentation/templates/slide-types-v(N+1).md`.
+Plus, when a new catalog version is created: `engine/templates/slide-types-v(N+1).md`.
 
 ## References
 

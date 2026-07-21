@@ -1,6 +1,6 @@
 # Template Authoring Workflow
 
-Build order and file checklist for a new template set. Mirror an existing set (e.g. `presentation/templates/swiss-modern/`) structurally at every step.
+Build order and file checklist for a new template set. Mirror an existing set (e.g. `engine/templates/swiss-modern/`) structurally at every step.
 
 ## Build Order
 

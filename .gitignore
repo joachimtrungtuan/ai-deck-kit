@@ -105,3 +105,8 @@ worktrees/
 
 # Transient browser-automation output
 playwright-output/
+
+# AI Deck Kit — user data (never touched by engine upgrade)
+/decks/
+/templates/
+**/.build/

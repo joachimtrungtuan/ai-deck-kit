@@ -33,4 +33,4 @@ Use when the user provides notes, a transcript, a memo, a rough outline, or top-
 
 ## Output
 
-Always produce or update `presentation/working-files/{presentation-slug}/content/{presentation-slug}.slides.md` before generating source code.
+Always produce or update `decks/{presentation-slug}.deck/content/{presentation-slug}.slides.md` before generating source code.

@@ -4,7 +4,7 @@ How to register a new template set in the shared preview runtime and the gates i
 
 ## Registration Steps
 
-1. **Preview data file** — create `presentation/preview-app/src/{template-name}-preview.tsx`:
+1. **Preview data file** — create `engine/preview-app/src/{template-name}-preview.tsx`:
    - Import all slide components from `../../templates/{template-name}/layouts/react`.
    - Export `{templateName}Slides: PreviewSlide[]` — one entry per slide type, in catalog order: `{ type, Component, props }` with realistic demo props matching the template's target domain.
 2. **main.tsx** — smallest possible diff:
@@ -16,7 +16,7 @@ How to register a new template set in the shared preview runtime and the gates i
 
 ## Verification Gates (all must pass before handoff)
 
-1. **Manifest**: `node skill-engineering/presentation-template-creation/scripts/validate-template-manifest.mjs presentation/templates/{template-name}/template-manifest.json`
+1. **Manifest**: `node engine/skills/presentation-template-creation/scripts/validate-template-manifest.mjs engine/templates/{template-name}/template-manifest.json`
 2. **Types compile**: `cd presentation && npx tsc --noEmit` — zero errors.
 3. **Visual pass**: `npm run dev`, switch to the new template, step through EVERY slide type: renders, no clipped text at 1600x900, animations fire once per slide entry, existing templates still render unaffected.
 4. **Catalog coverage**: every type ID in the declared `slide-types-vN.md` exists in `layout-index.json`, the manifest's `supportedSlideTypes`, and the preview slide list.

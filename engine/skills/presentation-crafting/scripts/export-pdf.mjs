@@ -10,11 +10,11 @@
 // Run export-standalone-html.mjs first, then point this at the produced index.html.
 //
 // Usage:
-//   node skill-engineering/presentation-crafting/scripts/export-pdf.mjs --slug <deck-slug> [--out <path.pdf>]
-//   node skill-engineering/presentation-crafting/scripts/export-pdf.mjs --html <path/to/index.html> [--out <path.pdf>]
+//   node engine/skills/presentation-crafting/scripts/export-pdf.mjs --slug <deck-slug> [--out <path.pdf>]
+//   node engine/skills/presentation-crafting/scripts/export-pdf.mjs --html <path/to/index.html> [--out <path.pdf>]
 //
 //   --html   Path to the standalone export HTML.
-//   --slug   Shortcut: uses presentation/working-files/<slug>/export/index.html.
+//   --slug   Shortcut: uses decks/<slug>.deck/export/index.html.
 //   --out    Output PDF path. Defaults to <html-dir>/<slug-or-deck>.pdf.
 //   --chrome Path to a Chrome/Chromium binary. Overrides auto-detection / CHROME_PATH env.
 //   --imagemagick Path to ImageMagick `magick`. Overrides `which magick`.
@@ -26,8 +26,8 @@ import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
-const projectRoot = resolve(scriptDir, "../../..");
-const presentationDir = resolve(projectRoot, "presentation");
+const projectRoot = resolve(scriptDir, "../../../..");
+const decksDir = resolve(projectRoot, "decks");
 
 function getArg(name) {
   const i = process.argv.indexOf(`--${name}`);
@@ -93,7 +93,7 @@ const slug = getArg("slug");
 const htmlPath = getArg("html")
   ? resolve(getArg("html"))
   : slug
-    ? resolve(presentationDir, "working-files", slug, "export", "index.html")
+    ? resolve(decksDir, `${slug}.deck`, "export", "index.html")
     : undefined;
 
 if (!htmlPath) {

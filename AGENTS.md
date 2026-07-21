@@ -8,24 +8,27 @@ Guidance for AI agents (OpenCode, Codex, Gemini CLI, and others) working in this
 
 **Core principles:** consistency, flexibility, portability, user control.
 
-> **In transition (2026-07-22).** Vision, architecture, `.deck` format, per-module PRDs, and an 8-phase migration plan live in `docs/` and `plans/260722-0258-ai-deck-kit-restructure/`. The engine/decks split, CLI, and `.deck` format are **planned, not yet executed** — the on-disk layout is still pre-migration. Read `docs/project-overview-pdr.md` + `docs/system-architecture.md` before migration work.
+> **In transition (2026-07-22).** Vision, architecture, `.deck` format, per-module PRDs, and an 8-phase migration plan live in `docs/` and `plans/260722-0258-ai-deck-kit-restructure/`. **Phase 01 (workspace restructure) is done** — the two-root `engine/`/`decks/` split + root pointer are on disk. The `.deck` manifest format, CLI, primitives layer, and everything else are still **planned, not yet executed**. Read `docs/project-overview-pdr.md` + `docs/system-architecture.md` before further migration work.
 
-## Structure (current — pre-migration)
+## Structure (current — post Phase 01)
 
-> Target layout (`engine/` + `decks/` + project `templates/`, `.deck` bundles) is specified in `docs/system-architecture.md` §2 and delivered by Phase 01. The tree below is what is on disk today.
+> `engine/` is the upgradable engine root; `decks/` + project-root `templates/` are gitignored user data. `ai-deck-kit.json` is the root pointer. `.deck` bundle internals (`deck.json`/`content.md` split) land in Phase 02.
 
 ```
 AI Presentation/
-├── skill-engineering/                      ← Skills SOURCE OF TRUTH (symlinked into .claude/skills/
-│   │                                          and .agents/skills/ — edit ONLY in skill-engineering/)
-│   ├── presentation-crafting/              ← Deck creation skill (content → slides)
-│   └── presentation-template-creation/     ← Template-set authoring skill (catalogs, design systems, layouts)
-├── presentation/
-│   ├── templates/                          ← Versioned template sets (e.g. swiss-modern)
+├── ai-deck-kit.json                        ← Root pointer (engineRoot, decksRoot, engineVersion)
+├── engine/                                 ← Upgradable engine root (ships with the toolkit)
+│   ├── skills/                             ← Skills SOURCE OF TRUTH (symlinked into .claude/skills/
+│   │   │                                      and .agents/skills/ — edit ONLY in engine/skills/)
+│   │   ├── presentation-crafting/          ← Deck creation skill (content → slides)
+│   │   └── presentation-template-creation/ ← Template-set authoring skill (catalogs, design systems, layouts)
+│   ├── templates/                          ← Shipped, versioned template-set presets (e.g. swiss-modern)
 │   │   ├── template-system.md              ← Master template-system rules
 │   │   └── slide-types-v1.md               ← Versioned slide-type catalog
-│   ├── preview-app/                        ← Single shared React preview runtime (Vite)
-│   └── working-files/{slug}/               ← One folder per deck: content/, source/, assets/, export/
+│   ├── preview-app/                        ← Single shared React preview + export runtime (Vite)
+│   └── engine.version.json                 ← Pinned engine version + supported ranges
+├── decks/                                  ← User data (gitignored): one {slug}.deck/ per deck
+├── templates/                              ← User data (gitignored): user-authored .template bundles
 ├── update-logs/                            ← Dated change logs (see below)
 ├── plans/                                  ← Implementation plans & reports
 └── docs/                                   ← Project documentation
@@ -33,9 +36,9 @@ AI Presentation/
 
 ## Way of Working (Presentation Crafting)
 
-Before deck work (content → slides), READ `skill-engineering/presentation-crafting/SKILL.md` and its `references/`. Before template-set or slide-type-catalog work, READ `skill-engineering/presentation-template-creation/SKILL.md` and its `references/`. Follow them as the standard operating procedure — the two skills are deliberately non-overlapping; never improvise either flow. (Agent metadata in `presentation-crafting/agents/openai.yaml`; both skills symlinked under `.agents/skills/`.) Non-negotiable rules:
+Before deck work (content → slides), READ `engine/skills/presentation-crafting/SKILL.md` and its `references/`. Before template-set or slide-type-catalog work, READ `engine/skills/presentation-template-creation/SKILL.md` and its `references/`. Follow them as the standard operating procedure — the two skills are deliberately non-overlapping; never improvise either flow. (Agent metadata in `presentation-crafting/agents/openai.yaml`; both skills symlinked under `.agents/skills/`.) Non-negotiable rules:
 
-1. **One canonical Markdown content file per deck** (`working-files/{slug}/content/{slug}.slides.md`) — the source of truth for text, images, icons, speaker notes, and review annotations.
+1. **One canonical Markdown content file per deck** (`decks/{slug}.deck/content/{slug}.slides.md`) — the source of truth for text, images, icons, speaker notes, and review annotations.
 2. **One and only one template set per presentation.** Every slide derives from a declared slide type in the active slide-type catalog. No off-template improvisation.
 3. **Templates are versioned** against the slide-types catalog version they implement.
 4. **Overrides (layout/animation) are an explicit, recorded edge case** — justified in the content file, never the default flow.

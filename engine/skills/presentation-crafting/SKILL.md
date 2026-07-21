@@ -27,17 +27,17 @@ This skill handles deck content normalization, React deck source, standalone HTM
 1. Read the available user material.
 2. If the user already provides slide-by-slide structure, preserve it and normalize it into the canonical slide-content schema.
 3. If the user provides raw notes, top-line ideas, transcripts, or long-form text, propose a slide-by-slide structure before generating the deck.
-4. Save or update the canonical content file under `presentation/working-files/{presentation-slug}/content/`.
+4. Save or update the canonical content file under `decks/{presentation-slug}.deck/content/`.
 5. Select exactly one template set. If no suitable template exists, stop and switch to the `presentation-template-creation` skill to author one — never improvise a deck style.
 6. Map every slide to a known slide type from the active catalog. Use `references/slide-types-v1.md` for the v1 baseline.
-7. Generate or update the React presentation source under `presentation/working-files/{presentation-slug}/source/`.
-8. Review templates or deck source in the shared preview runtime under `presentation/preview-app/` before export. If preview/export shell code is missing or drifting, restore it from `templates/export-runtime/` and follow `references/export-runtime-contract.md`.
+7. Generate or update the React presentation source under `decks/{presentation-slug}.deck/source/`.
+8. Review templates or deck source in the shared preview runtime under `engine/preview-app/` before export. If preview/export shell code is missing or drifting, restore it from `templates/export-runtime/` and follow `references/export-runtime-contract.md`.
 9. Export when requested or useful (see `references/export-workflow.md` for details and rationale):
-   - Standalone single-file HTML: `node skill-engineering/presentation-crafting/scripts/export-standalone-html.mjs --deck <deck-id> --slug <slug>`
-   - PDF (one landscape page per slide): `node skill-engineering/presentation-crafting/scripts/export-pdf.mjs --slug <slug>`
-   - The deck must be registered in `presentation/preview-app/src/deck-registry.tsx` first.
+   - Standalone single-file HTML: `node engine/skills/presentation-crafting/scripts/export-standalone-html.mjs --deck <deck-id> --slug <slug>`
+   - PDF (one landscape page per slide): `node engine/skills/presentation-crafting/scripts/export-pdf.mjs --slug <slug>`
+   - The deck must be registered in `engine/preview-app/src/deck-registry.tsx` first.
 10. Run validation:
-   - `node skill-engineering/presentation-crafting/scripts/validate-slide-content.mjs <content-file>`
+   - `node engine/skills/presentation-crafting/scripts/validate-slide-content.mjs <content-file>`
 11. Review the rendered deck for template consistency, text fit, framing, icon style, animation restraint, and asset rendering. After exporting, open the HTML by double-click (`file://`) to confirm it renders. For PDF, verify page count, file size, and a rasterized visual contact sheet; do not rely on successful script completion alone.
 
 ## User Intake
@@ -57,7 +57,7 @@ Use the structure in `references/folder-structure.md`. Keep all deck artifacts u
 The expected deck unit is:
 
 ```text
-presentation/working-files/{presentation-slug}/
+decks/{presentation-slug}.deck/
 ├── content/{presentation-slug}.slides.md
 ├── source/
 ├── assets/

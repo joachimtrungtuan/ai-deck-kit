@@ -20,7 +20,7 @@ Copy or compare from `templates/export-runtime/`:
 
 ## Required Contract
 
-1. Keep one shared runtime in `presentation/preview-app/`; do not scaffold per-deck apps.
+1. Keep one shared runtime in `engine/preview-app/`; do not scaffold per-deck apps.
 2. New decks only add slide source and a `deck-registry.tsx` entry.
 3. Screen mode renders one active slide in a fixed 1600×900 iframe.
 4. The browser viewport scales the iframe; slide layout must not reflow.
@@ -38,7 +38,7 @@ external `assets/` folder.
 
 ## When To Copy Templates
 
-- If `presentation/preview-app/src/deck-export.tsx` or `export-shell.css` is missing, copy the
+- If `engine/preview-app/src/deck-export.tsx` or `export-shell.css` is missing, copy the
   template first, then adapt only imports and template-specific slide selectors.
 - If the files exist, patch them instead of creating a second runtime.
 - If a deck needs custom controls or canvas behavior, record the override in the canonical content

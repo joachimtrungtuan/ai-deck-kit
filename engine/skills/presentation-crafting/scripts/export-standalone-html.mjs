@@ -5,11 +5,11 @@
 // and animation-presets.css are bundled.
 //
 // Usage:
-//   node skill-engineering/presentation-crafting/scripts/export-standalone-html.mjs --deck <deck-id> [--slug <slug>] [--out <dir>]
+//   node engine/skills/presentation-crafting/scripts/export-standalone-html.mjs --deck <deck-id> [--slug <slug>] [--out <dir>]
 //
 //   --deck   Registered deck/source id from preview-app/src/deck-registry.tsx (required).
-//   --slug   Working-files folder name. Defaults to --deck.
-//   --out    Output directory. Defaults to presentation/working-files/<slug>/export/.
+//   --slug   Deck folder name (without .deck suffix). Defaults to --deck.
+//   --out    Output directory. Defaults to decks/<slug>.deck/export/.
 
 import { spawnSync } from "node:child_process";
 import { existsSync, renameSync, rmSync } from "node:fs";
@@ -17,8 +17,9 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
-const projectRoot = resolve(scriptDir, "../../..");
-const presentationDir = resolve(projectRoot, "presentation");
+const projectRoot = resolve(scriptDir, "../../../..");
+const engineDir = resolve(projectRoot, "engine");
+const decksDir = resolve(projectRoot, "decks");
 
 function getArg(name) {
   const i = process.argv.indexOf(`--${name}`);
@@ -33,7 +34,7 @@ if (!deckId) {
 const slug = getArg("slug") ?? deckId;
 const outDir = getArg("out")
   ? resolve(getArg("out"))
-  : resolve(presentationDir, "working-files", slug, "export");
+  : resolve(decksDir, `${slug}.deck`, "export");
 
 console.log(`Building standalone HTML export\n  deck: ${deckId}\n  out:  ${outDir}`);
 
@@ -41,7 +42,7 @@ const result = spawnSync(
   "node_modules/.bin/vite",
   ["build", "--config", "vite.export.config.ts"],
   {
-    cwd: presentationDir,
+    cwd: engineDir,
     stdio: "inherit",
     env: { ...process.env, EXPORT_DECK: deckId, EXPORT_OUT_DIR: outDir },
   },

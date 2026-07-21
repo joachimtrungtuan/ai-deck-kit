@@ -15,7 +15,7 @@ PDF `.deck-page` structure per deck.
 ## Prerequisite: register the deck
 
 The export builds a single registered source, so the deck must be listed in
-`presentation/preview-app/src/deck-registry.tsx` (the same list the dev preview reads):
+`engine/preview-app/src/deck-registry.tsx` (the same list the dev preview reads):
 
 ```ts
 { id: "vivimoon-website", label: "VIVIMOON Website", deckClass: "ld-deck", slides: vivimoonWebsiteSlides },
@@ -27,11 +27,11 @@ for linear-dark, `swiss-deck` for swiss-modern). `label` becomes the browser tab
 ## Standalone HTML
 
 ```bash
-node skill-engineering/presentation-crafting/scripts/export-standalone-html.mjs \
+node engine/skills/presentation-crafting/scripts/export-standalone-html.mjs \
   --deck <deck-id> [--slug <slug>] [--out <dir>]
 ```
 
-Defaults: `--slug` = `--deck`; output = `presentation/working-files/<slug>/export/index.html`.
+Defaults: `--slug` = `--deck`; output = `decks/<slug>.deck/export/index.html`.
 
 What the script does and **why it matters**:
 
@@ -43,7 +43,7 @@ What the script does and **why it matters**:
 - **`base: './'`** so any remaining relative URL resolves next to the file, not at server root.
 - **Renames `export.html` → `index.html`** and drops the orphan favicon, leaving exactly one file
   to hand over.
-- **Keeps the fixed-canvas export shell** from `presentation/preview-app/src/deck-export.tsx` and
+- **Keeps the fixed-canvas export shell** from `engine/preview-app/src/deck-export.tsx` and
   `export-shell.css`: the active slide renders in a 1600×900 iframe, then zooms to fit.
 - **Uses reusable source templates** from `templates/export-runtime/` if the runtime is missing.
   These templates are bundled into the final file; the exported HTML does not depend on the
@@ -52,11 +52,11 @@ What the script does and **why it matters**:
 HTML is finalized when a temp export matches the canonical file behavior:
 
 ```bash
-node skill-engineering/presentation-crafting/scripts/export-standalone-html.mjs \
+node engine/skills/presentation-crafting/scripts/export-standalone-html.mjs \
   --deck vivimoon-website --slug vivimoon-website --out /tmp/vivimoon-html-export-check
 find /tmp/vivimoon-html-export-check -maxdepth 2 -type f -print
 cmp -s /tmp/vivimoon-html-export-check/index.html \
-  presentation/working-files/vivimoon-website/export/index.html
+  decks/vivimoon-website.deck/export/index.html
 ```
 
 Expected: one file (`index.html`), no external `assets/`, and `cmp` exit code `0` when comparing
@@ -82,7 +82,7 @@ remounts the slide (`key={index}`) so its entrance animation replays, matching t
 ## PDF
 
 ```bash
-node skill-engineering/presentation-crafting/scripts/export-pdf.mjs \
+node engine/skills/presentation-crafting/scripts/export-pdf.mjs \
   --slug <slug> [--out <path.pdf>] [--chrome <path>] [--imagemagick <path>]
 # or point at a built file directly: --html <path/to/index.html>
 ```
@@ -118,13 +118,13 @@ custom `--user-data-dir`; profile isolation caused hangs in local testing.
 - HTML: open the file by **double-click** (`file://`) and confirm it renders — that is the exact
   condition that previously failed. Resize the window and confirm the deck only zooms (no reflow).
 - PDF metadata:
-  `pdfinfo presentation/working-files/<slug>/export/<slug>.pdf`
+  `pdfinfo decks/<slug>.deck/export/<slug>.pdf`
   Check page count equals slide count, page size is 16:9, and file size is reasonable.
 - PDF visual QA: rasterize and inspect, because the PDF's value is usability, not code success.
 
 ```bash
 mkdir -p /tmp/<slug>-pdf-check
-pdftoppm -png -r 120 presentation/working-files/<slug>/export/<slug>.pdf /tmp/<slug>-pdf-check/page
+pdftoppm -png -r 120 decks/<slug>.deck/export/<slug>.pdf /tmp/<slug>-pdf-check/page
 ```
 
 Inspect at least: a contact sheet, page 1, a dense middle page, and the final page. Confirm no
