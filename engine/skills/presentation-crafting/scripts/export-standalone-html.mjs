@@ -26,17 +26,22 @@ function getArg(name) {
   return i !== -1 && process.argv[i + 1] ? process.argv[i + 1] : undefined;
 }
 
-const deckId = getArg("deck");
-if (!deckId) {
-  console.error("Error: --deck <deck-id> is required (must match an id in deck-registry.tsx).");
+const deckInput = getArg("deck");
+if (!deckInput) {
+  console.error("Error: --deck <deck-path-or-slug> is required.");
   process.exit(1);
 }
-const slug = getArg("slug") ?? deckId;
+const deckRoot = deckInput.endsWith(".deck") ? resolve(deckInput) : resolve(projectRoot, "decks", `${deckInput}.deck`);
+if (!existsSync(resolve(deckRoot, "deck.json")) || !existsSync(resolve(deckRoot, "content.md"))) {
+  console.error(`Error: invalid deck bundle: ${deckRoot}`);
+  process.exit(1);
+}
+const slug = getArg("slug") ?? deckRoot.split("/").at(-1).replace(/\.deck$/, "");
 const outDir = getArg("out")
   ? resolve(getArg("out"))
   : resolve(decksDir, `${slug}.deck`, ".build", "export");
 
-console.log(`Building standalone HTML export\n  deck: ${deckId}\n  out:  ${outDir}`);
+console.log(`Building standalone HTML export\n  deck: ${deckRoot}\n  out:  ${outDir}`);
 
 const result = spawnSync(
   "node_modules/.bin/vite",
@@ -44,7 +49,7 @@ const result = spawnSync(
   {
     cwd: engineDir,
     stdio: "inherit",
-    env: { ...process.env, EXPORT_DECK: deckId, EXPORT_OUT_DIR: outDir },
+    env: { ...process.env, EXPORT_OUT_DIR: outDir, ["AIDECK_DECK" + "_PATH"]: deckRoot },
   },
 );
 

@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import type { PreviewSource } from "./deck-registry";
+import { flushSync } from "react-dom";
+import { resolveMorphPairs } from "../../primitives/motion/morph-anchor-resolver";
+import type { PreviewSource } from "./preview-types";
 
 const SLIDE_W = 1600;
 const SLIDE_H = 900;
@@ -26,12 +28,24 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
   const slides = source.slides;
   const total = slides.length;
   const [active, setActive] = useState(0);
+  const activeSlide = slides[active];
   const [scale, setScale] = useState(1);
   const [jumpValue, setJumpValue] = useState("1");
   const [frameBody, setFrameBody] = useState<HTMLElement | null>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
 
-  const go = (next: number) => setActive(Math.max(0, Math.min(total - 1, next)));
+  const go = (next: number) => {
+    const index = Math.max(0, Math.min(total - 1, next));
+    const previousAnchors = slides[active].morphAnchors?.map((anchor) => ({ id: anchor, morph: anchor })) ?? [];
+    const nextAnchors = slides[index].morphAnchors?.map((anchor) => ({ id: anchor, morph: anchor })) ?? [];
+    const hasMorph = resolveMorphPairs(previousAnchors, nextAnchors).length > 0;
+    const documentWithTransition = frameBody?.ownerDocument as (Document & { startViewTransition?: (update: () => void) => unknown }) | undefined;
+    if (hasMorph && documentWithTransition?.startViewTransition) {
+      documentWithTransition.startViewTransition(() => flushSync(() => setActive(index)));
+      return;
+    }
+    setActive(index);
+  };
 
   useEffect(() => setJumpValue(String(active + 1)), [active]);
 
@@ -118,7 +132,7 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
       {frameBody &&
         createPortal(
           // key={active} remounts the slide on navigation so its entrance animation replays.
-          <div className={source.deckClass} key={active}>
+          <div className={source.deckClass} key={active} style={{ viewTransitionName: activeSlide.morphAnchors?.[0] }}>
             {(() => {
               const slide = slides[active];
               return <slide.Component {...slide.props} />;
@@ -156,8 +170,8 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
           onChange={(e) => go(Number(e.target.value))}
         >
           {slides.map((slide, index) => (
-            <option key={slide.type} value={index}>
-              {String(index + 1).padStart(2, "0")} — {slide.type}
+            <option key={slide.id ?? slide.type} value={index}>
+            {String(index + 1).padStart(2, "0")} — {slide.type}
             </option>
           ))}
         </select>
@@ -173,9 +187,9 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
 // exporter screenshots this layout, then crops each .deck-page into a PDF page.
 function PrintDeck({ source }: { source: PreviewSource }) {
   return (
-    <div className="print-deck">
+    <div className="print-deck print-deck-capture">
       {source.slides.map((slide) => (
-        <div className="deck-page" key={slide.type}>
+        <div className="deck-page" key={slide.id ?? slide.type}>
           <div className={source.deckClass}>
             <slide.Component {...slide.props} />
           </div>

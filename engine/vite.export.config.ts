@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { viteSingleFile } from "vite-plugin-singlefile";
+import { aideckDeckPlugin } from "./preview-app/vite-deck-plugin";
 
 // Standalone single-file deck export.
 // Inlines JS + CSS + fonts into one HTML so the deck opens by double-click (file://) with no server.
@@ -19,7 +20,7 @@ export default defineConfig({
   define: {
     __EXPORT_DECK_ID__: JSON.stringify(deckId),
   },
-  plugins: [react(), viteSingleFile()],
+  plugins: [react(), aideckDeckPlugin(), viteSingleFile()],
   build: {
     outDir,
     emptyOutDir: true,

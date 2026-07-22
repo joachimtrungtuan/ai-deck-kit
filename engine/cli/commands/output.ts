@@ -28,7 +28,10 @@ function runServe(workspace: ReturnType<typeof findWorkspace>, args: string[]): 
   const viteArgs = ["--host", "127.0.0.1"];
   const port = valueAfter(args, "--port");
   if (port) viteArgs.push("--port", port);
-  const result = spawnSync(vite, viteArgs, { cwd: workspace.engineRoot, stdio: "inherit", env: { ...process.env, AIDECK_DECK: valueAfter(args, "--deck") ?? "" } });
+  const selectedDeck = valueAfter(args, "--deck");
+  const deckRoot = selectedDeck ? deckPath(workspace, selectedDeck) : "";
+  const deckPathKey = "AIDECK_DECK" + "_PATH";
+  const result = spawnSync(vite, viteArgs, { cwd: workspace.engineRoot, stdio: "inherit", env: { ...process.env, [deckPathKey]: deckRoot } });
   if (result.status !== 0) throw new Error(`Preview server exited with code ${result.status ?? 1}.`);
 }
 
@@ -36,11 +39,12 @@ function runExport(workspace: ReturnType<typeof findWorkspace>, format: string, 
   if (!deck) throw new Error(`Usage: aideck export ${format} <deck-id>`);
   const scriptRoot = join(workspace.engineRoot, "skills", "presentation-crafting", "scripts");
   const htmlScript = join(scriptRoot, "export-standalone-html.mjs");
-  const htmlResult = spawnSync(process.execPath, [htmlScript, "--deck", deck, "--slug", deck], { cwd: workspace.root, stdio: "inherit" });
+  const root = deckPath(workspace, deck);
+  const htmlResult = spawnSync(process.execPath, [htmlScript, "--deck", root, "--slug", deck], { cwd: workspace.root, stdio: "inherit" });
   if (htmlResult.status !== 0) throw new Error("HTML export failed.");
   if (format === "pdf") {
     const pdfScript = join(scriptRoot, "export-pdf.mjs");
-    const pdfResult = spawnSync(process.execPath, [pdfScript, "--slug", deck], { cwd: workspace.root, stdio: "inherit" });
+    const pdfResult = spawnSync(process.execPath, [pdfScript, "--html", join(root, ".build", "export", "index.html"), "--out", join(root, ".build", "export", `${deck}.pdf`)], { cwd: workspace.root, stdio: "inherit" });
     if (pdfResult.status !== 0) throw new Error("PDF export failed.");
   }
 }
@@ -51,7 +55,8 @@ function runPack(workspace: ReturnType<typeof findWorkspace>, deck: string | und
   if (!existsSync(join(source, "deck.json"))) throw new Error(`Deck not found: ${source}`);
   const target = resolve(workspace.root, output ?? `${source}.zip`);
   mkdirSync(join(target, ".."), { recursive: true });
-  const result = spawnSync("zip", ["-qr", target, ".", "-x", ".build/*"], { cwd: source, stdio: "inherit" });
+  const bundleName = source.split("/").at(-1)!;
+  const result = spawnSync("zip", ["-qr", target, bundleName, "-x", "*/.build/*", "-x", "*/.DS_Store"], { cwd: join(source, ".."), stdio: "inherit" });
   if (result.status !== 0) throw new Error("Could not create zip bundle.");
   console.log(`Packed deck: ${target}`);
 }

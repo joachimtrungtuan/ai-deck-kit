@@ -13,18 +13,12 @@ import "../../templates/swiss-modern/animation-presets.css";
 import "../../templates/linear-dark/design-system.css";
 import "../../templates/linear-dark/animation-presets.css";
 import { SOURCES } from "./deck-registry";
+import { DeckExport } from "./deck-export";
+import { runtimeDeck } from "virtual:aideck-deck";
 import { PrimitivesDemo } from "./primitives-demo";
 
-function getDefaultSourceId() {
-  if (typeof window !== "undefined" && window.location.pathname.includes("/vivimoon-website.deck/.build/export/")) {
-    return "vivimoon-website";
-  }
-
-  return SOURCES[0].id;
-}
-
 function PreviewApp() {
-  const [sourceId, setSourceId] = useState(getDefaultSourceId);
+  const [sourceId, setSourceId] = useState(SOURCES[0].id);
   const [activeIndex, setActiveIndex] = useState(0);
 
   const source = useMemo(() => SOURCES.find((s) => s.id === sourceId) ?? SOURCES[0], [sourceId]);
@@ -93,6 +87,6 @@ function AppRouter() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <AppRouter />
+    {runtimeDeck ? <DeckExport source={runtimeDeck} /> : <AppRouter />}
   </StrictMode>,
 );

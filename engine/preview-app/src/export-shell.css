@@ -144,6 +144,15 @@ select {
   margin: 0;
 }
 
+/* Chrome's screenshot capture uses screen media even when the URL selects print mode. */
+.print-deck-capture [class*="ld-anim"],
+.print-deck-capture [class*="swiss-anim"] {
+  animation: none !important;
+  clip-path: none !important;
+  transform: none !important;
+  opacity: 1 !important;
+}
+
 @media print {
   html,
   body {

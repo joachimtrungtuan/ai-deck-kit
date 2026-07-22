@@ -1,6 +1,6 @@
 # AI Deck Kit — Product Definition & Requirements (PDR)
 
-**Status:** In progress (Phase 04 CLI core complete; remaining migration phases pending)
+**Status:** In progress (Phase 06 preview, export, morph, and pack complete; distribution and template migration remain pending)
 **Supersedes:** the enclosed React-only "AI Presentation" workspace model.
 
 ## 1. Vision
@@ -60,7 +60,8 @@ Deferred: PPTX export, local WYSIWYG web editor, audience-interactive on-slide e
 - Creating a new deck or template is a single deterministic command (no AI needed for boilerplate).
 - A `.deck` bundle moves between projects/users and still previews + exports identically.
 - Engine upgrade leaves all `decks/` untouched.
-- Existing VIVIMOON deck + `swiss-modern`/`linear-dark` templates migrate and still export cleanly.
+- Current-format decks plus `swiss-modern`/`linear-dark` templates export cleanly. VIVIMOON remains
+  a read-only legacy reference, not a runtime compatibility target.
 
 ## 9. References
 

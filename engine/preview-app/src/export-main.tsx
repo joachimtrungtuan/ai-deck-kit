@@ -26,19 +26,17 @@ import "../../templates/swiss-modern/animation-presets.css";
 import "../../templates/linear-dark/design-system.css";
 import "../../templates/linear-dark/animation-presets.css";
 import "./export-shell.css";
-import { getSource } from "./deck-registry";
 import { DeckExport } from "./deck-export";
+import { runtimeDeck } from "virtual:aideck-deck";
 
-// Deck id is injected at build time by vite.export.config (define), one build per deck.
-declare const __EXPORT_DECK_ID__: string;
-const source = getSource(__EXPORT_DECK_ID__);
+if (!runtimeDeck) throw new Error("A deck path is required for export.");
 
 if (typeof document !== "undefined") {
-  document.title = source.label;
+  document.title = runtimeDeck.label;
 }
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <DeckExport source={source} />
+    <DeckExport source={runtimeDeck} />
   </StrictMode>,
 );

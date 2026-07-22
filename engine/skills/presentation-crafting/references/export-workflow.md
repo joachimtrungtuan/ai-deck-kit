@@ -12,21 +12,14 @@ Before editing preview/export shell code, read `references/export-runtime-contra
 restore files from `templates/export-runtime/`; do not invent a new canvas, controls, registry, or
 PDF `.deck-page` structure per deck.
 
-## CLI entry point and current runtime prerequisite
+## CLI entry point and deck resolution
 
 Use `aideck export html <deck-id>` or `aideck export pdf <deck-id>`. The CLI owns deterministic export invocation; the scripts documented below are implementation details, not the authoring workflow.
 
-Until Phase 06 ships arbitrary `.deck` runtime resolution, the current export bridge still needs a registered legacy preview entry:
-
-The export builds a single registered source, so the deck must be listed in
-`engine/preview-app/src/deck-registry.tsx` (the same list the dev preview reads):
-
-```ts
-{ id: "vivimoon-website", label: "VIVIMOON Website", deckClass: "ld-deck", slides: vivimoonWebsiteSlides },
-```
-
-`id` is what you pass to `--deck`. `deckClass` is the template's deck wrapper class (e.g. `ld-deck`
-for linear-dark, `swiss-deck` for swiss-modern). `label` becomes the browser tab title.
+`aideck serve --deck <deck-id>` and `aideck export html|pdf <deck-id>` resolve the selected
+bundle from the workspace `decks/` root. The preview runtime reads `deck.json` and `content.md`;
+when a deck has legacy generated source, it is used only as a local compatibility adapter. New
+decks need no registry entry or source import.
 
 ## Standalone HTML
 
@@ -34,7 +27,7 @@ for linear-dark, `swiss-deck` for swiss-modern). `label` becomes the browser tab
 aideck export html <deck-id>
 ```
 
-Defaults: `--slug` = `--deck`; output = `decks/<slug>.deck/.build/export/index.html`.
+Output defaults to `decks/<slug>.deck/.build/export/index.html`.
 
 What the script does and **why it matters**:
 
@@ -52,18 +45,16 @@ What the script does and **why it matters**:
   These templates are bundled into the final file; the exported HTML does not depend on the
   preview app folder at runtime.
 
-HTML is finalized when a temp export matches the canonical file behavior:
+HTML is finalized when a current-format deck exports to exactly one self-contained file:
 
 ```bash
 node engine/skills/presentation-crafting/scripts/export-standalone-html.mjs \
-  --deck vivimoon-website --slug vivimoon-website --out /tmp/vivimoon-html-export-check
-find /tmp/vivimoon-html-export-check -maxdepth 2 -type f -print
-cmp -s /tmp/vivimoon-html-export-check/index.html \
-  decks/vivimoon-website.deck/.build/export/index.html
+  --deck decks/<slug>.deck --out /tmp/deck-html-export-check
+find /tmp/deck-html-export-check -maxdepth 2 -type f -print
 ```
 
-Expected: one file (`index.html`), no external `assets/`, and `cmp` exit code `0` when comparing
-against the current canonical VIVIMOON export.
+Expected: one file (`index.html`) and no external `assets/`. A `pack` → `unpack` round trip of a
+current-format deck must produce the same HTML output.
 
 ### Fixed canvas, not a responsive page
 
