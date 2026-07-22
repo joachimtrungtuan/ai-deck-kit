@@ -106,7 +106,10 @@ worktrees/
 # Transient browser-automation output
 playwright-output/
 
-# AI Deck Kit — user data (never touched by engine upgrade)
-/decks/
+# AI Deck Kit — user data (never touched by engine upgrade).
+# Keep user decks private by default. Add a specific re-include here only for
+# a deliberately chosen repository-owned sample deck.
+/decks/*
 /templates/
 **/.build/
+engine/storybook-static/

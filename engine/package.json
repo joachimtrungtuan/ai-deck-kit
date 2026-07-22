@@ -1,7 +1,10 @@
 {
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "preview": "vite preview --host 127.0.0.1"
+    "preview": "vite preview --host 127.0.0.1",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "typecheck:storybook": "tsc --noEmit --project tsconfig.storybook.json"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
@@ -14,8 +17,11 @@
     "vite": "^7.0.0"
   },
   "devDependencies": {
+    "@storybook/react-vite": "^10.5.3",
+    "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "storybook": "^10.5.3",
     "vite-plugin-singlefile": "^2.3.3"
   }
 }

@@ -6,7 +6,7 @@ Build order and file checklist for a new template set. Mirror an existing set (e
 
 1. **Catalog decision** — reuse newest `slide-types-vN.md` or create `v(N+1)` (additive copy + new types). Never edit an existing catalog file.
 2. **Manifest** — write `template-manifest.json`, validate with the skill's script. Must pass before any other file is written.
-3. **Design system CSS** — tokens first, then class inventory.
+3. **Design system CSS** — template tokens first, then base primitive aliases, then class inventory.
 4. **Animation presets CSS** — re-skin shared vocabulary, same preset names.
 5. **Icon policy** — template-specific application of the Phosphor-first rules.
 6. **React layouts** — shared helpers, then category files, then `index.ts`.
@@ -28,6 +28,8 @@ All keys required (see `template-system-and-versioning.md` for shape):
 - `qualityRules`: at minimum `oneIdeaPerSlide`, `maxAccentColors`, `cornerRadius`, `iconWeight`, `motionLevel`
 
 ## Design System Requirements
+
+Before defining the class inventory, map `engine/primitives/tokens/base-token-contract.md` under the template deck class. Primitive components consume only `--deck-*` aliases; the template keeps ownership of the values and its existing prefixed tokens.
 
 Define as CSS custom properties scoped under the template's deck class (`.{prefix}-deck`):
 

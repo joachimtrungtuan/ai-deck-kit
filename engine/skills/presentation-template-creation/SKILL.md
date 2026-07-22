@@ -30,7 +30,7 @@ This skill handles template-set authoring and slide-type catalog evolution. It d
    - `node engine/skills/presentation-template-creation/scripts/validate-template-manifest.mjs <template-manifest>`
 6. Build `design-system.css` (tokens + class inventory) and `animation-presets.css` (re-skin the shared preset vocabulary in `presentation-crafting/references/animation-presets.md` — same preset names, template-specific timing/easing).
 7. Write the template's `icon-policy.md`, applying `presentation-crafting/references/icon-policy.md` (Phosphor-first) with template-specific treatment.
-8. Implement React layouts per `references/react-layout-conventions.md`; document layout rules in `layouts/specs/layout-contracts.md`; map every slide type in `layouts/layout-index.json`.
+8. Map the base primitive token contract in the template deck class, then implement React layouts per `references/react-layout-conventions.md`; compose `engine/primitives/blocks` where a catalog block fits. Document layout rules in `layouts/specs/layout-contracts.md`; map every slide type in `layouts/layout-index.json`.
 9. Register the template in the shared preview app and run all verification gates per `references/preview-registration-and-verification.md`.
 10. Record the work in `update-logs/` per project rules.
 
@@ -56,6 +56,9 @@ Plus, when a new catalog version is created: `engine/templates/slide-types-v(N+1
 - `references/template-authoring-workflow.md` - Scaffold order, file checklist, design-token requirements.
 - `references/react-layout-conventions.md` - Component naming, prop superset rule, category file split, shared helpers.
 - `references/preview-registration-and-verification.md` - Preview app registration steps and verification gates.
+- `../../primitives/tokens/base-token-contract.md` - required token aliases shared by primitive blocks.
+- `../../primitives/blocks/block-catalog-v1.md` - stable block contracts for layout composition.
+- `../../primitives/motion/motion-catalog-v1.md` - capped motion and morph vocabulary.
 
 Cross-skill (canonical, do not duplicate here): `presentation-crafting/references/animation-presets.md` (approved preset vocabulary), `icon-policy.md` (icon family rules), `folder-structure.md` (repository layout), `preview-runtime.md` (shared runtime rules).
 

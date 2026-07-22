@@ -25,6 +25,31 @@
 }
 
 .swiss-deck {
+  /* Base primitive contract: existing Swiss tokens remain authoritative. */
+  --deck-color-bg: var(--swiss-bg);
+  --deck-color-surface: var(--swiss-paper);
+  --deck-color-panel: var(--swiss-panel);
+  --deck-color-ink: var(--swiss-ink);
+  --deck-color-muted: var(--swiss-muted);
+  --deck-color-accent: var(--swiss-emphasis);
+  --deck-color-accent-soft: color-mix(in srgb, var(--swiss-emphasis) 12%, transparent);
+  --deck-font-display: var(--swiss-font-display);
+  --deck-font-body: var(--swiss-font-body);
+  --deck-font-mono: var(--swiss-font-mono);
+  --deck-space-1: var(--swiss-space-1);
+  --deck-space-2: var(--swiss-space-2);
+  --deck-space-3: var(--swiss-space-3);
+  --deck-space-4: var(--swiss-space-4);
+  --deck-space-5: var(--swiss-space-5);
+  --deck-space-6: var(--swiss-space-6);
+  --deck-space-7: var(--swiss-space-7);
+  --deck-radius: var(--swiss-radius);
+  --deck-radius-sm: var(--swiss-radius);
+  --deck-stroke: var(--swiss-rule);
+  --deck-shadow: none;
+  --deck-motion-ease: var(--swiss-ease);
+  --deck-motion-base: var(--swiss-duration-base);
+  --deck-code-ink: var(--swiss-ink);
   background: var(--swiss-bg);
   color: var(--swiss-ink);
   font-family: var(--swiss-font-body);

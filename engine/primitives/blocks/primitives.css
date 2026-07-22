@@ -1,0 +1,58 @@
+.primitive-block {
+  color: var(--deck-color-ink);
+  font-family: var(--deck-font-body);
+}
+
+.primitive-block p,
+.primitive-block h2,
+.primitive-block h3 {
+  margin: 0;
+}
+
+.primitive-title-description h2,
+.primitive-icon-text-card h3 {
+  font-family: var(--deck-font-display);
+}
+
+.primitive-title-description h2 { font-size: clamp(2rem, 4vw, 4.5rem); line-height: 0.95; }
+.primitive-title-description p, .primitive-text-block p, .primitive-icon-text-card p { color: var(--deck-color-muted); font-size: 1rem; line-height: 1.45; }
+.primitive-title-description p { margin-top: var(--deck-space-2); max-width: 60ch; }
+.primitive-label { color: var(--deck-color-muted); font-family: var(--deck-font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.primitive-image-block { margin: 0; overflow: hidden; border-radius: var(--deck-radius); background: var(--deck-color-panel); }
+.primitive-image-block img { display: block; width: 100%; aspect-ratio: 16 / 7; object-fit: cover; }
+.primitive-image-block figcaption { padding: var(--deck-space-1) var(--deck-space-2); color: var(--deck-color-muted); font-size: 0.85rem; }
+
+.primitive-chart-block, .primitive-table-block, .primitive-icon-text-card, .primitive-code-block { border: var(--deck-stroke); border-radius: var(--deck-radius); background: var(--deck-color-panel); box-shadow: var(--deck-shadow); }
+.primitive-chart-block { padding: var(--deck-space-3); }
+.primitive-chart-bars { display: flex; height: 160px; align-items: end; gap: var(--deck-space-2); margin-top: var(--deck-space-2); }
+.primitive-chart-column { display: grid; flex: 1; height: 100%; align-items: end; gap: 8px; }
+.primitive-chart-column span { display: block; min-height: 6px; background: var(--deck-color-accent); border-radius: var(--deck-radius-sm) var(--deck-radius-sm) 0 0; }
+.primitive-chart-column small { color: var(--deck-color-muted); font-family: var(--deck-font-mono); font-size: 0.7rem; text-align: center; }
+
+.primitive-table-block { overflow: auto; }
+.primitive-table-block table { width: 100%; border-collapse: collapse; }
+.primitive-table-block caption { padding: var(--deck-space-2); color: var(--deck-color-muted); text-align: left; }
+.primitive-table-block th, .primitive-table-block td { border-bottom: var(--deck-stroke); padding: var(--deck-space-1) var(--deck-space-2); text-align: left; }
+.primitive-table-block th { color: var(--deck-color-muted); font-family: var(--deck-font-mono); font-size: 0.75rem; font-weight: 500; }
+
+.primitive-icon-text-card { display: flex; gap: var(--deck-space-2); padding: var(--deck-space-3); }
+.primitive-icon { display: grid; flex: 0 0 40px; width: 40px; height: 40px; place-items: center; border-radius: var(--deck-radius-sm); background: var(--deck-color-accent-soft); color: var(--deck-color-accent); }
+.primitive-icon-text-card p { margin-top: 4px; }
+.primitive-quote-block { border-left: 3px solid var(--deck-color-accent); padding-left: var(--deck-space-3); }
+.primitive-quote-block blockquote { margin: 0; font-family: var(--deck-font-display); font-size: clamp(1.4rem, 2.4vw, 2.5rem); line-height: 1.15; }
+.primitive-quote-block cite { display: block; margin-top: var(--deck-space-2); color: var(--deck-color-muted); font-style: normal; }
+.primitive-stat-block { display: grid; gap: 4px; }
+.primitive-stat-block strong { font-family: var(--deck-font-display); font-size: clamp(3rem, 7vw, 7rem); line-height: 0.9; }
+.primitive-stat-block span { font-size: 1.05rem; }
+.primitive-stat-block small { color: var(--deck-color-muted); }
+.primitive-list-block { color: var(--deck-color-muted); line-height: 1.55; }
+.primitive-list-block ul, .primitive-list-block ol { display: grid; gap: 6px; margin: 0; padding-left: 1.2rem; }
+.primitive-code-block { padding: var(--deck-space-2); overflow: auto; }
+.primitive-code-block pre { margin: var(--deck-space-2) 0 0; color: var(--deck-code-ink); font-family: var(--deck-font-mono); font-size: 0.85rem; line-height: 1.5; }
+
+.primitive-anim-fade { animation: primitiveFade var(--deck-motion-base) var(--deck-motion-ease) both; }
+.primitive-anim-gentle-rise { animation: primitiveRise var(--deck-motion-base) var(--deck-motion-ease) both; }
+@keyframes primitiveFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes primitiveRise { from { opacity: 0; transform: translate3d(0, 14px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
+@media (prefers-reduced-motion: reduce) { .primitive-anim-fade, .primitive-anim-gentle-rise { animation: none; } }

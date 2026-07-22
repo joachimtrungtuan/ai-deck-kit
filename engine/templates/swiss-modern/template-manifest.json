@@ -4,6 +4,7 @@
   "templateVersion": "1.0.0",
   "contentSchemaVersion": "1.0.0",
   "slideTypeCatalog": "v1",
+  "blockCatalog": "v1",
   "runtime": ["react", "static-html"],
   "iconFamily": "phosphor-react",
   "defaultAnimation": "gentle-rise",

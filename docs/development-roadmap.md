@@ -14,10 +14,10 @@ Continuous integration + continuous delivery of the **engine**. Each milestone s
 |---|---|---|---|
 | M1 | Two-root workspace | `engine/` + `decks/` split, root pointer, workspace resolution, project config | Phase 01 |
 | M2 | `.deck` format live | Bundle format + validators; VIVIMOON migrated to `.deck` | Phase 02 |
-| M3 | Design primitives | Block library (`block-catalog v1`), motion vocabulary incl. morph, base tokens | Phase 03 |
+| M3 | Design primitives | Block library (`block-catalog v1`), motion vocabulary, isolated morph prototype, base tokens, Storybook component catalog | Phase 03 |
 | M4 | CLI core | `aideck` Node/TS: init/new/slide/template/gen/export/serve/pack/doctor/upgrade | Phase 04 |
 | M5 | Skills + generation | Skill bundles reworked to `.deck`+CLI; outline-first generation; annotation reuse | Phase 05 |
-| M6 | Preview + export + morph | Runtime renders `.deck`; HTML/PDF export; morph animation in runtime; `pack` sharing | Phase 06 |
+| M6 | Preview + export + morph | Runtime renders `.deck`; HTML/PDF export; full deck-navigator morph integration; `pack` sharing | Phase 06 |
 | M7 | Distribution + CI/CD | `npx ai-deck-kit init` (root or subfolder), release pipeline, upgrade path | Phase 07 |
 | M8 | Migration + QA | swiss-modern & linear-dark migrated; end-to-end validation; docs finalized | Phase 08 |
 

@@ -101,14 +101,15 @@ engine/primitives/
 
 - **Hierarchy:** primitives → composed by template layouts → declared per slide type. Templates apply their own token values; blocks stay shared.
 - **Block catalog is versioned** (`block-catalog: v1`) alongside `slide-type-catalog`, so decks/templates pin a stable block vocabulary.
-- **Structured vs prose blocks:** prose blocks (text, title+description) stay free-form in `content.md`; data blocks (chart, table, stat) carry structured fields so they render deterministically and can morph.
+- **Structured vs prose blocks:** prose blocks (text, title+description) stay free-form in `content.md`; data blocks (chart, table, stat) carry structured fields so they render deterministically and can morph. Phase 03 validates catalog membership and required fields; full typed YAML data-schema validation remains deferred hardening.
+- **Component catalog:** `engine/.storybook/` isolates every primitive under a selected template skin for author and maintainer review. Storybook is development tooling only; `engine/preview-app/` remains the shared deck preview/export runtime.
 
 ### 4.2 Motion vocabulary & morph
 
 Small and curated — not a general animation engine.
 
 - **Minimal entrance/emphasis animations** (e.g. `gentle-rise`, fade, `none`) from the existing approved preset set.
-- **Morph** as a first-class shared-element primitive: a block on slide N and slide N+1 sharing a `morph` anchor id animates/tweens between states (position, size, data). Primary use: charts/diagrams evolving across slides. Feasible pattern (cf. reveal.js auto-animate) implemented in the React runtime.
+- **Morph** as a first-class shared-element primitive: a block on slide N and slide N+1 sharing a `morph` anchor id can tween between states (position, size, data). Primary use: charts/diagrams evolving across slides. Phase 03 proves this with an isolated primitive demo and Storybook morph-pair story; it does not yet wire morph through the deck navigator. Full navigator integration belongs to Phase 06.
 - Motion is declared per slide/block in the deck (`animation`, `transition`, `morph` anchor) and validated against the catalog.
 
 ## 5. Rendering & Export Runtime (reused)

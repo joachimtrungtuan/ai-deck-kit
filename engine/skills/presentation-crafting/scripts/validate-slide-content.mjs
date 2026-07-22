@@ -15,6 +15,8 @@ const contentPath = path.join(deckDir, "content.md");
 const manifest = readJson(manifestPath);
 const content = readFile(contentPath);
 const errors = [];
+const blockCatalogV1 = new Set(["text", "title-description", "image", "chart", "table", "icon-text-card", "quote", "stat", "list", "code"]);
+const motionCatalogV1 = new Set(["none", "fade", "gentle-rise", "morph"]);
 
 for (const field of [
   "schema",
@@ -38,6 +40,10 @@ for (const field of [
 
 if (manifest.template && (!manifest.template.set || !manifest.template.version)) {
   errors.push("deck.json: template.set and template.version are both required.");
+}
+
+if (manifest.blockCatalog && manifest.blockCatalog !== "v1") {
+  errors.push(`deck.json: unsupported blockCatalog "${manifest.blockCatalog}". Supported: v1.`);
 }
 
 if (manifest.template?.set) {
@@ -64,6 +70,7 @@ if (slideMatches.length === 0) {
 }
 
 const contentIds = new Set();
+const slideMorphAnchors = [];
 
 slideMatches.forEach((match, index) => {
   const start = match.index;
@@ -103,13 +110,35 @@ slideMatches.forEach((match, index) => {
   }
 
   const blocksSection = extractBlocksSection(metadata);
+  const anchors = [];
   if (blocksSection) {
-    for (const blockType of extractBlockTypes(blocksSection)) {
-      if (!manifest.blockCatalog) {
-        errors.push(`${label}: declares blocks but deck.json has no blockCatalog.`);
+    if (!manifest.blockCatalog) {
+      errors.push(`${label}: declares blocks but deck.json has no blockCatalog.`);
+    }
+    for (const blockEntry of extractBlockEntries(blocksSection)) {
+      const blockId = extractYamlField(blockEntry, "id");
+      const blockType = extractYamlField(blockEntry, "type");
+      const animation = extractYamlField(blockEntry, "animation");
+      const morph = extractYamlField(blockEntry, "morph");
+      if (!blockId) errors.push(`${label}: block is missing id.`);
+      if (!blockType || !blockCatalogV1.has(blockType)) {
+        errors.push(`${label}: block type "${blockType ?? "missing"}" is not in block-catalog v1.`);
       }
+      if (animation && !motionCatalogV1.has(animation)) {
+        errors.push(`${label}: block animation "${animation}" is not in motion-catalog v1.`);
+      }
+      if (animation === "morph" && !morph) {
+        errors.push(`${label}: block animation "morph" requires a morph anchor.`);
+      }
+      for (const field of requiredBlockFields(blockType)) {
+        if (!hasBlockField(blockEntry, field)) {
+          errors.push(`${label}: ${blockType} block is missing required field "${field}".`);
+        }
+      }
+      if (morph) anchors.push(morph);
     }
   }
+  slideMorphAnchors.push({ label, anchors });
 
   if (!/^### On-Slide Text/m.test(block)) {
     errors.push(`${label}: missing ### On-Slide Text section.`);
@@ -119,6 +148,17 @@ slideMatches.forEach((match, index) => {
   }
   if (!/^### Speaker Notes/m.test(block)) {
     errors.push(`${label}: missing ### Speaker Notes section.`);
+  }
+});
+
+slideMorphAnchors.forEach(({ label, anchors }, index) => {
+  const duplicate = anchors.find((anchor, anchorIndex) => anchors.indexOf(anchor) !== anchorIndex);
+  if (duplicate) errors.push(`${label}: morph anchor "${duplicate}" appears more than once.`);
+  for (const anchor of new Set(anchors)) {
+    const adjacent = [slideMorphAnchors[index - 1], slideMorphAnchors[index + 1]].filter(Boolean);
+    if (!adjacent.some((slide) => slide.anchors.includes(anchor))) {
+      errors.push(`${label}: morph anchor "${anchor}" has no matching anchor on an adjacent slide.`);
+    }
   }
 });
 
@@ -168,8 +208,32 @@ function extractBlocksSection(yaml) {
   return match ? match[1] : null;
 }
 
-function extractBlockTypes(blocksYaml) {
-  return [...blocksYaml.matchAll(/type:\s*"?([a-z0-9-]+)"?/g)].map((m) => m[1]);
+function extractBlockEntries(blocksYaml) {
+  const starts = [...blocksYaml.matchAll(/^  -\s+(.+)$/gm)];
+  return starts.map((match, index) => {
+    const nextStart = starts[index + 1]?.index ?? blocksYaml.length;
+    const lineEnd = (match.index ?? 0) + match[0].length;
+    return `${match[1]}${blocksYaml.slice(lineEnd, nextStart)}`;
+  });
+}
+
+function requiredBlockFields(blockType) {
+  return {
+    text: ["text"],
+    "title-description": ["title"],
+    image: ["src", "alt"],
+    chart: ["kind", "series"],
+    table: ["columns", "rows"],
+    "icon-text-card": ["icon", "title", "description"],
+    quote: ["quote"],
+    stat: ["value", "label"],
+    list: ["items"],
+    code: ["code"],
+  }[blockType] ?? [];
+}
+
+function hasBlockField(blockYaml, field) {
+  return new RegExp(`^\\s*${escapeRegExp(field)}\\s*:|^\\s*data\\s*:\\s*\\{[^}]*\\b${escapeRegExp(field)}\\s*:`, "m").test(blockYaml);
 }
 
 function hasYamlField(yaml, field) {

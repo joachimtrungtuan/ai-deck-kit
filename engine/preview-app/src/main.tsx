@@ -13,6 +13,7 @@ import "../../templates/swiss-modern/animation-presets.css";
 import "../../templates/linear-dark/design-system.css";
 import "../../templates/linear-dark/animation-presets.css";
 import { SOURCES } from "./deck-registry";
+import { PrimitivesDemo } from "./primitives-demo";
 
 function getDefaultSourceId() {
   if (typeof window !== "undefined" && window.location.pathname.includes("/vivimoon-website.deck/.build/export/")) {
@@ -86,8 +87,12 @@ function PreviewApp() {
   );
 }
 
+function AppRouter() {
+  return window.location.pathname === "/primitives" ? <PrimitivesDemo /> : <PreviewApp />;
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <PreviewApp />
+    <AppRouter />
   </StrictMode>,
 );

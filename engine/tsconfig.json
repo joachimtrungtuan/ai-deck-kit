@@ -16,5 +16,5 @@
     "noEmit": true,
     "jsx": "react-jsx"
   },
-  "include": ["preview-app/src", "templates/**/*.tsx", "working-files/**/*.tsx"]
+  "include": ["preview-app/src", "primitives/**/*.ts", "primitives/**/*.tsx", "templates/**/*.tsx", "working-files/**/*.tsx"]
 }
