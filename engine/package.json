@@ -1,5 +1,29 @@
 {
+  "name": "ai-deck-kit",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "aideck": "cli/index.mjs"
+  },
+  "files": [
+    "cli",
+    "engine.version.json",
+    "primitives",
+    "preview-app",
+    "schemas",
+    "skills",
+    "templates",
+    "README.md",
+    "tsconfig.json",
+    "tsconfig.storybook.json",
+    "vite.config.ts",
+    "vite.export.config.ts"
+  ],
+  "engines": {
+    "node": ">=22.6.0"
+  },
   "scripts": {
+    "aideck": "node cli/index.mjs",
     "dev": "vite --host 127.0.0.1",
     "preview": "vite preview --host 127.0.0.1",
     "storybook": "storybook dev -p 6006",

@@ -9,6 +9,22 @@ The upgradable half of an AI Deck Kit install. Everything here ships with the en
 - `preview-app/` — shared React preview + export runtime (Vite).
 - `engine.version.json` — pinned engine version + supported content/catalog/template ranges, read by `aideck doctor`.
 
+## CLI
+
+Run the deterministic command surface with `node cli/index.mjs` or the installed `aideck` binary.
+Deck commands keep `deck.json` and `content.md` synchronized; template and primitive commands
+expose installed catalogs; output commands wrap the existing preview/export scripts and zip
+packaging.
+
+```text
+aideck init --here
+aideck new my-talk --template swiss-modern
+aideck slide add slide-02 --type text-statement --deck my-talk
+aideck validate my-talk
+```
+
+The CLI requires Node 22.6+ for built-in TypeScript stripping and makes no model or network calls.
+
 ## What lives outside `engine/`
 
 User data — never touched by upgrade:

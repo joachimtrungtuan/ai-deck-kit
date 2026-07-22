@@ -11,10 +11,11 @@
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
     "moduleResolution": "Node",
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx"
   },
-  "include": ["preview-app/src", "primitives/**/*.ts", "primitives/**/*.tsx", "templates/**/*.tsx", "working-files/**/*.tsx"]
+  "include": ["cli/**/*.ts", "preview-app/src", "primitives/**/*.ts", "primitives/**/*.tsx", "templates/**/*.tsx", "working-files/**/*.tsx"]
 }

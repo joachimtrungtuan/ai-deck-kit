@@ -1,6 +1,6 @@
 # AI Deck Kit — System Architecture
 
-**Status:** Draft spec (2026-07-22). Describes target architecture; not yet implemented.
+**Status:** Active migration spec (2026-07-22). Phase 04 CLI core is implemented; later runtime and distribution phases remain planned.
 Companion specs: `project-overview-pdr.md`, `deck-format-spec.md`, `development-roadmap.md`.
 
 ## 1. Architecture Principles

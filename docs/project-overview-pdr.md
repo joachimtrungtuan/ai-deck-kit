@@ -1,6 +1,6 @@
 # AI Deck Kit — Product Definition & Requirements (PDR)
 
-**Status:** Draft (specs approved to write 2026-07-22; restructuring not yet started)
+**Status:** In progress (Phase 04 CLI core complete; remaining migration phases pending)
 **Supersedes:** the enclosed React-only "AI Presentation" workspace model.
 
 ## 1. Vision
@@ -45,7 +45,7 @@
 
 - Product: **AI Deck Kit**
 - npm package: `ai-deck-kit` (scope TBD)
-- CLI binary: `aideck` (proposed; confirm before implementation)
+- CLI binary: `aideck` (confirmed; Phase 04 command surface implemented)
 - Deck artifact: `*.deck` folder bundle
 
 ## 7. Scope Boundaries for This Restructure

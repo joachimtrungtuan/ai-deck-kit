@@ -60,7 +60,9 @@
         "properties": {
           "id": { "type": "string" },
           "type": { "type": "string" },
-          "file": { "type": "string" }
+          "file": { "type": "string" },
+          "animation": { "type": "string" },
+          "transition": { "type": "string" }
         },
         "additionalProperties": false
       }
