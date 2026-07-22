@@ -63,8 +63,10 @@ Context is scarce; flooding it makes you thrash. Spend deliberately.
 - **Bounded search.** Cap search-tool output at ~50 matches; more → refine scope/pattern, don't read further.
 - **Bounded reads.** Small files whole; large files in ~100-line windows targeting the range you need. **Never re-read a file already in context.**
 - **Lint/compile after every edit** — fix a syntax error before anything else.
-- **Delegate broad recon cheaply.** Broad/unknown surface or >10 files → if your harness supports sub-runs, delegate the sweep to a single cheap one that returns only a distilled brief (paths, line ranges, facts); root-cause/design stays in the main context. Small, knowable surface → read directly.
-- **Sub-runs one at a time.** If your harness supports parallel sub-runs, run them sequentially unless the user explicitly approves concurrency.
+- **Your default: no subagent.** As the non-Claude agent reading this file, keep work in your main context. Do not delegate merely because a task is broad, touches many files, or could finish faster in parallel. Time and speed are lower priorities than wise token use.
+- **Exception: genuine context efficiency.** Spawn a subagent only when it is extremely necessary to protect the main context from a large mechanical sweep, isolate a clearly bounded specialist task, or avoid a demonstrably larger token cost in the main run. First narrow searches and reads; if those are sufficient, do the work directly. Root-cause analysis, design, integration, edits, and decisions stay with the main agent.
+- **Cheapest adequate sub-run for other agents.** If you exceptionally need a subagent, configure low reasoning and use the lowest suitable model tier available to your agenting tool, such as GPT-5.6 Luna. Give it a narrow prompt and require only a distilled brief (paths, line ranges, facts). Do not spend high-tier reasoning on mechanical reconnaissance.
+- **Subagents run one at a time.** Never run them concurrently unless the user explicitly requests concurrency and it is genuinely necessary. This overrides any general parallel-work guidance.
 - **Right-size the ceremony, never skip it.** Plan → implement → test → review, update-log entries, and docs sync stay mandatory; what scales is their depth.
 
 ## Coding Rules
