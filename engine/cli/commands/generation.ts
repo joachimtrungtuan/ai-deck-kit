@@ -4,7 +4,8 @@ import type { DeckSlide } from "../lib/types.ts";
 import { findWorkspace } from "../lib/workspace.ts";
 
 export const generationHelp = `Generation commands:
-  gen scaffold <slug> [--template <set>]  Create a deterministic deck skeleton`;
+  gen scaffold <slug> --outline <file> [--template <set>]
+                                           Create a deterministic deck skeleton from an approved Markdown outline`;
 
 export function runGeneration(args: string[]): void {
   if (!args.length || args.includes("--help")) return console.log(generationHelp);
@@ -12,10 +13,11 @@ export function runGeneration(args: string[]): void {
   const templateIndex = args.indexOf("--template");
   const template = templateIndex === -1 ? "swiss-modern" : args[templateIndex + 1];
   if (!template) throw new Error("--template requires a template name.");
+  const outlinePath = valueAfter(args, "--outline");
+  if (!outlinePath) throw new Error("--outline requires an approved Markdown outline file.");
   const workspace = findWorkspace();
   const root = createDeck(workspace, args[1], template);
-  const outlinePath = valueAfter(args, "--outline");
-  if (outlinePath) applyOutline(workspace, args[1], readFileSync(outlinePath, "utf8"));
+  applyOutline(workspace, args[1], readFileSync(outlinePath, "utf8"));
   console.log(`Generated deterministic scaffold: ${root}`);
 }
 

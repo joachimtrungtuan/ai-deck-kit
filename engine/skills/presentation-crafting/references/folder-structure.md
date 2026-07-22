@@ -1,42 +1,35 @@
-# Folder Structure
+# AI Deck Kit Folder Structure
 
-All presentation artifacts live under `presentation/`.
+The root pointer resolves the installed engine and user deck roots. Keep authored deck data outside the engine.
 
 ```text
-presentation/
-├── templates/
-│   ├── template-system.md
-│   ├── slide-types-v1.md
-│   └── {template-set-name}/
-│       ├── template-manifest.json
-│       ├── design-system.css
-│       ├── animation-presets.css
-│       ├── icon-policy.md
-│       └── layouts/
-├── preview-app/
-│   ├── index.html
-│   └── src/
-└── working-files/
-    └── {presentation-slug}/
-        ├── content/
-        │   └── {presentation-slug}.slides.md
-        ├── source/
-        ├── assets/
-        └── export/
+<project-root>/
+├── ai-deck-kit.json
+├── engine/                         # installed/upgradable runtime
+│   ├── skills/
+│   ├── templates/
+│   └── preview-app/
+├── decks/
+│   └── {presentation-slug}.deck/
+│       ├── deck.json               # CLI-owned structure
+│       ├── content.md              # author/agent-owned content + annotations
+│       ├── assets/
+│       ├── template/               # pinned template snapshot
+│       └── .build/                 # generated, disposable source/export
+└── templates/
+    └── {template-name}.template/   # user-authored template before registration
 ```
 
 ## Rules
 
-- `templates/` stores reusable template systems, not one-off deck edits.
-- `preview-app/` stores the single shared React preview runtime for templates and decks.
-- `working-files/{presentation-slug}/content/` stores the source of truth for deck content and annotations.
-- `source/` stores React or static source code generated from the content file.
+- `deck.json` owns slide order, IDs, types, template binding, and defaults. Change it through `aideck` commands.
+- `content.md` is the one canonical authored file: copy, visual direction, speaker notes, design notes, review questions, and explicit override reasons.
 - `assets/` stores deck-specific images, generated graphics, exported diagrams, and local media.
-- `export/` stores browser-ready output.
-- Do not create per-template or per-deck app scaffolds. Add preview entries to the shared runtime.
+- `.build/` stores regenerated source and exports; never treat it as canonical input.
+- Do not create per-template or per-deck app scaffolds. `engine/preview-app/` is the one shared runtime.
 
 ## Naming
 
 - Use kebab-case for folders and files.
 - Use descriptive names that remain understandable through grep or file search.
-- Do not place deck files outside `presentation/`.
+- Do not place deck artifacts outside their `.deck` bundle.

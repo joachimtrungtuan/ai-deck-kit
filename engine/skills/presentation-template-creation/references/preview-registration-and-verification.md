@@ -12,13 +12,13 @@ How to register a new template set in the shared preview runtime and the gates i
    - Import the preview data file.
    - Extend the template switcher (or add one if only one template exists) so the user can select between registered slide sets; wrap rendered slides in the active template's deck class.
    - Keep keyboard navigation (arrow left/right) working.
-3. **Fonts** — load any template fonts via `@fontsource` imports in main.tsx; check `presentation/package.json` before adding dependencies (Inter and JetBrains Mono are already present).
+3. **Fonts** — load any template fonts via `@fontsource` imports in `engine/preview-app/src/main.tsx`; check `engine/package.json` before adding dependencies (Inter and JetBrains Mono are already present).
 
 ## Verification Gates (all must pass before handoff)
 
-1. **Manifest**: `node engine/skills/presentation-template-creation/scripts/validate-template-manifest.mjs engine/templates/{template-name}/template-manifest.json`
-2. **Types compile**: `cd presentation && npx tsc --noEmit` — zero errors.
-3. **Visual pass**: `npm run dev`, switch to the new template, step through EVERY slide type: renders, no clipped text at 1600x900, animations fire once per slide entry, existing templates still render unaffected.
+1. **Manifest and install**: `aideck template register {template-name}` completes without errors.
+2. **Types compile**: `cd engine && npx tsc --noEmit --project tsconfig.storybook.json` — zero errors.
+3. **Visual pass**: `cd engine && npm run dev`, switch to the new template, step through EVERY slide type: renders, no clipped text at 1600x900, animations fire once per slide entry, existing templates still render unaffected.
 4. **Catalog coverage**: every type ID in the declared `slide-types-vN.md` exists in `layout-index.json`, the manifest's `supportedSlideTypes`, and the preview slide list.
 5. **Token discipline**: no hardcoded colors in TSX (grep for `#` hex values outside CSS); accent usage follows the template's declared policy.
 6. **Constraint audits**: grep `font-weight` (respect declared max), `font-family` / `@fontsource` (only declared fonts), and confirm all class names carry the template prefix.

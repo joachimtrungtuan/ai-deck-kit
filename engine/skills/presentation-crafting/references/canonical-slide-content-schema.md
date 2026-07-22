@@ -1,22 +1,6 @@
 # Canonical Slide Content Schema
 
-Use Markdown with YAML frontmatter and one slide section per slide.
-
-## File Frontmatter
-
-```yaml
----
-title: "Presentation title"
-slug: "presentation-slug"
-audience: "Who this is for"
-goal: "What the presentation should achieve"
-template_set: "template-set-name"
-template_version: "1.0.0"
-slide_type_catalog: "v1"
-output_mode: "react-and-static-html"
-status: "draft"
----
-```
+Use `content.md` with one Markdown section per slide. Its paired `deck.json` is the manifest: it owns the deck title, slug, audience, goal, template, catalog versions, output mode, defaults, and slide registry. Do not duplicate that frontmatter in `content.md`.
 
 ## Slide Block
 
@@ -61,8 +45,9 @@ Constraints for layout, hierarchy, spacing, emphasis, or asset treatment.
 
 ## Rules
 
-- Every slide must have `id`, `type`, `status`, `intent`, and `animation`.
+- Every slide must have `id`, `type`, `status`, `intent`, `animation`, and `transition`; the `id` and `type` must match the paired `deck.json` slide registry.
 - `type` must exist in the active slide-type catalog.
 - `override.reason` is required when `override.layout` or `override.animation` is not `none`.
 - Put edit intent and review notes in this file, not hidden only in React source.
 - Keep visible slide copy under the density limits of the chosen template.
+- When a structured block is needed, add it to the slide YAML under `blocks:` using a type from the deck's pinned block catalog. Preserve the prose sections below it.

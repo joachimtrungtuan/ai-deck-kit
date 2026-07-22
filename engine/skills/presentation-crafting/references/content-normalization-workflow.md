@@ -19,7 +19,7 @@ Use when the user provides notes, a transcript, a memo, a rough outline, or top-
 
 1. Extract the presentation goal, audience, tone, and expected duration.
 2. Group content into a narrative arc.
-3. Propose a slide outline before coding if the structure is not obvious.
+3. Propose a slide outline before scaffolding if the structure is not obvious; get approval when narrative choices are material, then follow `outline-first-generation.md`.
 4. Assign each slide a purpose: opener, context, contrast, evidence, method, example, implication, closing.
 5. Include visual direction for each slide: image, icon, diagram, chart, product UI, or type-only.
 
@@ -33,4 +33,4 @@ Use when the user provides notes, a transcript, a memo, a rough outline, or top-
 
 ## Output
 
-Always produce or update `decks/{presentation-slug}.deck/content.md` (slide prose) and `deck.json` (manifest: order/type/template) before generating source code. See `docs/deck-format-spec.md`.
+Always produce or update `decks/{presentation-slug}.deck/content.md` (slide prose). The CLI owns `deck.json` structure: create/scaffold and change order/type through `aideck`, then validate with `aideck validate <slug>`. See `docs/deck-format-spec.md`.

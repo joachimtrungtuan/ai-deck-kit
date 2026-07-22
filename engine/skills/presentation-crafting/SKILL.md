@@ -1,11 +1,11 @@
 ---
 name: presentation-crafting
-description: Create polished React slide decks, standalone HTML exports, and Preview-friendly PDFs from canonical Markdown content.
+description: Create polished .deck bundles, standalone HTML exports, and Preview-friendly PDFs through the AI Deck Kit CLI and canonical Markdown content.
 ---
 
 # Presentation Crafting
 
-Create polished browser presentations through a controlled content-first workflow. Treat this skill as a collaboration protocol: normalize content, choose one template system, generate from source, verify consistency, then iterate through explicit annotations.
+Create polished browser presentations through a controlled content-first workflow. This skill is the creative collaboration protocol; `aideck` performs deterministic scaffolding, structural edits, validation, preview, and export.
 
 ## Scope
 
@@ -16,7 +16,7 @@ This skill handles deck content normalization, React deck source, standalone HTM
 - Keep one canonical Markdown content file per deck.
 - Use one and only one template set per presentation.
 - Derive every slide from a declared slide type in the active slide-type catalog.
-- Prefer React source for systematic decks; export a standalone single-file HTML (and a PDF) when the user needs portable delivery. Both build from the same React source, so the export never diverges from the preview.
+- Keep authored copy, visual direction, and annotations in `content.md`; do not hand-edit CLI-owned `deck.json` structure.
 - Allow overrides only when they are explicit, justified, and recorded in the content file.
 - Do not recreate Google Slides. The agent edits source; the user reviews content and rendered output.
 - Use one shared React preview runtime for template and deck review. Do not create a separate React app per template or per presentation.
@@ -24,21 +24,15 @@ This skill handles deck content normalization, React deck source, standalone HTM
 
 ## Workflow
 
-1. Read the available user material.
-2. If the user already provides slide-by-slide structure, preserve it and normalize it into the canonical slide-content schema.
-3. If the user provides raw notes, top-line ideas, transcripts, or long-form text, propose a slide-by-slide structure before generating the deck.
-4. Save or update the canonical content (`content.md`) and manifest (`deck.json`) at `decks/{presentation-slug}.deck/`. See `docs/deck-format-spec.md`.
-5. Select exactly one template set. If no suitable template exists, stop and switch to the `presentation-template-creation` skill to author one — never improvise a deck style.
-6. Map every slide to a known slide type from the active catalog. Use `references/slide-types-v1.md` for the v1 baseline.
-7. Generate or update the React presentation source under `decks/{presentation-slug}.deck/.build/source/` (regenerable, not canonical).
-8. Review templates or deck source in the shared preview runtime under `engine/preview-app/` before export. If preview/export shell code is missing or drifting, restore it from `templates/export-runtime/` and follow `references/export-runtime-contract.md`.
-9. Export when requested or useful (see `references/export-workflow.md` for details and rationale):
-   - Standalone single-file HTML: `node engine/skills/presentation-crafting/scripts/export-standalone-html.mjs --deck <deck-id> --slug <slug>`
-   - PDF (one landscape page per slide): `node engine/skills/presentation-crafting/scripts/export-pdf.mjs --slug <slug>`
-   - The deck must be registered in `engine/preview-app/src/deck-registry.tsx` first.
-10. Run validation:
-   - `node engine/skills/presentation-crafting/scripts/validate-slide-content.mjs decks/<slug>.deck`
-11. Review the rendered deck for template consistency, text fit, framing, icon style, animation restraint, and asset rendering. After exporting, open the HTML by double-click (`file://`) to confirm it renders. For PDF, verify page count, file size, and a rasterized visual contact sheet; do not rely on successful script completion alone.
+1. Read the available user material and select exactly one installed template set. If no suitable set exists, stop and switch to `presentation-template-creation`; never improvise a deck style.
+2. For slide-ready input, preserve the supplied structure. For a prompt, document, notes, or transcript, first create a proposed Markdown outline and obtain approval before scaffolding. Follow `references/outline-first-generation.md`.
+3. Scaffold the bundle through the CLI:
+   - Slide-ready or manually structured: `aideck new <slug> --template <set>`.
+   - Approved outline: `aideck gen scaffold <slug> --template <set> --outline <approved-outline.md>`.
+4. Author or refine only `decks/<slug>.deck/content.md`: visible copy, intent, visual direction, speaker notes, design notes, review questions, and valid structured blocks. Use `aideck slide add|remove|move`, `aideck anim toggle`, and `aideck transition set` for structure or motion metadata.
+5. Validate the canonical bundle with `aideck validate <slug>`. Resolve every manifest/content mismatch before preview or export.
+6. Review through the shared runtime with `aideck serve --deck <slug>`. During the Phase 04-to-06 transition, export still requires a registered legacy preview entry; do not claim arbitrary-deck preview/export support before Phase 06 delivers its resolver.
+7. When the deck is renderable, export with `aideck export html <slug>` or `aideck export pdf <slug>`, then perform the HTML/PDF visual checks in `references/export-workflow.md`.
 
 ## User Intake
 
@@ -52,7 +46,7 @@ If the user has not chosen a template set and multiple options exist, recommend 
 
 ## Required Folder Structure
 
-Use the structure in `references/folder-structure.md`. Keep all deck artifacts under `presentation/`.
+Use the structure in `references/folder-structure.md`.
 
 The expected deck unit is:
 
@@ -69,6 +63,7 @@ decks/{presentation-slug}.deck/
 ## References
 
 - `references/content-normalization-workflow.md` - Convert raw material into slide-ready content.
+- `references/outline-first-generation.md` - Prompt/document to approved outline, scaffold, then content-fill workflow.
 - `references/canonical-slide-content-schema.md` - Required Markdown schema for each deck.
 - `references/folder-structure.md` - Repository layout for templates and working files.
 - `references/slide-types-v1.md` - Required v1 slide-type catalog.
@@ -84,9 +79,8 @@ Template authoring (manifests, catalogs, versioning, new template sets) lives in
 
 ## Scripts
 
-- `scripts/validate-slide-content.mjs` checks a `.deck` bundle's `deck.json` manifest against its `content.md` (parity, required fields, override reasons).
-- `scripts/export-standalone-html.mjs` builds a deck into one self-contained HTML file that opens by double-click (no server). See `references/export-workflow.md`.
-- `scripts/export-pdf.mjs` renders a built deck to a flattened, Preview-friendly PDF (one landscape page per slide) using system Chrome + ImageMagick. Run after the HTML export.
+- `aideck validate <slug>` checks a `.deck` bundle's `deck.json` manifest against its `content.md` (parity, required fields, override reasons).
+- `aideck export html <slug>` builds one self-contained HTML file. `aideck export pdf <slug>` follows with the flattened PDF pipeline.
 
 ## Templates
 

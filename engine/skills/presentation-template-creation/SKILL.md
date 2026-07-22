@@ -25,19 +25,17 @@ This skill handles template-set authoring and slide-type catalog evolution. It d
 1. Gather the style brief: aesthetic direction, target presentation domain, typography constraints, accent policy.
 2. Read `engine/templates/template-system.md` and the newest `engine/templates/slide-types-v*.md`; read one existing template set (e.g. `swiss-modern/`) as the structural reference.
 3. Decide catalog version: reuse the newest catalog, or — if the domain needs new slide types — create the next `slide-types-v(N+1).md` (copy previous catalog verbatim, append new categories/types with purpose + required props). See `references/template-system-and-versioning.md`.
-4. Scaffold the template folder per `references/template-authoring-workflow.md`.
-5. Write `template-manifest.json` and validate:
-   - `node engine/skills/presentation-template-creation/scripts/validate-template-manifest.mjs <template-manifest>`
-6. Build `design-system.css` (tokens + class inventory) and `animation-presets.css` (re-skin the shared preset vocabulary in `presentation-crafting/references/animation-presets.md` — same preset names, template-specific timing/easing).
-7. Write the template's `icon-policy.md`, applying `presentation-crafting/references/icon-policy.md` (Phosphor-first) with template-specific treatment.
-8. Map the base primitive token contract in the template deck class, then implement React layouts per `references/react-layout-conventions.md`; compose `engine/primitives/blocks` where a catalog block fits. Document layout rules in `layouts/specs/layout-contracts.md`; map every slide type in `layouts/layout-index.json`.
-9. Register the template in the shared preview app and run all verification gates per `references/preview-registration-and-verification.md`.
-10. Record the work in `update-logs/` per project rules.
+4. Scaffold the user-owned template bundle through `aideck template new <name>`. It creates `templates/<name>.template/`; do not hand-create its manifest or base files.
+5. Build its `design-system.css` (tokens + class inventory), `animation-presets.css` (re-skin the approved vocabulary with the same preset names), `icon-policy.md`, layouts, layout index, and layout contracts. Compose `engine/primitives/blocks` where a catalog block fits.
+6. Validate and install the completed bundle through `aideck template register <name>`. The CLI validates the manifest and copies the template into `engine/templates/<name>/`; do not copy it manually.
+7. Use `aideck template version <name>` to read the installed version or `aideck template version <name> --bump patch|minor|major` for an intentional version change.
+8. Register the template in the shared preview app and run all verification gates per `references/preview-registration-and-verification.md`.
+9. Record the work in `update-logs/` per project rules.
 
 ## Required Output Per Template Set
 
 ```text
-engine/templates/{template-name}/
+templates/{template-name}.template/       # authored before registration
 ├── template-manifest.json
 ├── design-system.css
 ├── animation-presets.css
@@ -64,7 +62,7 @@ Cross-skill (canonical, do not duplicate here): `presentation-crafting/reference
 
 ## Scripts
 
-- `scripts/validate-template-manifest.mjs` checks a template manifest for required template-system fields.
+- `aideck template new|register|list|version` owns deterministic template scaffolding, validation, installation, and version changes.
 
 ## Reporting
 

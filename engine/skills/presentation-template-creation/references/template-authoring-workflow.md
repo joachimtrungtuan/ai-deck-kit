@@ -5,13 +5,15 @@ Build order and file checklist for a new template set. Mirror an existing set (e
 ## Build Order
 
 1. **Catalog decision** — reuse newest `slide-types-vN.md` or create `v(N+1)` (additive copy + new types). Never edit an existing catalog file.
-2. **Manifest** — write `template-manifest.json`, validate with the skill's script. Must pass before any other file is written.
-3. **Design system CSS** — template tokens first, then base primitive aliases, then class inventory.
-4. **Animation presets CSS** — re-skin shared vocabulary, same preset names.
-5. **Icon policy** — template-specific application of the Phosphor-first rules.
-6. **React layouts** — shared helpers, then category files, then `index.ts`.
-7. **Specs** — `layout-contracts.md` (per-category layout rules) + `layout-index.json` (complete type→component map).
-8. **Preview registration + verification** — see `preview-registration-and-verification.md`.
+2. **Scaffold** — run `aideck template new <name>`. It creates `templates/<name>.template/` with the CLI-owned starter manifest and files.
+3. **Manifest** — complete the generated `template-manifest.json`; keep its name, version axes, and supported types synchronized with the selected catalog.
+4. **Design system CSS** — template tokens first, then base primitive aliases, then class inventory.
+5. **Animation presets CSS** — re-skin shared vocabulary, same preset names.
+6. **Icon policy** — template-specific application of the Phosphor-first rules.
+7. **React layouts** — shared helpers, then category files, then `index.ts`.
+8. **Specs** — `layout-contracts.md` (per-category layout rules) + `layout-index.json` (complete type→component map).
+9. **Register** — run `aideck template register <name>`; it validates and installs the bundle into `engine/templates/<name>/`.
+10. **Preview registration + verification** — see `preview-registration-and-verification.md`.
 
 ## Manifest Checklist
 

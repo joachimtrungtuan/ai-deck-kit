@@ -1,6 +1,6 @@
 # Export Workflow
 
-Two deliverables ship from a finished deck, both produced by scripts so every deck exports the same way:
+Two deliverables ship from a finished deck, both produced through `aideck` so every deck follows the same command surface:
 
 1. **Standalone HTML** — one self-contained `.html` file that opens by double-click, no server.
 2. **PDF** — one landscape page per slide, for clients who want a flat document.
@@ -12,7 +12,11 @@ Before editing preview/export shell code, read `references/export-runtime-contra
 restore files from `templates/export-runtime/`; do not invent a new canvas, controls, registry, or
 PDF `.deck-page` structure per deck.
 
-## Prerequisite: register the deck
+## CLI entry point and current runtime prerequisite
+
+Use `aideck export html <deck-id>` or `aideck export pdf <deck-id>`. The CLI owns deterministic export invocation; the scripts documented below are implementation details, not the authoring workflow.
+
+Until Phase 06 ships arbitrary `.deck` runtime resolution, the current export bridge still needs a registered legacy preview entry:
 
 The export builds a single registered source, so the deck must be listed in
 `engine/preview-app/src/deck-registry.tsx` (the same list the dev preview reads):
@@ -27,8 +31,7 @@ for linear-dark, `swiss-deck` for swiss-modern). `label` becomes the browser tab
 ## Standalone HTML
 
 ```bash
-node engine/skills/presentation-crafting/scripts/export-standalone-html.mjs \
-  --deck <deck-id> [--slug <slug>] [--out <dir>]
+aideck export html <deck-id>
 ```
 
 Defaults: `--slug` = `--deck`; output = `decks/<slug>.deck/.build/export/index.html`.
@@ -82,9 +85,7 @@ remounts the slide (`key={index}`) so its entrance animation replays, matching t
 ## PDF
 
 ```bash
-node engine/skills/presentation-crafting/scripts/export-pdf.mjs \
-  --slug <slug> [--out <path.pdf>] [--chrome <path>] [--imagemagick <path>]
-# or point at a built file directly: --html <path/to/index.html>
+aideck export pdf <deck-id>
 ```
 
 Run the HTML export first; the PDF script loads that `index.html`. It uses **system

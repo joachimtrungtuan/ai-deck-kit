@@ -6,10 +6,10 @@ Annotations keep the collaboration trace clear without turning React source into
 
 | Annotation | Location |
 | --- | --- |
-| Speaker notes | Content file, per slide. |
-| Design notes | Content file, per slide. |
-| Review questions | Content file, per slide or file-level section. |
-| Override reason | Slide metadata in content file. |
+| Speaker notes | `decks/{slug}.deck/content.md`, per slide. |
+| Design notes | `decks/{slug}.deck/content.md`, per slide. |
+| Review questions | `decks/{slug}.deck/content.md`, per slide or file-level section. |
+| Override reason | Slide metadata in `content.md`. |
 | Implementation extension point | Short source-code comment near component boundary. |
 | Change history | Optional `review-notes.md` inside the deck working folder. |
 
@@ -24,7 +24,7 @@ Annotations keep the collaboration trace clear without turning React source into
 
 When the user requests edits:
 
-1. Update the content file first if the change affects copy, intent, speaker notes, asset direction, slide order, or override reason.
-2. Update source code second.
-3. Re-run validation.
+1. Update `content.md` first if the change affects copy, intent, speaker notes, asset direction, or override reason.
+2. Use `aideck slide add|remove|move` if the change affects slide order or structure; never manually edit the manifest registry.
+3. Re-run `aideck validate <slug>`.
 4. Summarize changed slides by slide number.

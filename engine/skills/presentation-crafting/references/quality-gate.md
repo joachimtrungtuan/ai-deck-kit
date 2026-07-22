@@ -4,7 +4,7 @@ Run this checklist before handing off a deck.
 
 ## Content
 
-- One canonical content file exists.
+- One canonical `decks/{slug}.deck/content.md` file exists.
 - Every slide has a clear intent.
 - Visible copy fits the selected slide type.
 - Speaker notes carry detail that should not be on screen.
@@ -19,7 +19,8 @@ Run this checklist before handing off a deck.
 
 ## Runtime
 
-- Shared preview runtime is used for browser review.
+- `aideck validate <slug>` passes before review or export.
+- Shared preview runtime is used through `aideck serve --deck <slug>` for browser review.
 - React source compiles when React output is used.
 - Static export opens in browser when static output is requested.
 - Keyboard navigation works.
