@@ -1,6 +1,6 @@
 # AI Deck Kit — Development Roadmap
 
-**Status:** Draft (2026-07-22). Continuous-development / CI-CD project — this roadmap is a living document.
+**Status:** Phase 08 implementation complete (2026-07-23); local QA passed, while remote release and registry-backed clean-install verification remain pending. Continuous-development / CI-CD project — this roadmap remains a living document.
 Companion specs: `project-overview-pdr.md`, `system-architecture.md`, `deck-format-spec.md`.
 Migration plan: `plans/260722-0258-ai-deck-kit-restructure/plan.md`.
 
@@ -18,7 +18,7 @@ Continuous integration + continuous delivery of the **engine**. Each milestone s
 | M4 | CLI core | `aideck` Node/TS: init/new/slide/template/gen/export/serve/pack/doctor/upgrade | Phase 04 |
 | M5 | Skills + generation | Skill bundles reworked to `.deck`+CLI; outline-first generation; annotation reuse | Phase 05 |
 | M6 | Preview + export + morph | Runtime renders `.deck`; HTML/PDF export; full deck-navigator morph integration; `pack` sharing | Phase 06 |
-| M7 | Distribution + CI/CD | `npx ai-deck-kit init` (root or subfolder), release pipeline, upgrade path | Phase 07 |
+| M7 | Distribution + CI/CD | GitHub-source `npx` init (root or subfolder), configured release pipeline, upgrade path | Phase 07 |
 | M8 | Migration + QA | swiss-modern & linear-dark migrated; end-to-end validation; docs finalized | Phase 08 |
 
 ## Post-v1 Backlog (deferred)

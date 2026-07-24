@@ -1,6 +1,6 @@
 # AI Deck Kit — System Architecture
 
-**Status:** Active migration spec (2026-07-23). Phase 06 runtime integration is implemented; distribution and template migration remain planned.
+**Status:** Active architecture spec (2026-07-23). Phases 01–08 runtime, distribution, template migration, and QA are implemented.
 Companion specs: `project-overview-pdr.md`, `deck-format-spec.md`, `development-roadmap.md`.
 
 ## 1. Architecture Principles
@@ -64,10 +64,10 @@ The CLI finds the workspace by walking **up** from CWD to the nearest `ai-deck-k
 
 This is a **continuous-development / CI-CD** project: the engine ships new capabilities regularly, and installed copies upgrade in place.
 
-- **Package:** published as npm package `ai-deck-kit`; source of truth is the GitHub repo.
-- **Install:** `npx ai-deck-kit init [--here | --dir <subfolder>]` scaffolds the two roots + root pointer, installs the engine at the chosen version.
-- **CI (engine repo):** on push/PR → lint, typecheck, run CLI + skill validators, build preview/export runtime, run an end-to-end deck export smoke test, publish on tagged release (semver).
-- **Upgrade (installed copy):** `aideck upgrade [--to <version>]` pulls a newer engine into `engine/` only; `decks/` untouched. Engine version pinned in `ai-deck-kit.json` + `engine.version.json`.
+- **Package:** root distribution package named `ai-deck-kit`; the repository is the source of truth. Remote publication is release-workflow configuration, not a completed release.
+- **Install:** `npx github:<owner>/ai-deck-kit init [--here | --dir <subfolder>]` is the configured GitHub-source entrypoint; it scaffolds the two roots + root pointer and installs the engine at the chosen version. Registry-backed clean-install proof remains pending.
+- **CI (engine repo):** on push/PR → lint, typecheck, run CLI + template validators, install export tools, run nested-workspace HTML/PDF export smoke tests, and verify upgrade hash safety; tagged releases pack the root distribution package.
+- **Upgrade (installed copy):** `aideck upgrade [--to <version>]` pulls a newer engine into the resolved `engineRoot` only; `decks/` and project `templates/` remain untouched. Engine version pinned in `ai-deck-kit.json` + `engine.version.json`.
 - **Compatibility:** engine declares which `content_schema_version`, `slide_type_catalog`, and `template_version` ranges it supports; `aideck doctor` reports mismatches and never force-migrates decks silently.
 
 ## 4. Modules (CLI commands + skill bundles)
@@ -109,7 +109,7 @@ engine/primitives/
 Small and curated — not a general animation engine.
 
 - **Minimal entrance/emphasis animations** (e.g. `gentle-rise`, fade, `none`) from the existing approved preset set.
-- **Morph** as a first-class shared-element primitive: a block on slide N and slide N+1 sharing a `morph` anchor id can tween between states (position, size, data). Primary use: charts/diagrams evolving across slides. Phase 03 proves this with an isolated primitive demo and Storybook morph-pair story; it does not yet wire morph through the deck navigator. Full navigator integration belongs to Phase 06.
+- **Morph** as a first-class shared-element primitive: a block on slide N and slide N+1 sharing a `morph` anchor id can tween between states (position, size, data). Primary use: charts/diagrams evolving across slides. Phase 03 established the isolated primitive demo; Phase 06 carries the behavior through the shared deck navigator.
 - Motion is declared per slide/block in the deck (`animation`, `transition`, `morph` anchor) and validated against the catalog.
 
 ## 5. Rendering & Export Runtime (reused)

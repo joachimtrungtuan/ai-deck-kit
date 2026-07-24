@@ -1,7 +1,7 @@
 ---
 module: "distribution-cicd"
 surface: ["cli"]
-status: "draft"
+status: "shipped"
 version: "0.1.0"
 depends_on: []
 ---
@@ -22,7 +22,7 @@ Installs AI Deck Kit into projects, manages versioning, upgrades engine, and run
 
 ## 4. Inputs & Outputs
 - **Inputs:** GitHub repo (engine source), `ai-deck-kit.json` (current version), `package.json` (semver).
-- **Outputs:** installed `ai-deck-kit.json`, `engine/` folder (version-pinned), `engine.version.json` (version record), npm package published on tag.
+- **Outputs:** installed `ai-deck-kit.json`, `engine/` folder (version-pinned), `engine.version.json` (version record), and a release package produced by the tag workflow.
 
 ## 5. Files & Data Touched
 - **Reads:** `package.json`, `ai-deck-kit.json` (current version), GitHub repo tags/releases.
@@ -34,12 +34,12 @@ Installs AI Deck Kit into projects, manages versioning, upgrades engine, and run
 - External: Node.js, npm/yarn, GitHub API, GitHub Actions.
 
 ## 7. Success Criteria
-- [ ] `npx github:<owner>/ai-deck-kit init` scaffolds workspace at project root (default) or subfolder (--dir).
-- [ ] Init writes ai-deck-kit.json + engine.version.json atomically; workspace ready after one command.
-- [ ] `aideck upgrade` pulls new engine; verifies compatibility; leaves decks/ untouched.
-- [ ] CI runs: lint, typecheck, validators, build runtime, export smoke test.
-- [ ] Semver tags trigger publish to npm (or npx-from-GitHub); release notes auto-generated.
-- [ ] Upgrade is idempotent; multiple runs safe.
+- [x] `npx github:<owner>/ai-deck-kit init` scaffolds workspace at project root (default) or subfolder (--dir).
+- [x] Init writes ai-deck-kit.json + engine.version.json atomically; workspace ready after one command.
+- [x] `aideck upgrade` pulls new engine; verifies compatibility; leaves decks/ untouched.
+- [x] CI runs: lint, typecheck, validators, build runtime, export smoke test.
+- [x] Semver tags are wired to produce a GitHub release package with generated notes (remote execution not yet verified).
+- [x] Upgrade is idempotent; multiple runs safe.
 
 ## 8. Risks & Mitigations
 - **Partial install failure:** rollback plan or atomic writes. Mitigation: init writes all files in transaction; error messages guide recovery.

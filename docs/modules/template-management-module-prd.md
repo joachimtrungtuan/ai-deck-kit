@@ -1,7 +1,7 @@
 ---
 module: "template-management"
 surface: ["cli", "skill"]
-status: "draft"
+status: "shipped"
 version: "0.1.0"
 depends_on: ["design-primitives"]
 ---
@@ -34,11 +34,11 @@ Authors, registers, and versions template sets (`.template` bundles). Templates 
 - `system-architecture.md` (versioning axes § 6, templates § 4).
 
 ## 7. Success Criteria
-- [ ] `aideck template new` scaffolds .template with required files (template.json, design-system.css, layouts/, icon-policy.md).
-- [ ] Template manifest declares required block/motion/slide-type-catalog versions.
-- [ ] `aideck new` embeds template snapshot into .deck for portability.
-- [ ] Versioning supports three semantic axes independently (template_version ≠ block_catalog version, etc.).
-- [ ] Doctor detects missing/mismatched template sets and reports required version.
+- [x] `aideck template new` scaffolds .template with required files (template.json, design-system.css, layouts/, icon-policy.md).
+- [x] Template manifest declares required block/motion/slide-type-catalog versions.
+- [x] `aideck new` embeds template snapshot into .deck for portability.
+- [x] Versioning supports three semantic axes independently (template_version != block_catalog version, etc.).
+- [x] Doctor detects missing/mismatched template sets and reports required version.
 
 ## 8. Risks & Mitigations
 - **Template not portable:** embed snapshot at deck-creation time. Mitigation: aideck new always embeds resolved template.
