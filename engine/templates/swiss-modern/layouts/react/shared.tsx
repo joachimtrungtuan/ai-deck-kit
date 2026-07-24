@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ImageBlock, TitleDescriptionBlock } from "../../../../primitives/blocks";
 
 export type SwissSlideProps = {
   index?: string;
@@ -33,8 +34,7 @@ export function SwissTextBlock({ kicker, title, body }: Pick<SwissSlideProps, "k
   return (
     <div className="swiss-rule-top">
       {kicker ? <p className="swiss-kicker">{kicker}</p> : null}
-      <h1 className="swiss-title">{title}</h1>
-      {body ? <p className="swiss-body">{body}</p> : null}
+      <TitleDescriptionBlock className="swiss-template-title-block" block={{ id: "title", title, description: body }} />
     </div>
   );
 }
@@ -55,8 +55,7 @@ export function SwissList({ items = [] }: { items?: string[] }) {
 export function SwissMedia({ imageSrc, imageAlt = "", caption }: Pick<SwissSlideProps, "imageSrc" | "imageAlt" | "caption">) {
   return (
     <figure className="swiss-media">
-      {imageSrc ? <img src={imageSrc} alt={imageAlt} /> : null}
-      {caption ? <figcaption className="swiss-kicker">{caption}</figcaption> : null}
+      {imageSrc ? <ImageBlock className="swiss-template-image-block" block={{ id: "media", src: imageSrc, alt: imageAlt, caption }} /> : null}
     </figure>
   );
 }

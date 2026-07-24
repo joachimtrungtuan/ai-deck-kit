@@ -1,4 +1,5 @@
 import type { ComponentType, ReactNode } from "react";
+import { ImageBlock, TitleDescriptionBlock } from "../../../../primitives/blocks";
 import {
   ArrowsClockwise,
   ChartLine,
@@ -118,8 +119,7 @@ export function LinearTextBlock({ kicker, title, body }: Pick<LinearSlideProps, 
   return (
     <div className="ld-rule-top">
       {kicker ? <p className="ld-kicker ld-kicker-dot">{kicker}</p> : null}
-      <h1 className="ld-title">{title}</h1>
-      {body ? <p className="ld-body">{body}</p> : null}
+      <TitleDescriptionBlock className="ld-template-title-block" block={{ id: "title", title, description: body }} />
     </div>
   );
 }
@@ -153,8 +153,7 @@ export function LinearMedia({
 }: Pick<LinearSlideProps, "imageSrc" | "imageAlt" | "caption"> & { scrim?: boolean }) {
   return (
     <figure className={`ld-media${scrim ? " ld-media-scrim" : ""}`}>
-      {imageSrc ? <img src={imageSrc} alt={imageAlt} /> : null}
-      {caption ? <figcaption className="ld-kicker">{caption}</figcaption> : null}
+      {imageSrc ? <ImageBlock className="ld-template-image-block" block={{ id: "media", src: imageSrc, alt: imageAlt, caption }} /> : null}
     </figure>
   );
 }

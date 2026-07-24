@@ -1,12 +1,12 @@
 import { SwissFrame, SwissList, SwissSmallLabel, type SwissSlideProps } from "./shared";
+import { StatBlock } from "../../../../primitives/blocks";
 
 export function SwissMetricHighlightSlide(props: SwissSlideProps) {
   return (
     <SwissFrame animation={props.animation ?? "spotlight"}>
       <div className="swiss-rule-top" style={{ gridColumn: "1 / 8", gridRow: "2 / 7" }}>
         <SwissSmallLabel>{props.kicker ?? "Metric"}</SwissSmallLabel>
-        <div className="swiss-metric">{props.metric ?? props.title}</div>
-        {props.metricLabel ? <p className="swiss-body">{props.metricLabel}</p> : null}
+        <div className="swiss-metric"><StatBlock className="swiss-template-stat-block" block={{ id: "metric", value: props.metric ?? props.title, label: props.metricLabel ?? "" }} /></div>
       </div>
       <aside style={{ gridColumn: "9 / 13", gridRow: "4 / 8" }}>
         <SwissList items={props.items} />

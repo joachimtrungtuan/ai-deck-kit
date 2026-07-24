@@ -45,6 +45,7 @@
     "react": "layouts/react",
     "specs": "layouts/specs"
   },
+  "primitiveComposition": ["title-description", "image", "stat"],
   "qualityRules": {
     "oneIdeaPerSlide": true,
     "maxAccentColors": 0,

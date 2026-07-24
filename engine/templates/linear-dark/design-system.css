@@ -324,6 +324,57 @@
   pointer-events: none;
 }
 
+/* Primitive compositions retain the established Linear Dark layout surface. */
+.ld-rule-top .ld-template-title-block {
+  color: var(--ld-ink);
+}
+.ld-rule-top .ld-template-title-block h2 {
+  margin: 0;
+  font-family: var(--ld-font-display);
+  font-size: calc(var(--ld-type) * clamp(48px, 6vw, 96px));
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  background: linear-gradient(180deg, #f7f8f8 0%, rgb(247 248 248 / 0.7) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.ld-rule-top .ld-template-title-block p {
+  max-width: 62ch;
+  margin: var(--ld-space-2) 0 0;
+  color: var(--ld-muted);
+  font-size: calc(var(--ld-type) * clamp(15px, 1.2vw, 20px));
+  line-height: 1.5;
+}
+.ld-media .ld-template-image-block {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.ld-media .ld-template-image-block img {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  object-fit: cover;
+}
+.ld-media .ld-template-image-block figcaption {
+  position: absolute;
+  left: var(--ld-space-2);
+  right: var(--ld-space-2);
+  bottom: var(--ld-space-2);
+  z-index: 1;
+  padding: 0;
+  color: var(--ld-ink);
+  font-family: var(--ld-font-mono);
+  font-size: calc(var(--ld-type) * 0.75rem);
+  text-transform: uppercase;
+}
+
 /* Meta row */
 .ld-meta-row {
   display: grid;
@@ -382,6 +433,21 @@
   -webkit-text-fill-color: transparent;
   color: transparent;
   filter: drop-shadow(0 0 32px var(--ld-accent-soft));
+}
+.ld-metric .ld-template-stat-block strong {
+  display: block;
+  font-family: var(--ld-font-display);
+  font-size: inherit;
+  line-height: inherit;
+}
+.ld-metric .ld-template-stat-block span {
+  display: block;
+  margin-top: var(--ld-space-2);
+  color: var(--ld-muted);
+  font-family: var(--ld-font-body);
+  font-size: calc(var(--ld-type) * clamp(15px, 1.2vw, 20px));
+  line-height: 1.5;
+  -webkit-text-fill-color: var(--ld-muted);
 }
 
 /* Thin accent progress bar (section dividers, timelines) */

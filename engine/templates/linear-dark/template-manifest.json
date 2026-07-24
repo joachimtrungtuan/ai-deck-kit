@@ -4,6 +4,7 @@
   "templateVersion": "1.0.0",
   "contentSchemaVersion": "1.1.0",
   "slideTypeCatalog": "v2",
+  "blockCatalog": "v1",
   "runtime": ["react", "static-html"],
   "iconFamily": "phosphor-react",
   "defaultAnimation": "gentle-rise",
@@ -52,6 +53,7 @@
     "react": "layouts/react",
     "specs": "layouts/specs"
   },
+  "primitiveComposition": ["title-description", "image", "stat"],
   "qualityRules": {
     "oneIdeaPerSlide": true,
     "maxAccentColors": 1,

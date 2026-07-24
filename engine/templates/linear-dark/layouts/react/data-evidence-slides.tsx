@@ -1,4 +1,5 @@
 import { LinearFrame, LinearIconTile, LinearList, LinearSmallLabel, type LinearSlideProps } from "./shared";
+import { StatBlock } from "../../../../primitives/blocks";
 
 export function LinearMetricHighlightSlide(props: LinearSlideProps) {
   return (
@@ -8,8 +9,7 @@ export function LinearMetricHighlightSlide(props: LinearSlideProps) {
           <LinearIconTile name={props.icon} />
           <LinearSmallLabel>{props.kicker ?? "Metric"}</LinearSmallLabel>
         </div>
-        <div className="ld-metric ld-anim-spotlight">{props.metric ?? props.title}</div>
-        {props.metricLabel ? <p className="ld-body">{props.metricLabel}</p> : null}
+        <div className="ld-metric ld-anim-spotlight"><StatBlock className="ld-template-stat-block" block={{ id: "metric", value: props.metric ?? props.title, label: props.metricLabel ?? "" }} /></div>
       </div>
       <aside style={{ gridColumn: "9 / 13", gridRow: "4 / 8" }}>
         <LinearList items={props.items} />

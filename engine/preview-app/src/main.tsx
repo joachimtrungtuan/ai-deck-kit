@@ -12,6 +12,7 @@ import "../../templates/swiss-modern/design-system.css";
 import "../../templates/swiss-modern/animation-presets.css";
 import "../../templates/linear-dark/design-system.css";
 import "../../templates/linear-dark/animation-presets.css";
+import "../../primitives/blocks/primitives.css";
 import { SOURCES } from "./deck-registry";
 import { DeckExport } from "./deck-export";
 import { runtimeDeck } from "virtual:aideck-deck";
