@@ -34,3 +34,20 @@ export function copyTree(source: string, destination: string, excluded = new Set
 export function removeTree(target: string): void {
   rmSync(resolve(target), { recursive: true, force: true });
 }
+
+export function replaceTree(source: string, destination: string): void {
+  const target = resolve(destination);
+  const staging = `${target}.staging-${process.pid}`;
+  const backup = `${target}.backup-${process.pid}`;
+  removeTree(staging);
+  copyTree(source, staging);
+  try {
+    if (existsSync(target)) renameSync(target, backup);
+    renameSync(staging, target);
+    removeTree(backup);
+  } catch (error) {
+    removeTree(staging);
+    if (existsSync(backup) && !existsSync(target)) renameSync(backup, target);
+    throw error;
+  }
+}

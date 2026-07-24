@@ -1,0 +1,5 @@
+{
+  "packageName": "ai-deck-kit",
+  "source": "github:joachimtrungtuan/ai-deck-kit",
+  "engineDirectory": "engine"
+}

@@ -47,15 +47,9 @@ if (manifest.blockCatalog && manifest.blockCatalog !== "v1") {
 }
 
 if (manifest.template?.set) {
-  const templateManifestPath = path.resolve(
-    deckDir,
-    "..",
-    "..",
-    "engine",
-    "templates",
-    manifest.template.set,
-    "template-manifest.json",
-  );
+  const workspaceRoot = findWorkspaceRoot(deckDir);
+  const pointer = workspaceRoot ? readJson(path.join(workspaceRoot, "ai-deck-kit.json")) : { engineRoot: "./engine" };
+  const templateManifestPath = path.resolve(workspaceRoot ?? path.resolve(deckDir, "..", ".."), pointer.engineRoot, "templates", manifest.template.set, "template-manifest.json");
   if (!fs.existsSync(templateManifestPath)) {
     errors.push(`deck.json: template.set "${manifest.template.set}" has no installed template-manifest.json.`);
   }
@@ -253,4 +247,15 @@ function escapeRegExp(value) {
 function fail(message) {
   console.error(message);
   process.exit(1);
+}
+
+function findWorkspaceRoot(start) {
+  let directory = path.resolve(start);
+  while (true) {
+    const pointer = path.join(directory, "ai-deck-kit.json");
+    if (fs.existsSync(pointer)) return directory;
+    const parent = path.dirname(directory);
+    if (parent === directory) return null;
+    directory = parent;
+  }
 }

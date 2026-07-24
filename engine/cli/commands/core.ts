@@ -1,8 +1,9 @@
 import { existsSync, readdirSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import { copyTree, readJson, writeJson } from "../lib/fs.ts";
-import { ensureWorkspaceDirs, findWorkspace, writePointer } from "../lib/workspace.ts";
+import { readJson, writeJson } from "../lib/fs.ts";
+import { findWorkspace } from "../lib/workspace.ts";
+import { initCommand } from "./init.ts";
+import { upgradeCommand } from "./upgrade.ts";
 import type { Workspace, WorkspacePointer } from "../lib/types.ts";
 
 export const coreHelp = `Core commands:
@@ -20,46 +21,11 @@ export function runCore(args: string[]): void {
   }
   if (command === "init") return initCommand(args.slice(1));
   const workspace = findWorkspace();
-  if (command === "upgrade") return upgradeCommand(workspace, args.slice(1));
+  if (command === "upgrade") return upgradeCommand(workspace, args.slice(1), () => doctorCommand(findWorkspace()));
   if (command === "doctor") return doctorCommand(workspace);
   if (command === "config") return configCommand(workspace, args.slice(1));
   if (command === "list") return listCommand(workspace);
   throw new Error(`Unknown core command: ${command}`);
-}
-
-function initCommand(args: string[]): void {
-  const here = args.includes("--here");
-  const dirIndex = args.indexOf("--dir");
-  const target = resolve(dirIndex !== -1 ? args[dirIndex + 1] ?? "" : process.cwd());
-  if (dirIndex !== -1 && !args[dirIndex + 1]) throw new Error("init --dir requires a path.");
-  if (here && dirIndex !== -1) throw new Error("Choose either --here or --dir, not both.");
-  if (existsSync(join(target, "ai-deck-kit.json"))) throw new Error(`Workspace already initialized: ${join(target, "ai-deck-kit.json")}`);
-  const sourceEngine = fileURLToPath(new URL("../..", import.meta.url));
-  const targetEngine = join(target, "engine");
-  if (sourceEngine !== targetEngine) copyTree(sourceEngine, targetEngine);
-  const engineVersion = readJson<{ engineVersion: string }>(join(targetEngine, "engine.version.json")).engineVersion;
-  const pointer: WorkspacePointer = { engineRoot: "./engine", decksRoot: "./decks", engineVersion };
-  const pointerPath = writePointer(target, pointer);
-  const workspace = { root: target, pointerPath, pointer, engineRoot: targetEngine, decksRoot: join(target, "decks") } as Workspace;
-  ensureWorkspaceDirs(workspace);
-  console.log(`Initialized AI Deck Kit workspace: ${target}`);
-  console.log(`  engine: ${relative(target, targetEngine)}`);
-  console.log(`  decks:  ${relative(target, workspace.decksRoot)}`);
-}
-
-function upgradeCommand(workspace: Workspace, args: string[]): void {
-  const sourceEngine = fileURLToPath(new URL("../..", import.meta.url));
-  const targetVersion = option(args, "--to");
-  const sourceVersion = readJson<{ engineVersion: string }>(join(sourceEngine, "engine.version.json")).engineVersion;
-  if (targetVersion && targetVersion !== sourceVersion) throw new Error(`Only the bundled engine version ${sourceVersion} is available locally; requested ${targetVersion}.`);
-  if (sourceEngine === workspace.engineRoot) {
-    console.log(`Engine already uses bundled version ${sourceVersion}; decks were untouched.`);
-    return;
-  }
-  copyTree(sourceEngine, workspace.engineRoot);
-  const pointer = { ...workspace.pointer, engineVersion: sourceVersion };
-  writeJson(workspace.pointerPath, pointer);
-  console.log(`Upgraded engine to ${sourceVersion}; decks were untouched.`);
 }
 
 function doctorCommand(workspace: Workspace): void {

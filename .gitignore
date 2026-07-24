@@ -113,3 +113,7 @@ playwright-output/
 /templates/
 **/.build/
 engine/storybook-static/
+
+# The distribution entrypoint is intentionally tracked.
+!/bin/
+!/bin/create-ai-deck-kit

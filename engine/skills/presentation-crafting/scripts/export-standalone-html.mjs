@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDir, "../../../..");
-const engineDir = resolve(projectRoot, "engine");
+const engineDir = resolve(scriptDir, "../../..");
 const decksDir = resolve(projectRoot, "decks");
 
 function getArg(name) {

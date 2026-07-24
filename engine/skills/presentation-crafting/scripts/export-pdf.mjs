@@ -54,8 +54,11 @@ function findChrome() {
 function findImageMagick() {
   const override = getArg("imagemagick");
   if (override) return override;
-  const result = spawnSync("which", ["magick"], { encoding: "utf8" });
-  return result.status === 0 ? result.stdout.trim() : undefined;
+  for (const command of ["magick", "convert"]) {
+    const result = spawnSync("which", [command], { encoding: "utf8" });
+    if (result.status === 0) return result.stdout.trim();
+  }
+  return undefined;
 }
 
 function run(command, args, options = {}) {
