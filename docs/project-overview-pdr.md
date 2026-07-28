@@ -19,7 +19,7 @@
 
 ## 3. Goals
 
-1. **Install anywhere** — the root package exposes an `npx github:<owner>/ai-deck-kit init` installer that sets up the workspace.
+1. **Install anywhere** — the root package exposes an `npx github:joachimtrungtuan/ai-deck-kit init` installer that sets up the workspace.
 2. **Agent-native runtime** — no standalone server app; the agent drives the toolkit through skills + CLI.
 3. **Deterministic core** — repeatable operations (new deck, new template, serve, export, package, validate) are CLI commands, callable by user or agent.
 4. **Portable deck artifact** — the `.deck` folder bundle is self-contained (content + manifest + assets), git-diffable and zippable for sharing.
@@ -56,7 +56,7 @@ Deferred: PPTX export, local WYSIWYG web editor, audience-interactive on-slide e
 
 ## 8. Success Criteria
 
-- A fresh machine can use the GitHub-source installer (`npx github:<owner>/ai-deck-kit init`) and produce a previewed + exported deck without manual setup once registry access is available.
+- A fresh machine can use the GitHub-source installer (`npx github:joachimtrungtuan/ai-deck-kit init`) and produce a previewed + exported deck without manual setup once registry access is available.
 - Creating a new deck or template is a single deterministic command (no AI needed for boilerplate).
 - A `.deck` bundle moves between projects/users and still previews + exports identically.
 - Engine upgrade leaves all `decks/` untouched.

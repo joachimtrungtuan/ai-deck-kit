@@ -1,6 +1,7 @@
 import { existsSync, readdirSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { readJson, writeJson } from "../lib/fs.ts";
+import { checkPrerequisites, formatPrerequisiteReport, hasFailures } from "../lib/prerequisites.ts";
 import { findWorkspace } from "../lib/workspace.ts";
 import { initCommand } from "./init.ts";
 import { upgradeCommand } from "./upgrade.ts";
@@ -29,7 +30,11 @@ export function runCore(args: string[]): void {
 }
 
 function doctorCommand(workspace: Workspace): void {
+  const prerequisites = checkPrerequisites();
+  console.log(formatPrerequisiteReport(prerequisites));
+  console.log("");
   const errors: string[] = [];
+  if (hasFailures(prerequisites)) errors.push("Required software is missing — see the list above.");
   if (!existsSync(workspace.engineRoot)) errors.push(`Engine root missing: ${workspace.engineRoot}`);
   if (!existsSync(workspace.decksRoot)) errors.push(`Decks root missing: ${workspace.decksRoot}`);
   const versionPath = join(workspace.engineRoot, "engine.version.json");

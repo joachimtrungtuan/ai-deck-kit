@@ -8,11 +8,11 @@ Guidance for Claude Code in this repository. This file is the **source of truth*
 
 **Core principles:** consistency, flexibility, portability, user control.
 
-> **In transition (2026-07-22).** Vision, architecture, `.deck` format, per-module PRDs, and an 8-phase migration plan live in `docs/` and `plans/260722-0258-ai-deck-kit-restructure/`. **Phase 01 (workspace restructure) is done** — the two-root `engine/`/`decks/` split + root pointer are on disk. The `.deck` manifest format, CLI, primitives layer, and everything else are still **planned, not yet executed**. Read `docs/project-overview-pdr.md` + `docs/system-architecture.md` before further migration work.
+> **Status (2026-07-28).** All eight migration phases are implemented: the two-root split, the `.deck` bundle format, the `aideck` CLI, the primitives layer, the shared preview/export runtime, and the installer. Remote release publication and a registry-backed clean install remain unverified. Vision, architecture, and per-module PRDs live in `docs/`; read `docs/project-overview-pdr.md` + `docs/system-architecture.md` before structural work. **This repository develops the engine — decks and templates are authored in other projects that install the kit** (`npx github:joachimtrungtuan/ai-deck-kit init --here`; see `README.md`).
 
-## Structure (current — post Phase 01)
+## Structure
 
-> `engine/` is the upgradable engine root; `decks/` + project-root `templates/` are gitignored user data. `ai-deck-kit.json` is the root pointer. `.deck` bundle internals (`deck.json`/`content.md` split) land in Phase 02.
+> `engine/` is the upgradable engine root; `decks/` + project-root `templates/` are gitignored user data. `ai-deck-kit.json` is the root pointer. Each deck is a `{slug}.deck/` bundle holding `deck.json`, `content.md`, `assets/`, and a pinned `template/` snapshot.
 
 ```
 AI Presentation/
@@ -38,7 +38,7 @@ AI Presentation/
 
 Activate the `presentation-crafting` skill for deck work (content → slides) and the `presentation-template-creation` skill for template-set or slide-type-catalog work. The skills are deliberately non-overlapping; never improvise either flow. Non-negotiable rules:
 
-1. **One canonical Markdown content file per deck** (`decks/{slug}.deck/content/{slug}.slides.md`) — the source of truth for text, images, icons, speaker notes, and review annotations.
+1. **One canonical Markdown content file per deck** (`decks/{slug}.deck/content.md`) — the source of truth for text, images, icons, speaker notes, and review annotations.
 2. **One and only one template set per presentation.** Every slide derives from a declared slide type in the active slide-type catalog. No off-template improvisation.
 3. **Templates are versioned** against the slide-types catalog version they implement.
 4. **Overrides (layout/animation) are an explicit, recorded edge case** — justified in the content file, never the default flow.
