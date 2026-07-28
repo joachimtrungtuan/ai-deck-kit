@@ -68,7 +68,8 @@ The CLI finds the workspace by walking **up** from CWD to the nearest `ai-deck-k
 This is a **continuous-development / CI-CD** project: the engine ships new capabilities regularly, and installed copies upgrade in place.
 
 - **Package:** root distribution package named `ai-deck-kit`; the repository is the source of truth. Remote publication is release-workflow configuration, not a completed release.
-- **Install:** `npx github:<owner>/ai-deck-kit init [--here | --dir <subfolder>]` is the configured GitHub-source entrypoint; it scaffolds the two roots + root pointer and installs the engine at the chosen version. Registry-backed clean-install proof remains pending.
+- **Install:** `npx github:joachimtrungtuan/ai-deck-kit init [--here | --dir <subfolder>]` is the configured GitHub-source entrypoint. It runs a prerequisite preflight, scaffolds the two roots + root pointer, installs the engine at the chosen version, writes the `./aideck` project wrapper, links the engine skills into the project's agent home, and offers to register the global `aideck` launcher. Registry-backed clean-install proof remains pending.
+- **Command resolution:** the registered `aideck` is a version-agnostic resolver (`engine/cli/resolver.mjs`) that walks up to the nearest `ai-deck-kit.json` and runs that workspace's engine. Registration is therefore one-time and machine-wide while execution stays project-scoped.
 - **CI (engine repo):** on push/PR → lint, typecheck, run CLI + template validators, install export tools, run nested-workspace HTML/PDF export smoke tests, and verify upgrade hash safety; tagged releases pack the root distribution package.
 - **Upgrade (installed copy):** `aideck upgrade [--to <version>]` pulls a newer engine into the resolved `engineRoot` only; `decks/` and project `templates/` remain untouched. Engine version pinned in `ai-deck-kit.json` + `engine.version.json`.
 - **Compatibility:** engine declares which `content_schema_version`, `slide_type_catalog`, and `template_version` ranges it supports; `aideck doctor` reports mismatches and never force-migrates decks silently.
@@ -80,11 +81,12 @@ Each module has a deterministic CLI surface and, where creative, a paired skill.
 | Module | CLI (deterministic) | Skill (AI-driven) |
 |---|---|---|
 | **Core / orchestration** | `init`, `upgrade`, `doctor`, `config`, `list` (deck registry), workspace resolution | workflow routing |
+| **Onboarding** | `link`/`unlink` (register the workspace-resolving `aideck` launcher), `skills wire` (link engine skills into `.claude`/`.agents`) | — |
 | **Design primitives** | `blocks list`, `motion list`, `tokens print` (read/scaffold shared blocks + motion + tokens) | choose/compose blocks, tune motion |
 | **Presentation** | `new`, `slide add/remove/move`, `anim toggle`, `transition set` (scaffold + flag flips in `content.md`/manifest) | author & edit slide content |
 | **Template mgmt** | `template new`, `template register`, `template list`, `template version` | design tokens, layouts, overrides |
 | **Generation** | `gen scaffold` (deck skeleton from template + outline) | outline-first: input → structure → slides |
-| **Export / package** | `export html`, `export pdf`, `pack` (`.deck` → zip) | — |
+| **Export / package** | `export html`, `export pdf`, `pack` (`.deck` → zip), `unpack` (zip → `.deck`) | — |
 | **Preview** | `serve` (shared preview-app) | — |
 | **Annotation** | `validate` surfaces annotations | reuse existing in-content annotation policy |
 
@@ -160,7 +162,7 @@ user prompt ─▶ agent (skill) ─▶ aideck new (CLI scaffolds .deck from tem
 ## 9. Distribution Decisions (locked 2026-07-22)
 
 - **Install location:** engine installs at the **project root** by default (`--dir` still allows a subfolder; root pointer keeps it runnable from root either way).
-- **Publish channel:** **npx-from-GitHub** — `npx github:<owner>/ai-deck-kit init`. No npm registry account needed. AI Deck Kit lives in its **own dedicated GitHub repo** whose root *is* the engine/package. User projects gitignore `engine/` and commit `decks/` + `ai-deck-kit.json`.
+- **Publish channel:** **npx-from-GitHub** — `npx github:joachimtrungtuan/ai-deck-kit init`. No npm registry account needed. AI Deck Kit lives in its **own dedicated GitHub repo** whose root *is* the engine/package. User projects gitignore `engine/` and commit `decks/` + `ai-deck-kit.json`.
 - **Repo layout:** **single package** — one `package.json` at engine repo root; modules are folders, one version, one publish. Revisit workspaces only if a module needs independent versioning.
 
 ## Unresolved Questions

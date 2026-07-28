@@ -17,7 +17,7 @@ AI Presentation/
 ├── package.json                 # root distribution package and binaries
 ├── bin/                         # installer entrypoint
 ├── engine/
-│   ├── cli/                     # aideck commands and workspace resolution
+│   ├── cli/                     # aideck commands, workspace resolution, resolver launcher
 │   ├── primitives/              # shared blocks, motion, and tokens
 │   ├── preview-app/             # shared React preview/export runtime
 │   ├── skills/                  # crafting, validation, and export skills
@@ -31,8 +31,8 @@ AI Presentation/
 
 ## Runtime Flow
 
-1. The installer copies the pinned engine into the project root or a selected subfolder and writes `ai-deck-kit.json`.
-2. `aideck` walks upward to resolve that pointer and operates on the selected `decks/` root.
+1. The installer checks prerequisites, copies the pinned engine into the project root or a selected subfolder, writes `ai-deck-kit.json` and the `./aideck` wrapper, links the engine skills into the project's agent home, and offers to register the global launcher.
+2. `aideck` walks upward to resolve that pointer and operates on the selected `decks/` root. The registered launcher is `engine/cli/resolver.mjs`, which carries no version of its own and delegates to the resolved workspace's engine.
 3. `aideck new` creates a `.deck` bundle from a shipped template and embeds its
    pinned snapshot. Manifest-backed preview resolves that embedded snapshot
    first, then the installed `engine/templates/<name>.template` bundle.

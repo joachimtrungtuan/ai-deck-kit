@@ -12,7 +12,7 @@ depends_on: []
 Installs AI Deck Kit into projects, manages versioning, upgrades engine, and runs CI/CD pipeline (lint, typecheck, validators, smoke tests). Installer is the entry point; CI runs in the engine repo; upgrade is in-place only.
 
 ## 2. Responsibilities
-- **In scope:** `npx github:<owner>/ai-deck-kit init` (install, scaffold workspace, write root pointer), `aideck upgrade [--to <version>]` (update engine only), GitHub Actions CI (lint/typecheck/validators/smoke export), release process (semver tags, publish), single-package repo layout.
+- **In scope:** `npx github:joachimtrungtuan/ai-deck-kit init` (install, scaffold workspace, write root pointer), `aideck upgrade [--to <version>]` (update engine only), GitHub Actions CI (lint/typecheck/validators/smoke export), release process (semver tags, publish), single-package repo layout.
 - **Out of scope:** user deck management (owned by presentation module), template authoring (owned by template-management).
 
 ## 3. Surfaces
@@ -34,12 +34,15 @@ Installs AI Deck Kit into projects, manages versioning, upgrades engine, and run
 - External: Node.js, npm/yarn, GitHub API, GitHub Actions.
 
 ## 7. Success Criteria
-- [x] `npx github:<owner>/ai-deck-kit init` scaffolds workspace at project root (default) or subfolder (--dir).
+- [x] `npx github:joachimtrungtuan/ai-deck-kit init` scaffolds workspace at project root (default) or subfolder (--dir).
 - [x] Init writes ai-deck-kit.json + engine.version.json atomically; workspace ready after one command.
 - [x] `aideck upgrade` pulls new engine; verifies compatibility; leaves decks/ untouched.
 - [x] CI runs: lint, typecheck, validators, build runtime, export smoke test.
 - [x] Semver tags are wired to produce a GitHub release package with generated notes (remote execution not yet verified).
 - [x] Upgrade is idempotent; multiple runs safe.
+- [x] Init runs a prerequisite preflight and refuses to write anything when required software (Node ≥ 22.6.0, npm, git) is missing; soft dependencies warn only.
+- [x] Init links the engine skills into the project's agent home (`.claude`/`.agents`), prompting when the home is only found further up the tree, and never overwriting a directory it did not create.
+- [x] Init offers one-time registration of a workspace-resolving `aideck` launcher; registration is machine-wide but execution stays project-scoped.
 
 ## 8. Risks & Mitigations
 - **Partial install failure:** rollback plan or atomic writes. Mitigation: init writes all files in transaction; error messages guide recovery.
