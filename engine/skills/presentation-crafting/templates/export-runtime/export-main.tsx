@@ -20,10 +20,12 @@ import "@fontsource/jetbrains-mono/latin-400.css";
 import "@fontsource/jetbrains-mono/vietnamese-400.css";
 import "@fontsource/jetbrains-mono/latin-500.css";
 import "@fontsource/jetbrains-mono/vietnamese-500.css";
+import "@fontsource-variable/newsreader/wght.css";
+import "@fontsource-variable/newsreader/wght-italic.css";
 // Import the active template design system(s) used by registered sources.
 // Example:
-// import "../../templates/linear-dark/design-system.css";
-// import "../../templates/linear-dark/animation-presets.css";
+// import "../../templates/linear-dark.template/design-system.css";
+// import "../../templates/linear-dark.template/animation-presets.css";
 import "./export-shell.css";
 import { getSource } from "./deck-registry";
 import { DeckExport } from "./deck-export";

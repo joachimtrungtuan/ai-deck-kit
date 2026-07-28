@@ -14,7 +14,7 @@ docs/
 .agentkit/
 .github/
 decks/
-templates/
+/templates/
 plans/
 update-logs/
 release-manifest.json

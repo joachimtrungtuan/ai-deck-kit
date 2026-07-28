@@ -5,21 +5,19 @@
 // and animation-presets.css are bundled.
 //
 // Usage:
-//   node engine/skills/presentation-crafting/scripts/export-standalone-html.mjs --deck <deck-id> [--slug <slug>] [--out <dir>]
+//   node engine/skills/presentation-crafting/scripts/export-standalone-html.mjs --deck <deck-path-or-slug> [--out <dir>]
 //
-//   --deck   Registered deck/source id from preview-app/src/deck-registry.tsx (required).
-//   --slug   Deck folder name (without .deck suffix). Defaults to --deck.
-//   --out    Output directory. Defaults to decks/<slug>.deck/.build/export/.
+//   --deck   Deck bundle path or workspace deck slug (required).
+//   --out    Output directory. Defaults to the selected deck's .build/export/.
 
 import { spawnSync } from "node:child_process";
-import { existsSync, renameSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, renameSync, rmSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDir, "../../../..");
 const engineDir = resolve(scriptDir, "../../..");
-const decksDir = resolve(projectRoot, "decks");
 
 function getArg(name) {
   const i = process.argv.indexOf(`--${name}`);
@@ -31,15 +29,16 @@ if (!deckInput) {
   console.error("Error: --deck <deck-path-or-slug> is required.");
   process.exit(1);
 }
-const deckRoot = deckInput.endsWith(".deck") ? resolve(deckInput) : resolve(projectRoot, "decks", `${deckInput}.deck`);
+const deckRoot = deckInput.endsWith(".deck")
+  ? resolve(deckInput)
+  : resolve(findWorkspaceDecksRoot(), `${deckInput}.deck`);
 if (!existsSync(resolve(deckRoot, "deck.json")) || !existsSync(resolve(deckRoot, "content.md"))) {
   console.error(`Error: invalid deck bundle: ${deckRoot}`);
   process.exit(1);
 }
-const slug = getArg("slug") ?? deckRoot.split("/").at(-1).replace(/\.deck$/, "");
 const outDir = getArg("out")
   ? resolve(getArg("out"))
-  : resolve(decksDir, `${slug}.deck`, ".build", "export");
+  : resolve(deckRoot, ".build", "export");
 
 console.log(`Building standalone HTML export\n  deck: ${deckRoot}\n  out:  ${outDir}`);
 
@@ -74,3 +73,20 @@ if (existsSync(orphanFavicon)) {
 
 console.log(`\nDone. Standalone deck: ${finalFile}`);
 console.log("Open it directly in a browser (double-click) — no server required.");
+
+function findWorkspaceDecksRoot(start = process.cwd()) {
+  let directory = resolve(start);
+  while (true) {
+    const pointerPath = resolve(directory, "ai-deck-kit.json");
+    if (existsSync(pointerPath)) {
+      const pointer = JSON.parse(readFileSync(pointerPath, "utf8"));
+      if (typeof pointer.decksRoot !== "string" || !pointer.decksRoot) {
+        throw new Error(`${pointerPath}: decksRoot must be a non-empty string.`);
+      }
+      return resolve(directory, pointer.decksRoot);
+    }
+    const parent = dirname(directory);
+    if (parent === directory) return resolve(projectRoot, "decks");
+    directory = parent;
+  }
+}

@@ -15,6 +15,7 @@ const contentPath = path.join(deckDir, "content.md");
 const manifest = readJson(manifestPath);
 const content = readFile(contentPath);
 const errors = [];
+let templateManifest;
 const blockCatalogV1 = new Set(["text", "title-description", "image", "chart", "table", "icon-text-card", "quote", "stat", "list", "code"]);
 const motionCatalogV1 = new Set(["none", "fade", "gentle-rise", "morph"]);
 
@@ -49,14 +50,37 @@ if (manifest.blockCatalog && manifest.blockCatalog !== "v1") {
 if (manifest.template?.set) {
   const workspaceRoot = findWorkspaceRoot(deckDir);
   const pointer = workspaceRoot ? readJson(path.join(workspaceRoot, "ai-deck-kit.json")) : { engineRoot: "./engine" };
-  const templateManifestPath = path.resolve(workspaceRoot ?? path.resolve(deckDir, "..", ".."), pointer.engineRoot, "templates", manifest.template.set, "template-manifest.json");
+  const embeddedTemplateManifestPath = path.join(deckDir, "template", "template-manifest.json");
+  const installedTemplateManifestPath = path.resolve(workspaceRoot ?? path.resolve(deckDir, "..", ".."), pointer.engineRoot, "templates", `${manifest.template.set}.template`, "template-manifest.json");
+  const templateManifestPath = fs.existsSync(embeddedTemplateManifestPath)
+    ? embeddedTemplateManifestPath
+    : installedTemplateManifestPath;
   if (!fs.existsSync(templateManifestPath)) {
     errors.push(`deck.json: template.set "${manifest.template.set}" has no installed template-manifest.json.`);
+  } else {
+    templateManifest = readJson(templateManifestPath);
+    if (templateManifest.name !== manifest.template.set) {
+      errors.push(`deck.json: template set mismatch, deck=${manifest.template.set}, embedded=${templateManifest.name ?? "missing"}.`);
+    }
+    if (templateManifest.templateVersion !== manifest.template.version) {
+      errors.push(`deck.json: template version mismatch, deck=${manifest.template.version}, embedded=${templateManifest.templateVersion ?? "missing"}.`);
+    }
+    if (manifest.slideTypeCatalog && templateManifest.slideTypeCatalog && manifest.slideTypeCatalog !== templateManifest.slideTypeCatalog) {
+      errors.push(`deck.json: slideTypeCatalog mismatch, deck=${manifest.slideTypeCatalog}, template=${templateManifest.slideTypeCatalog}.`);
+    }
   }
 }
 
 const manifestSlides = Array.isArray(manifest.slides) ? manifest.slides : [];
 const manifestIds = new Set(manifestSlides.map((slide) => slide.id));
+if (templateManifest) {
+  const supported = new Set(templateManifest.supportedSlideTypes ?? []);
+  for (const slide of manifestSlides) {
+    if (!supported.has(slide.type)) {
+      errors.push(`deck.json: slide "${slide.id}" uses type "${slide.type}" not supported by template "${templateManifest.name}".`);
+    }
+  }
+}
 
 const slideMatches = [...content.matchAll(/^## Slide\s+(\d+):\s+(.+)$/gm)];
 if (slideMatches.length === 0) {
@@ -85,10 +109,28 @@ slideMatches.forEach((match, index) => {
   }
 
   const id = extractYamlField(metadata, "id");
+  const type = extractYamlField(metadata, "type");
   if (id) {
     contentIds.add(id);
     if (!manifestIds.has(id)) {
       errors.push(`${label}: id "${id}" has no matching entry in deck.json slides[].`);
+    }
+  }
+
+  if (templateManifest && type) {
+    const layoutVariant = extractYamlField(metadata, "layoutVariant");
+    const backgroundVariant = extractYamlField(metadata, "backgroundVariant");
+    if (layoutVariant) {
+      const allowed = templateManifest.layoutVariants?.[type] ?? [];
+      if (!allowed.includes(layoutVariant)) {
+        errors.push(`${label}: layoutVariant "${layoutVariant}" is not declared for type "${type}".`);
+      }
+    }
+    if (backgroundVariant) {
+      const allowed = templateManifest.backgroundVariants ?? [];
+      if (!allowed.includes(backgroundVariant)) {
+        errors.push(`${label}: backgroundVariant "${backgroundVariant}" is not declared by template "${templateManifest.name}".`);
+      }
     }
   }
 

@@ -49,7 +49,7 @@ function doctorCommand(workspace: Workspace): void {
       if (version.contentSchemaVersion && manifest.contentSchemaVersion !== version.contentSchemaVersion) errors.push(`${entry}: unsupported content schema ${manifest.contentSchemaVersion ?? "missing"}.`);
       if (version.supportedSlideTypeCatalogs && manifest.slideTypeCatalog && !version.supportedSlideTypeCatalogs.includes(manifest.slideTypeCatalog)) errors.push(`${entry}: unsupported slide-type catalog ${manifest.slideTypeCatalog}.`);
       if (manifest.template?.set) {
-        const templatePath = join(workspace.engineRoot, "templates", manifest.template.set, "template-manifest.json");
+        const templatePath = join(workspace.engineRoot, "templates", `${manifest.template.set}.template`, "template-manifest.json");
         if (!existsSync(templatePath)) errors.push(`${entry}: missing template ${manifest.template.set}@${manifest.template.version}.`);
         else {
           const template = readJson<{ templateVersion?: string }>(templatePath);

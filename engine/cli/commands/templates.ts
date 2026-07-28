@@ -25,10 +25,15 @@ export function runTemplates(args: string[]): void {
 
 function listTemplates(workspace: ReturnType<typeof findWorkspace>): void {
   const root = join(workspace.engineRoot, "templates");
-  const names = existsSync(root) ? readdirSync(root).filter((entry) => existsSync(join(root, entry, "template-manifest.json"))).sort() : [];
+  const names = existsSync(root)
+    ? readdirSync(root)
+        .filter((entry) => entry.endsWith(".template") && existsSync(join(root, entry, "template-manifest.json")))
+        .map((entry) => entry.slice(0, -".template".length))
+        .sort()
+    : [];
   if (!names.length) return console.log("No installed templates.");
   names.forEach((name) => {
-    const manifest = readJson<{ displayName: string; templateVersion: string }>(join(root, name, "template-manifest.json"));
+    const manifest = readJson<{ displayName: string; templateVersion: string }>(join(root, `${name}.template`, "template-manifest.json"));
     console.log(`${name}\t${manifest.templateVersion}\t${manifest.displayName}`);
   });
 }

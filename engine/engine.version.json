@@ -1,6 +1,6 @@
 {
   "engineVersion": "0.1.0",
   "contentSchemaVersion": "1.0.0",
-  "supportedSlideTypeCatalogs": ["v1", "v2"],
+  "supportedSlideTypeCatalogs": ["v1", "v2", "clarity-courseware-v1"],
   "templateVersionRange": ">=1.0.0 <2.0.0"
 }

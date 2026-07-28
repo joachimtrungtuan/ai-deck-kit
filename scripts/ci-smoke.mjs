@@ -14,11 +14,19 @@ const skipInstallEnv = "AIDECK_" + "SKIP_INSTALL";
 const env = process.env[ciSkipInstallEnv] === "1" ? { [skipInstallEnv]: "1" } : process.env;
 
 run([cli, "init", "--dir", "tools/ai-deck-kit"], workspace, env);
-for (const [slug, template] of [["swiss-smoke", "swiss-modern"], ["linear-smoke", "linear-dark"]]) {
+for (const [slug, template] of [
+  ["swiss-smoke", "swiss-modern"],
+  ["linear-smoke", "linear-dark"],
+  ["clarity-smoke", "clarity-courseware"],
+]) {
   const targetCli = join(workspace, "tools", "ai-deck-kit", "cli", "index.mjs");
   run([targetCli, "new", slug, "--template", template], workspace, env);
   run([targetCli, "validate", slug], workspace, env);
   if (process.env[ciSkipInstallEnv] !== "1") {
+    if (slug === "swiss-smoke") {
+      const directHtmlExport = join(workspace, "tools", "ai-deck-kit", "skills", "presentation-crafting", "scripts", "export-standalone-html.mjs");
+      run([directHtmlExport, "--deck", slug], workspace, env);
+    }
     run([targetCli, "export", "html", slug], workspace, env);
     run([targetCli, "export", "pdf", slug], workspace, env);
   }
