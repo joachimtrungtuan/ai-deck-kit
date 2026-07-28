@@ -23,11 +23,11 @@ This skill handles template-set authoring and slide-type catalog evolution. It d
 ## Workflow
 
 1. Gather the style brief: aesthetic direction, target presentation domain, typography constraints, accent policy.
-2. Read `engine/templates/template-system.md` and the newest `engine/templates/slide-types-v*.md`; read one existing template set (e.g. `swiss-modern/`) as the structural reference.
+2. Read `engine/templates/template-system.md` and the newest `engine/templates/slide-types-v*.md`; read one existing template set (e.g. `swiss-modern.template/`) as the structural reference.
 3. Decide catalog version: reuse the newest catalog, or — if the domain needs new slide types — create the next `slide-types-v(N+1).md` (copy previous catalog verbatim, append new categories/types with purpose + required props). See `references/template-system-and-versioning.md`.
 4. Scaffold the user-owned template bundle through `aideck template new <name>`. It creates `templates/<name>.template/`; do not hand-create its manifest or base files.
 5. Build its `design-system.css` (tokens + class inventory), `animation-presets.css` (re-skin the approved vocabulary with the same preset names), `icon-policy.md`, layouts, layout index, and layout contracts. Compose `engine/primitives/blocks` where a catalog block fits.
-6. Validate and install the completed bundle through `aideck template register <name>`. The CLI validates the manifest and copies the template into `engine/templates/<name>/`; do not copy it manually.
+6. Validate and install the completed bundle through `aideck template register <name>`. The CLI validates the manifest and copies the bundle into `engine/templates/<name>.template/`; do not copy it manually.
 7. Use `aideck template version <name>` to read the installed version or `aideck template version <name> --bump patch|minor|major` for an intentional version change.
 8. Register the template in the shared preview app and run all verification gates per `references/preview-registration-and-verification.md`.
 9. Record the work in `update-logs/` per project rules.

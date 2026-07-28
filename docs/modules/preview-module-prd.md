@@ -9,23 +9,23 @@ depends_on: ["design-primitives"]
 # Module PRD: Preview
 
 ## 1. Purpose
-Serves a shared React preview app that renders any .deck via manifest resolver. No hardcoded paths or per-template apps. Read-only review in browser; morph transitions render at runtime.
+Serves one shared React preview app for the installed-template gallery, a selected .deck, or a selected template. No per-template or per-deck apps. Review is read-only in the browser; source edits remain agent-owned.
 
 ## 2. Responsibilities
-- **In scope:** `aideck serve [<deck-slug>]` (start preview server), manifest resolver (discovers .deck path from ai-deck-kit.json), render deck by reading deck.json + content.md + template, morph transitions at runtime, read-only UI (no in-browser edits).
+- **In scope:** `aideck serve`, `aideck serve --deck <slug>`, `aideck serve --template <name>`, browser auto-open with `--no-open` opt-out, workspace target resolution, template structural validation, live reload, read-only UI, and morph transitions at runtime.
 - **Out of scope:** content authoring (delegated to presentation skill), export (owned by export-package).
 
 ## 3. Surfaces
-- **CLI:** `aideck serve [<deck-slug>] [--port <port>]` (start server, open browser).
+- **CLI:** `aideck serve [--deck <slug> | --template <name>] [--port <port>] [--no-open]`.
 - **Skill:** —
 - **Runtime:** React app (Vite dev server), reads deck.json + content.md + template on load, renders slides with morph animation on transitions.
 
 ## 4. Inputs & Outputs
-- **Inputs:** ai-deck-kit.json (workspace), `decks/{slug}.deck/deck.json`, `decks/{slug}.deck/content.md`, template snapshot in .deck/template/, assets/.
+- **Inputs:** ai-deck-kit.json (workspace), `decks/{slug}.deck/deck.json`, `decks/{slug}.deck/content.md`, `templates/{name}.template/` user drafts, installed `engine/templates/{name}.template/`, template snapshots, and assets/.
 - **Outputs:** rendered HTML in browser, morph state updates on slide change.
 
 ## 5. Files & Data Touched
-- **Reads:** `ai-deck-kit.json`, `decks/{slug}.deck/*`, `engine/primitives/blocks/`, template manifest (both engine-side and embedded).
+- **Reads:** `ai-deck-kit.json`, `decks/{slug}.deck/*`, `templates/{name}.template/*`, `engine/templates/{name}.template/*`, and `engine/primitives/blocks/`.
 - **Writes:** none (read-only).
 
 ## 6. Dependencies
@@ -35,11 +35,16 @@ Serves a shared React preview app that renders any .deck via manifest resolver. 
 - External: Node.js, Vite, React.
 
 ## 7. Success Criteria
-- [ ] `aideck serve` discovers .deck from CWD or ai-deck-kit.json.
+- [x] Bare `aideck serve` opens the shared installed-template gallery.
+- [x] `--deck` and `--template` select one read-only preview target and cannot be combined.
+- [x] Template preview prefers a user draft, falls back to the installed template, and validates its required structure.
+- [x] The browser opens by default; `--no-open` supports automation.
+- [x] Bare serve presents a dedicated template-gallery page; selecting a card opens the template viewer.
+- [x] Deck and template review share the same fixed-canvas viewer, with a viewport-height stage and independently scrolling slide list.
 - [ ] Preview loads deck.json + content.md + embedded template without network calls.
 - [ ] Slides render correctly with blocks, text, images, speaker notes visible.
 - [ ] Morph transitions (same anchor id on consecutive slides) animate smoothly.
-- [ ] Read-only; no in-preview edits (edits via content.md + CLI).
+- [x] Read-only; no in-preview edits (edits happen in source through the agent workflow).
 
 ## 8. Risks & Mitigations
 - **Manifest resolver fails:** preview falls back to workspace default or errors with clear message. Mitigation: doctor pre-validates workspace.

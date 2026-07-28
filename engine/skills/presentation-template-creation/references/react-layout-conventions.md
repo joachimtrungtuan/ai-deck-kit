@@ -1,6 +1,6 @@
 # React Layout Conventions
 
-Structural rules for a template set's `layouts/react/` directory. Mirror `swiss-modern/layouts/react/` exactly in organization; only the visual language changes.
+Structural rules for a template set's `layouts/react/` directory. Mirror `swiss-modern.template/layouts/react/` exactly in organization; only the visual language changes.
 
 ## File Organization
 
@@ -25,7 +25,7 @@ layouts/react/
 ## Props Contract (CRITICAL)
 
 - Each template exports one props type: `{Prefix}SlideProps`.
-- It MUST be a superset of the existing shared prop shape (see `SwissSlideProps` in `swiss-modern/layouts/react/shared.tsx`): keep every inherited field with identical name and type.
+- It MUST be a superset of the existing shared prop shape (see `SwissSlideProps` in `swiss-modern.template/layouts/react/shared.tsx`): keep every inherited field with identical name and type.
 - New slide types add OPTIONAL fields only. Never rename or repurpose an inherited field — the canonical content schema and preview runtime depend on field stability.
 - `children` remains the slot for custom markup (diagrams, charts).
 - When fields are added, bump the template's `contentSchemaVersion` minor version.

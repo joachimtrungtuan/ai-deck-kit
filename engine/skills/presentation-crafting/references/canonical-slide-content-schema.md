@@ -13,6 +13,21 @@ type: "title"
 status: "draft"
 intent: "Open the presentation with the core promise."
 animation: "gentle-rise"
+layoutVariant: "editorial-left"
+backgroundVariant: "white"
+highlightPhrase: "one clear idea"
+courseName: "AI Foundations"
+lessonName: "Lesson 01"
+sectionName: "Core concepts"
+imageSrc: "assets/retrieval-loop.png"
+imageAlt: "Retrieval practice loop"
+tableColumns: ["Step", "Purpose"]
+tableRows: [["Retrieve", "Find evidence"], ["Reflect", "Test the claim"]]
+language: "ts"
+highlightLines: [2, 3]
+metric: "84%"
+metricLabel: "Learners completing the practice"
+chartData: [{"label":"Read","value":42}, {"label":"Apply","value":76}]
 icons: []
 assets: []
 override:
@@ -48,6 +63,17 @@ Constraints for layout, hierarchy, spacing, emphasis, or asset treatment.
 - Every slide must have `id`, `type`, `status`, `intent`, `animation`, and `transition`; the `id` and `type` must match the paired `deck.json` slide registry.
 - `type` must exist in the active slide-type catalog.
 - `override.reason` is required when `override.layout` or `override.animation` is not `none`.
+- `layoutVariant` and `backgroundVariant` are optional template-owned selections.
+  When present, they must be declared by the active template manifest.
+- `highlightPhrase` is optional. Templates may style its first exact contiguous
+  occurrence inside the title; unmatched text must render safely without emphasis.
+- `courseName`, `lessonName`, and `sectionName` are optional instructional
+  metadata. Page position is supplied by the runtime rather than authored.
+- Use optional advanced metadata only when the selected layout needs it:
+  `imageSrc`/`imageAlt`/`caption` for media, `tableColumns`/`tableRows` for
+  tables, `language`/`highlightLines` for code, and `metric`/`metricLabel` or
+  `chartData` for data visuals. Keep arrays and objects on one flow-style,
+  JSON-compatible YAML line so the shared runtime can parse them.
 - Put edit intent and review notes in this file, not hidden only in React source.
 - Keep visible slide copy under the density limits of the chosen template.
 - When a structured block is needed, add it to the slide YAML under `blocks:` using a type from the deck's pinned block catalog. Preserve the prose sections below it.

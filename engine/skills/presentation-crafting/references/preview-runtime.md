@@ -21,13 +21,13 @@ Use the shared runtime to review:
 - Do not create one React app per presentation.
 - Keep reusable template code under `engine/templates/`.
 - Keep generated deck-specific source under `decks/{presentation-slug}.deck/.build/source/`; it is never canonical input.
-- Add or switch preview entries inside the shared preview app when a template or deck needs visual review.
+- Use a targeted CLI preview for a deck or template; reserve static preview entries for the curated installed-template gallery.
 - Run the shared runtime through `aideck serve`; the CLI resolves the workspace from `ai-deck-kit.json`.
 
 ## Review Flow
 
-1. Add the template or deck preview entry to `engine/preview-app/src/`.
-2. Run `aideck serve --deck <slug>` from the workspace. Until Phase 06 replaces the legacy runtime resolver, only registered legacy preview entries can render/export; surface that limitation instead of fabricating support.
+1. Run `aideck serve --deck <slug>` or `aideck serve --template <name>` from the workspace. The browser opens automatically; use `--no-open` for automation.
+2. For template authoring, the resolver prefers `templates/<name>.template/` and otherwise uses `engine/templates/<name>.template/`. Bare `aideck serve` remains the curated installed-template gallery.
 3. Review all relevant slide types or deck slides in browser.
 4. Fix template/source issues at their source.
 5. Run structural validators again before export.

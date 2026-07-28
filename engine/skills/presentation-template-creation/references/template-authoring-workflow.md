@@ -1,6 +1,6 @@
 # Template Authoring Workflow
 
-Build order and file checklist for a new template set. Mirror an existing set (e.g. `engine/templates/swiss-modern/`) structurally at every step.
+Build order and file checklist for a new template set. Mirror an existing set (e.g. `engine/templates/swiss-modern.template/`) structurally at every step.
 
 ## Build Order
 
@@ -12,14 +12,14 @@ Build order and file checklist for a new template set. Mirror an existing set (e
 6. **Icon policy** — template-specific application of the Phosphor-first rules.
 7. **React layouts** — shared helpers, then category files, then `index.ts`.
 8. **Specs** — `layout-contracts.md` (per-category layout rules) + `layout-index.json` (complete type→component map).
-9. **Register** — run `aideck template register <name>`; it validates and installs the bundle into `engine/templates/<name>/`.
+9. **Register** — run `aideck template register <name>`; it validates and installs the bundle into `engine/templates/<name>.template/`.
 10. **Preview registration + verification** — see `preview-registration-and-verification.md`.
 
 ## Manifest Checklist
 
 All keys required (see `template-system-and-versioning.md` for shape):
 
-- `name` (kebab-case id), `displayName`
+- `name` (kebab-case id), `displayName`, `deckClass` (template-scoped CSS class)
 - `templateVersion`, `contentSchemaVersion`, `slideTypeCatalog`
 - `runtime`: `["react", "static-html"]`
 - `iconFamily`: `"phosphor-react"`

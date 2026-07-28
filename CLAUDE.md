@@ -22,7 +22,7 @@ AI Presentation/
 │   │   │                                      and .agents/skills/ — edit ONLY in engine/skills/)
 │   │   ├── presentation-crafting/          ← Deck creation skill (content → slides)
 │   │   └── presentation-template-creation/ ← Template-set authoring skill (catalogs, design systems, layouts)
-│   ├── templates/                          ← Shipped, versioned template-set presets (e.g. swiss-modern)
+│   ├── templates/                          ← Shipped, versioned *.template presets + catalog docs
 │   │   ├── template-system.md              ← Master template-system rules
 │   │   └── slide-types-v1.md               ← Versioned slide-type catalog
 │   ├── preview-app/                        ← Single shared React preview + export runtime (Vite)

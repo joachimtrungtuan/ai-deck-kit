@@ -34,6 +34,7 @@ When `slide-types-v2` is created later, old templates that declared `v1` remain 
 {
   "name": "swiss-modern",
   "displayName": "Swiss Modern",
+  "deckClass": "swiss-deck",
   "templateVersion": "1.0.0",
   "contentSchemaVersion": "1.0.0",
   "slideTypeCatalog": "v1",
@@ -52,6 +53,8 @@ When `slide-types-v2` is created later, old templates that declared `v1` remain 
   ]
 }
 ```
+
+`deckClass` is the template-scoped CSS class applied by the shared preview runtime. New scaffolds set it to `<template-name>-deck`; older templates without the field fall back to the first `*-deck` selector in `design-system.css`.
 
 ## Controlled Overrides
 

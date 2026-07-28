@@ -26,6 +26,20 @@ node ./engine/cli/index.mjs new my-talk --template swiss-modern
 
 Use `./tools/ai-deck-kit/cli/index.mjs` when `--dir tools/ai-deck-kit` was used.
 
+## Preview
+
+The same shared, read-only preview app handles the gallery, decks, and templates:
+
+```sh
+aideck serve
+aideck serve --deck my-talk
+aideck serve --template swiss-modern
+```
+
+The browser opens automatically. Add `--no-open` for automation and `--port <port>` to select a port. `--deck` and `--template` are mutually exclusive.
+
+Template selection checks `templates/{name}.template/` first so an agent can edit and review a user draft. If no draft exists, it loads the installed template from `engine/templates/{name}.template/`. The CLI validates the selected template's manifest, CSS files, layout index, and declared layout sources before starting Vite.
+
 ## Upgrade
 
 When the `aideck` binary is installed or linked, run from the project root or any descendant directory:
@@ -51,7 +65,7 @@ Pull requests and pushes to `main` run:
 
 - JavaScript syntax lint.
 - TypeScript typecheck.
-- Template manifest validation.
+- Template manifest validation plus release-package checks for both shipped `.template` bundles.
 - Clean nested-engine install smoke test for both shipped templates (workflow configured; local registry-backed install remains unverified).
 - HTML and raster PDF export smoke tests.
 - Upgrade hash check proving `decks/` is unchanged.

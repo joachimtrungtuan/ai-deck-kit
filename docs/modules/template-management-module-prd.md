@@ -12,7 +12,7 @@ depends_on: ["design-primitives"]
 Authors, registers, and versions template sets (`.template` bundles). Templates compose primitives (blocks, motion, tokens) and declare slide-type layouts. One template per deck; templates are code-owned and upgradable.
 
 ## 2. Responsibilities
-- **In scope:** `aideck template new/register/list/version`, .template bundle structure (template.json, design-system.css, layouts/, animation-presets.css, icon-policy.md), token customization, three+one version axes (template_version, slide_type_catalog, block_catalog, content_schema_version).
+- **In scope:** `aideck template new/register/list/version`, .template bundle structure (`template-manifest.json`, design-system.css, layouts/, animation-presets.css, icon-policy.md), token customization, three+one version axes (template_version, slide_type_catalog, block_catalog, content_schema_version).
 - **Out of scope:** primitive block definitions (owned by design-primitives), deck content authoring (owned by presentation).
 
 ## 3. Surfaces
@@ -21,11 +21,11 @@ Authors, registers, and versions template sets (`.template` bundles). Templates 
 - **Runtime:** —
 
 ## 4. Inputs & Outputs
-- **Inputs:** template.json manifest, design-system CSS, layout specifications.
+- **Inputs:** `template-manifest.json`, design-system CSS, layout specifications.
 - **Outputs:** installed .template bundle under `engine/templates/`, embedded template snapshot in .deck (portability), version records.
 
 ## 5. Files & Data Touched
-- **Reads:** `engine/templates/{template-set}.template/template.json`, `deck.json` (template.set + version).
+- **Reads:** `engine/templates/{template-set}.template/template-manifest.json`, `deck.json` (template.set + version).
 - **Writes:** `engine/templates/{template-set}.template/` (engine-side), embedded `{slug}.deck/template/` (snapshot, git-ignored or committed per user choice).
 
 ## 6. Dependencies
@@ -34,7 +34,7 @@ Authors, registers, and versions template sets (`.template` bundles). Templates 
 - `system-architecture.md` (versioning axes § 6, templates § 4).
 
 ## 7. Success Criteria
-- [x] `aideck template new` scaffolds .template with required files (template.json, design-system.css, layouts/, icon-policy.md).
+- [x] `aideck template new` scaffolds .template with required files (`template-manifest.json`, design-system.css, layouts/, icon-policy.md).
 - [x] Template manifest declares required block/motion/slide-type-catalog versions.
 - [x] `aideck new` embeds template snapshot into .deck for portability.
 - [x] Versioning supports three semantic axes independently (template_version != block_catalog version, etc.).
@@ -42,7 +42,7 @@ Authors, registers, and versions template sets (`.template` bundles). Templates 
 
 ## 8. Risks & Mitigations
 - **Template not portable:** embed snapshot at deck-creation time. Mitigation: aideck new always embeds resolved template.
-- **Version skew:** template.json declares supported catalog ranges. Mitigation: doctor validates before render.
+- **Version skew:** `template-manifest.json` declares supported catalog ranges. Mitigation: doctor validates before render.
 
 ## 9. Open Questions
 - None blocking.

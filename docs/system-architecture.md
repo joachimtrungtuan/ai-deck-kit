@@ -22,7 +22,7 @@ Install creates two logical roots plus a root pointer:
 ├── <engine-root>/              ← engine (root or a subfolder, user's choice)
 │   ├── cli/                     ← Node/TS CLI core (aideck)
 │   ├── skills/                  ← skill bundles (crafting, template, generation)
-│   ├── templates/               ← versioned template sets + catalogs
+│   ├── templates/               ← versioned *.template presets + catalogs
 │   ├── preview-app/             ← shared React preview + export runtime
 │   └── engine.version.json      ← pinned engine version
 ├── decks/                       ← user presentations (one .deck each) — user data
@@ -33,7 +33,10 @@ Install creates two logical roots plus a root pointer:
 
 - `engine/` (incl. shipped preset templates) is the only tree upgrades write to.
 - `decks/` and project `templates/` are user data: never touched by upgrade; users edit here.
-- **Two template locations:** `engine/templates/` = shipped presets (upgradable); project `templates/` = user's own (safe from upgrades). `aideck template new` writes to project `templates/` by default.
+- **Two template locations:** `engine/templates/{name}.template/` = shipped/installed presets (upgradable); project `templates/{name}.template/` = user-authored drafts (safe from upgrades). `aideck template new` writes to project `templates/` by default, and `aideck template register` installs the validated bundle without stripping its `.template` suffix.
+- **Shipped presets:** `swiss-modern`, `linear-dark`, and `clarity-courseware`.
+  Clarity declares the named `clarity-courseware-v1` compact catalog (10 types,
+  25 layout variants) rather than changing the shared v1/v2 catalogs.
 
 ### What ships vs user data (git boundary)
 
@@ -115,6 +118,12 @@ Small and curated — not a general animation engine.
 ## 5. Rendering & Export Runtime (reused)
 
 - Single shared **React preview app** renders any `.deck` by reading its manifest + content + assets.
+- For a manifest-backed deck, the runtime resolves `deck/template/` first; when
+  absent, it resolves `engine/templates/<template.set>.template/`. The selected
+  bundle supplies its manifest, layout index, React components, CSS, animation
+  CSS, and deck class, so no template-name branch is needed. Deck validation
+  checks an embedded bundle's name, version, and slide-type catalog against
+  `deck.json`.
 - Export reuses the existing pipeline: standalone self-contained `index.html` (bundled) and flattened raster PDF (Chrome screenshot + ImageMagick). See existing `export-runtime-contract.md`.
 - Templates remain code-owned (design-system CSS + React layouts per slide type); one template set per deck.
 
