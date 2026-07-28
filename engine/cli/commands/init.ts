@@ -4,6 +4,12 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { copyTree, readJson } from "../lib/fs.ts";
 import { ensureWorkspaceDirs, writePointer } from "../lib/workspace.ts";
+import { checkPrerequisites, formatPrerequisiteReport, hasFailures } from "../lib/prerequisites.ts";
+import { writeProjectWrapper } from "../lib/command-registration.ts";
+import { ensureProjectGitignore } from "../lib/project-gitignore.ts";
+import { isInteractive, promptChoice } from "../lib/prompt.ts";
+import { offerRegistration } from "./link.ts";
+import { wireSkillsInteractively } from "./wire-skills.ts";
 import type { Workspace, WorkspacePointer } from "../lib/types.ts";
 
 const DISTRIBUTION_ROOT_ENV = "AIDECK_" + "DISTRIBUTION_ROOT";
@@ -15,6 +21,8 @@ export function initCommand(args: string[]): void {
   const subfolder = dirIndex === -1 ? "engine" : args[dirIndex + 1];
   if (dirIndex !== -1 && !subfolder) throw new Error("init --dir requires a subfolder path.");
   if (here && dirIndex !== -1) throw new Error("Choose either --here or --dir, not both.");
+
+  runPreflight(args.includes("--skip-checks"));
 
   const projectRoot = resolve(process.cwd());
   const targetEngine = resolve(projectRoot, subfolder ?? "engine");
@@ -35,15 +43,79 @@ export function initCommand(args: string[]): void {
   writePointer(projectRoot, pointer);
   ensureWorkspaceDirs(workspace);
   installDependencies(targetEngine);
-  console.log(`Initialized AI Deck Kit workspace: ${projectRoot}`);
-  console.log(`  engine: ${relative(projectRoot, targetEngine)}`);
-  console.log(`  decks:  ${relative(projectRoot, workspace.decksRoot)}`);
+
+  console.log("");
+  console.log(`Set up AI Deck Kit in: ${projectRoot}`);
+  const planted: [string, string][] = [
+    [relative(projectRoot, targetEngine), "the toolkit itself — upgradable, leave it alone"],
+    [relative(projectRoot, workspace.decksRoot), "your presentations live here"],
+    ["templates", "your own designs live here"],
+  ];
+  const column = Math.max(...planted.map(([path]) => path.length)) + 2;
+  planted.forEach(([path, purpose]) => console.log(`  ${path.padEnd(column)}(${purpose})`));
+
+  const gitignore = ensureProjectGitignore(projectRoot, relative(projectRoot, targetEngine));
+  if (gitignore !== "unchanged") {
+    console.log("");
+    console.log(`${gitignore === "created" ? "Created" : "Updated"} .gitignore so the installed engine stays out of your repository.`);
+    console.log("Your decks and ai-deck-kit.json are not ignored — commit them as usual.");
+  }
+
+  writeProjectWrapper(projectRoot, targetEngine);
+  wireSkillsInteractively(projectRoot, targetEngine);
+  registerIfWanted();
+  printNextSteps();
+}
+
+function runPreflight(skipChecks: boolean): void {
+  const report = checkPrerequisites();
+  console.log(formatPrerequisiteReport(report));
+  if (!hasFailures(report)) return;
+  if (skipChecks) {
+    console.log("Continuing anyway because --skip-checks was given. Expect failures.");
+    return;
+  }
+  throw new Error("Missing required software — see the list above, then run this command again.");
+}
+
+function registerIfWanted(): void {
+  if (!isInteractive()) return;
+  console.log("");
+  const choice = promptChoice(
+    `Would you like to be able to type "aideck" from anywhere?\n\nOnly a small launcher is installed system-wide. Your presentations, designs\nand the toolkit itself stay inside this project.`,
+    [`Yes — register the "aideck" command (recommended)`, `No — I will use ./aideck inside this project`],
+  );
+  if (choice === 0) offerRegistration();
+}
+
+function printNextSteps(): void {
+  console.log("");
+  console.log("Done. Next steps:");
+  console.log("");
+  console.log("  1. Make your first presentation:   aideck new my-talk");
+  console.log("  2. See it in your browser:         aideck serve --deck my-talk");
+  console.log("  3. Save it as a file to share:     aideck export html my-talk");
+  console.log("");
+  console.log("Not sure something is set up right?  aideck doctor");
+  console.log(`If "aideck" is not found, use ./aideck instead, from this folder.`);
 }
 
 function installDependencies(engineRoot: string): void {
   if (process.env[SKIP_INSTALL_ENV] === "1") return;
+  console.log("");
+  console.log("Installing the toolkit's components. This can take a minute.");
   const result = spawnSync("npm", ["install", "--prefix", engineRoot, "--no-audit", "--no-fund"], { stdio: "inherit" });
-  if (result.status !== 0) throw new Error("Engine dependency installation failed. Re-run with the offline install flag only for a CLI-only workspace.");
+  if (result.status !== 0) {
+    throw new Error(
+      [
+        "Could not install the toolkit's components.",
+        "",
+        "  - Check that you are connected to the internet.",
+        "  - If you are behind a company proxy or VPN, that is the usual cause.",
+        "  - Then run the install command again.",
+      ].join("\n"),
+    );
+  }
 }
 
 function isWithin(root: string, candidate: string): boolean {
