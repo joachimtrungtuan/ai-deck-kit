@@ -1,5 +1,6 @@
-import { StrictMode, useEffect, useMemo, useState } from "react";
+import { StrictMode, useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { flushSync } from "react-dom";
 import "@fontsource/inter/300.css";
 import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
@@ -7,64 +8,71 @@ import "@fontsource/inter/600.css";
 import "@fontsource/inter/700.css";
 import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/500.css";
+import "@fontsource-variable/newsreader/wght.css";
+import "@fontsource-variable/newsreader/wght-italic.css";
 import "./preview-shell.css";
-import "../../templates/swiss-modern/design-system.css";
-import "../../templates/swiss-modern/animation-presets.css";
-import "../../templates/linear-dark/design-system.css";
-import "../../templates/linear-dark/animation-presets.css";
+import "../../templates/clarity-courseware.template/design-system.css";
+import "../../templates/clarity-courseware.template/animation-presets.css";
+import "../../templates/swiss-modern.template/design-system.css";
+import "../../templates/swiss-modern.template/animation-presets.css";
+import "../../templates/linear-dark.template/design-system.css";
+import "../../templates/linear-dark.template/animation-presets.css";
 import "../../primitives/blocks/primitives.css";
+import { resolveMorphPairs } from "../../primitives/motion/morph-anchor-resolver";
 import { SOURCES } from "./deck-registry";
-import { DeckExport } from "./deck-export";
-import { runtimeDeck } from "virtual:aideck-deck";
+import { FixedSlideCanvas } from "./fixed-slide-canvas";
+import { runtimeDeck, runtimeTemplate } from "virtual:aideck-deck";
 import { PrimitivesDemo } from "./primitives-demo";
+import { TemplateGallery } from "./template-gallery";
+import type { PreviewSource } from "./preview-types";
 
-function PreviewApp() {
-  const [sourceId, setSourceId] = useState(SOURCES[0].id);
+function PreviewApp({ galleryHref, source }: { galleryHref?: string; source: PreviewSource }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const source = useMemo(() => SOURCES.find((s) => s.id === sourceId) ?? SOURCES[0], [sourceId]);
   const slides = source.slides;
   const activeSlide = slides[Math.min(activeIndex, slides.length - 1)];
+  const frameDocumentRef = useRef<Document | null>(null);
+  const go = useCallback((next: number) => {
+    const index = Math.max(0, Math.min(slides.length - 1, next));
+    const previousAnchors = slides[activeIndex].morphAnchors?.map((anchor) => ({ id: anchor, morph: anchor })) ?? [];
+    const nextAnchors = slides[index].morphAnchors?.map((anchor) => ({ id: anchor, morph: anchor })) ?? [];
+    const hasMorph = resolveMorphPairs(previousAnchors, nextAnchors).length > 0;
+    const documentWithTransition = frameDocumentRef.current as (Document & { startViewTransition?: (update: () => void) => unknown }) | null;
+    if (hasMorph && documentWithTransition?.startViewTransition) {
+      documentWithTransition.startViewTransition(() => flushSync(() => setActiveIndex(index)));
+      return;
+    }
+    setActiveIndex(index);
+  }, [activeIndex, frameDocumentRef, slides]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "ArrowRight") {
-        setActiveIndex((index) => Math.min(index + 1, slides.length - 1));
+        go(activeIndex + 1);
       }
       if (event.key === "ArrowLeft") {
-        setActiveIndex((index) => Math.max(index - 1, 0));
+        go(activeIndex - 1);
       }
     }
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [slides.length]);
+  }, [activeIndex, go]);
 
   return (
     <main className="preview-shell">
       <aside className="preview-sidebar">
-        <div className="preview-source-switch">
-          <label className="preview-label" htmlFor="source-select">Preview source</label>
-          <select
-            id="source-select"
-            value={sourceId}
-            onChange={(event) => {
-              setSourceId(event.target.value);
-              setActiveIndex(0);
-            }}
-          >
-            {SOURCES.map((s) => (
-              <option key={s.id} value={s.id}>{s.label}</option>
-            ))}
-          </select>
-        </div>
-        <h1>Template Preview</h1>
+        {galleryHref && <a className="preview-back-link" href={galleryHref}>← All templates</a>}
+        <header className="preview-slide-header">
+          <p className="preview-label">Slides</p>
+          <h1>{source.label}</h1>
+        </header>
         <nav aria-label="Slides">
           {slides.map((slide, index) => (
             <button
               className={index === activeIndex ? "is-active" : ""}
-              key={slide.type}
-              onClick={() => setActiveIndex(index)}
+              key={slide.id ?? slide.type}
+              onClick={() => go(index)}
               type="button"
             >
               <span>{String(index + 1).padStart(2, "0")}</span>
@@ -74,20 +82,34 @@ function PreviewApp() {
         </nav>
       </aside>
       <section className="preview-stage" aria-label={activeSlide.type}>
-        <div className={`preview-deck ${source.deckClass}`}>
-          <activeSlide.Component {...activeSlide.props} />
-        </div>
+        <FixedSlideCanvas documentRef={frameDocumentRef} slide={activeSlide} source={source} />
       </section>
     </main>
   );
 }
 
 function AppRouter() {
-  return window.location.pathname === "/primitives" ? <PrimitivesDemo /> : <PreviewApp />;
+  if (window.location.pathname === "/primitives") return <PrimitivesDemo />;
+  if (runtimeDeck) return <PreviewApp source={runtimeDeck} />;
+
+  const params = new URLSearchParams(window.location.search);
+  const sources = runtimeTemplate
+    ? [runtimeTemplate, ...SOURCES.filter((source) => source.id !== runtimeTemplate.id)]
+    : SOURCES;
+  const requestedTemplate = params.get("template");
+  const showGallery = params.has("gallery") || (!runtimeTemplate && !requestedTemplate);
+  if (showGallery) return <TemplateGallery sources={sources} />;
+
+  const source = requestedTemplate
+    ? sources.find((candidate) => candidate.id === requestedTemplate)
+    : runtimeTemplate;
+  return source
+    ? <PreviewApp galleryHref="?gallery" source={source} />
+    : <TemplateGallery sources={sources} />;
 }
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    {runtimeDeck ? <DeckExport source={runtimeDeck} /> : <AppRouter />}
+    <AppRouter />
   </StrictMode>,
 );

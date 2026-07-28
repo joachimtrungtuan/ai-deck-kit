@@ -31,7 +31,7 @@ import {
   LinearTwoColumnTextSlide,
   LinearUiShowcaseSlide,
   type LinearSlideProps,
-} from "../../templates/linear-dark/layouts/react";
+} from "../../templates/linear-dark.template/layouts/react";
 
 export type PreviewSlide = {
   type: string;

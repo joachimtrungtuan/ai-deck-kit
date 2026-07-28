@@ -1,0 +1,13 @@
+@media (max-width: 900px) {
+  .clarity-courseware-deck .cc-slide {
+    width: 1600px;
+    height: 900px;
+  }
+}
+
+@media print {
+  .clarity-courseware-deck .cc-slide {
+    width: 1600px !important;
+    height: 900px !important;
+  }
+}

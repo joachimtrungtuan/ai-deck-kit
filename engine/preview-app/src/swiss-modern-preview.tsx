@@ -23,7 +23,7 @@ import {
   SwissTwoColumnTextSlide,
   SwissUiShowcaseSlide,
   type SwissSlideProps,
-} from "../../templates/swiss-modern/layouts/react";
+} from "../../templates/swiss-modern.template/layouts/react";
 
 type PreviewSlide = {
   type: string;

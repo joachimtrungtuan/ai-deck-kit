@@ -1,0 +1,12 @@
+{
+  "title": { "component": "ClarityTitleSlide", "source": "react/foundation-slides.tsx" },
+  "section-divider": { "component": "ClaritySectionDividerSlide", "source": "react/foundation-slides.tsx" },
+  "content-text": { "component": "ClarityContentTextSlide", "source": "react/content-slides.tsx" },
+  "content-media": { "component": "ClarityContentMediaSlide", "source": "react/content-slides.tsx" },
+  "table": { "component": "ClarityTableSlide", "source": "react/data-slides.tsx" },
+  "code": { "component": "ClarityCodeSlide", "source": "react/data-slides.tsx" },
+  "data-visual": { "component": "ClarityDataVisualSlide", "source": "react/data-slides.tsx" },
+  "full-bleed-image": { "component": "ClarityFullBleedImageSlide", "source": "react/foundation-slides.tsx" },
+  "quote": { "component": "ClarityQuoteSlide", "source": "react/foundation-slides.tsx" },
+  "closing": { "component": "ClarityClosingSlide", "source": "react/foundation-slides.tsx" }
+}

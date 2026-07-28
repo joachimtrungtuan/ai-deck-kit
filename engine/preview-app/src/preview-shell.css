@@ -16,36 +16,49 @@ button {
 .preview-shell {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 .preview-sidebar {
+  display: flex;
+  height: 100dvh;
+  min-height: 0;
+  flex-direction: column;
   border-right: 1px solid #3d3d38;
-  overflow-y: auto;
+  overflow: hidden;
   padding: 24px;
 }
 
 .preview-sidebar h1 {
-  margin: 0 0 24px;
-  font-size: 24px;
+  margin: 0;
+  font-size: 20px;
   font-weight: 600;
-  line-height: 1;
+  line-height: 1.2;
 }
 
 .preview-label {
-  margin: 0 0 8px;
+  margin: 0;
   color: #a7a79f;
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 12px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .preview-sidebar nav {
   display: grid;
+  min-height: 0;
+  align-content: start;
   gap: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-color: #5a5a54 transparent;
+  scrollbar-width: thin;
 }
 
-.preview-sidebar button {
+.preview-sidebar nav button {
   display: grid;
   grid-template-columns: 36px 1fr;
   gap: 10px;
@@ -59,49 +72,47 @@ button {
   text-align: left;
 }
 
-.preview-sidebar button:hover,
-.preview-sidebar button.is-active {
+.preview-sidebar nav button:hover,
+.preview-sidebar nav button.is-active {
   border-color: #f7f7f2;
   color: #ffffff;
 }
 
-.preview-sidebar span {
+.preview-sidebar nav span {
   color: #a7a79f;
   font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 
 .preview-stage {
   display: grid;
+  height: 100dvh;
   min-width: 0;
-  overflow: auto;
+  overflow: hidden;
   padding: 24px;
   place-items: center;
 }
 
-.preview-stage .swiss-slide,
-.preview-stage .ld-slide {
-  box-shadow: 0 28px 80px rgb(0 0 0 / 34%);
-  min-height: auto;
-  width: min(100%, 1440px);
+.preview-stage .fixed-slide-canvas {
+  filter: drop-shadow(0 28px 40px rgb(0 0 0 / 34%));
 }
 
-.preview-deck {
-  display: contents;
+.preview-back-link {
+  flex: none;
+  margin-bottom: 24px;
+  color: #a7a79f;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  text-decoration: none;
 }
 
-.preview-source-switch {
+.preview-back-link:hover,
+.preview-back-link:focus-visible {
+  color: #f7f7f2;
+}
+
+.preview-slide-header {
   display: grid;
   gap: 6px;
-  margin-bottom: 20px;
-}
-
-.preview-source-switch select {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #3d3d38;
-  border-radius: 6px;
-  background: #1f1f1d;
-  color: #f7f7f2;
-  font: inherit;
-  cursor: pointer;
+  flex: none;
+  padding-bottom: 16px;
 }

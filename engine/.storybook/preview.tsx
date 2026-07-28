@@ -1,6 +1,6 @@
 import type { Preview } from "@storybook/react-vite";
-import "../templates/swiss-modern/design-system.css";
-import "../templates/swiss-modern/animation-presets.css";
+import "../templates/swiss-modern.template/design-system.css";
+import "../templates/swiss-modern.template/animation-presets.css";
 import "../primitives/blocks/primitives.css";
 import "./storybook.css";
 

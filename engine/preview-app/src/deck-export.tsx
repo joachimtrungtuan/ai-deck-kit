@@ -1,11 +1,8 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { resolveMorphPairs } from "../../primitives/motion/morph-anchor-resolver";
+import { FixedSlideCanvas } from "./fixed-slide-canvas";
 import type { PreviewSource } from "./preview-types";
-
-const SLIDE_W = 1600;
-const SLIDE_H = 900;
 
 // The templates size type/layout with viewport units (e.g. clamp(48px, 6vw, 96px)) and a
 // max-width media query. A CSS transform does NOT change what `vw` resolves to, so a scaled
@@ -29,17 +26,15 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
   const total = slides.length;
   const [active, setActive] = useState(0);
   const activeSlide = slides[active];
-  const [scale, setScale] = useState(1);
   const [jumpValue, setJumpValue] = useState("1");
-  const [frameBody, setFrameBody] = useState<HTMLElement | null>(null);
-  const frameRef = useRef<HTMLIFrameElement>(null);
+  const frameDocumentRef = useRef<Document | null>(null);
 
   const go = (next: number) => {
     const index = Math.max(0, Math.min(total - 1, next));
     const previousAnchors = slides[active].morphAnchors?.map((anchor) => ({ id: anchor, morph: anchor })) ?? [];
     const nextAnchors = slides[index].morphAnchors?.map((anchor) => ({ id: anchor, morph: anchor })) ?? [];
     const hasMorph = resolveMorphPairs(previousAnchors, nextAnchors).length > 0;
-    const documentWithTransition = frameBody?.ownerDocument as (Document & { startViewTransition?: (update: () => void) => unknown }) | undefined;
+    const documentWithTransition = frameDocumentRef.current as (Document & { startViewTransition?: (update: () => void) => unknown }) | null;
     if (hasMorph && documentWithTransition?.startViewTransition) {
       documentWithTransition.startViewTransition(() => flushSync(() => setActive(index)));
       return;
@@ -81,39 +76,6 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [active, total]);
 
-  // Uniformly zoom the fixed canvas to fit the window (letterboxed), preserving aspect.
-  useLayoutEffect(() => {
-    function fit() {
-      setScale(Math.min(window.innerWidth / SLIDE_W, window.innerHeight / SLIDE_H));
-    }
-    fit();
-    window.addEventListener("resize", fit);
-    return () => window.removeEventListener("resize", fit);
-  }, []);
-
-  // Copy the bundled styles + @font-face rules into the iframe so the slide renders identically.
-  // Driven by an effect (not just onLoad) because a src-less iframe's about:blank `load` event
-  // can fire before React attaches the handler, leaving the deck blank.
-  function initFrame() {
-    const doc = frameRef.current?.contentDocument;
-    if (!doc) return;
-    doc.head.querySelectorAll("[data-deck-style]").forEach((n) => n.remove());
-    document.head.querySelectorAll("style, link[rel='stylesheet']").forEach((node) => {
-      const clone = node.cloneNode(true) as HTMLElement;
-      clone.setAttribute("data-deck-style", "");
-      doc.head.appendChild(clone);
-    });
-    doc.documentElement.style.background = "#000";
-    doc.body.style.margin = "0";
-    doc.body.style.background = "#000";
-    setFrameBody(doc.body);
-  }
-
-  useLayoutEffect(() => {
-    initFrame();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   function commitJump() {
     const n = Number.parseInt(jumpValue, 10);
     if (Number.isFinite(n)) go(n - 1);
@@ -122,24 +84,7 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
 
   return (
     <div className="deck-export">
-      <iframe
-        ref={frameRef}
-        className="deck-frame"
-        title={source.label}
-        onLoad={initFrame}
-        style={{ transform: `translate(-50%, -50%) scale(${scale})` }}
-      />
-      {frameBody &&
-        createPortal(
-          // key={active} remounts the slide on navigation so its entrance animation replays.
-          <div className={source.deckClass} key={active} style={{ viewTransitionName: activeSlide.morphAnchors?.[0] }}>
-            {(() => {
-              const slide = slides[active];
-              return <slide.Component {...slide.props} />;
-            })()}
-          </div>,
-          frameBody,
-        )}
+      <FixedSlideCanvas documentRef={frameDocumentRef} slide={activeSlide} source={source} />
 
       <nav className="deck-controls" aria-label="Slide navigation">
         <button type="button" aria-label="Previous slide" onClick={() => go(active - 1)} disabled={active === 0}>
