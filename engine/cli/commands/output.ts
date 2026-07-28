@@ -2,10 +2,12 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { deckPath } from "../lib/deck.ts";
+import { getPreviewTemplate } from "../lib/templates.ts";
 import { findWorkspace } from "../lib/workspace.ts";
 
 export const outputHelp = `Output commands:
-  serve [--deck <id>]                 Start the shared Vite preview runtime
+  serve [--deck <id> | --template <name>] [--port <port>] [--no-open]
+                                      Start the shared Vite preview runtime
   export html <deck-id>               Build standalone HTML through the existing runtime
   export pdf <deck-id>                Build HTML, then the flattened PDF
   pack <deck> [--out <zip>]           Create a portable zip bundle
@@ -26,12 +28,27 @@ function runServe(workspace: ReturnType<typeof findWorkspace>, args: string[]): 
   const vite = join(workspace.engineRoot, "node" + "_modules", ".bin", "vite");
   if (!existsSync(vite)) throw new Error(`Vite executable missing: ${vite}`);
   const viteArgs = ["--host", "127.0.0.1"];
-  const port = valueAfter(args, "--port");
+  const port = optionValueAfter(args, "--port");
   if (port) viteArgs.push("--port", port);
-  const selectedDeck = valueAfter(args, "--deck");
+  const selectedDeck = optionValueAfter(args, "--deck");
+  const selectedTemplate = optionValueAfter(args, "--template");
+  if (selectedDeck && selectedTemplate) throw new Error("Choose either --deck or --template, not both.");
   const deckRoot = selectedDeck ? deckPath(workspace, selectedDeck) : "";
+  const templateRoot = selectedTemplate ? getPreviewTemplate(workspace, selectedTemplate).root : "";
+  if (!args.includes("--no-open")) viteArgs.push("--open");
   const deckPathKey = "AIDECK_DECK" + "_PATH";
-  const result = spawnSync(vite, viteArgs, { cwd: workspace.engineRoot, stdio: "inherit", env: { ...process.env, [deckPathKey]: deckRoot } });
+  const templatePathKey = "AIDECK_TEMPLATE" + "_PATH";
+  const engineRootKey = "AIDECK_ENGINE" + "_ROOT";
+  const result = spawnSync(vite, viteArgs, {
+    cwd: workspace.engineRoot,
+    stdio: "inherit",
+    env: {
+      ...process.env,
+      [deckPathKey]: deckRoot,
+      [templatePathKey]: templateRoot,
+      [engineRootKey]: workspace.engineRoot,
+    },
+  });
   if (result.status !== 0) throw new Error(`Preview server exited with code ${result.status ?? 1}.`);
 }
 
@@ -40,7 +57,7 @@ function runExport(workspace: ReturnType<typeof findWorkspace>, format: string, 
   const scriptRoot = join(workspace.engineRoot, "skills", "presentation-crafting", "scripts");
   const htmlScript = join(scriptRoot, "export-standalone-html.mjs");
   const root = deckPath(workspace, deck);
-  const htmlResult = spawnSync(process.execPath, [htmlScript, "--deck", root, "--slug", deck], { cwd: workspace.root, stdio: "inherit" });
+  const htmlResult = spawnSync(process.execPath, [htmlScript, "--deck", root], { cwd: workspace.root, stdio: "inherit" });
   if (htmlResult.status !== 0) throw new Error("HTML export failed.");
   if (format === "pdf") {
     const pdfScript = join(scriptRoot, "export-pdf.mjs");
@@ -78,4 +95,12 @@ function runUnpack(workspace: ReturnType<typeof findWorkspace>, archive: string 
 function valueAfter(args: string[], option: string): string | undefined {
   const index = args.indexOf(option);
   return index === -1 ? undefined : args[index + 1];
+}
+
+function optionValueAfter(args: string[], option: string): string | undefined {
+  const index = args.indexOf(option);
+  if (index === -1) return undefined;
+  const value = args[index + 1];
+  if (!value || value.startsWith("--")) throw new Error(`${option} requires a value.`);
+  return value;
 }
