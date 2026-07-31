@@ -7,7 +7,7 @@
 import { chmodSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, rmSync, writeFileSync } from "node:fs";
 import { delimiter, dirname, join, relative, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
+import { engineRoot } from "./engine-root.ts";
 
 const SHIM_MARKER = "ai-deck-kit-resolver-shim";
 
@@ -19,7 +19,7 @@ export type RegistrationResult = { binary: string; binDir: string; onPath: boole
  * cannot break the command for every other project.
  */
 function shimSource(): string {
-  return readFileSync(fileURLToPath(new URL("../resolver.mjs", import.meta.url)), "utf8");
+  return readFileSync(join(engineRoot(), "cli", "resolver.mjs"), "utf8");
 }
 
 /** npm's global bin directory — where a registered command has to live. */

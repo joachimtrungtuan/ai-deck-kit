@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": "cli",
+    "outDir": "cli/dist",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "sourceMap": false,
+    "declaration": false,
+    "removeComments": false,
+    "rewriteRelativeImportExtensions": true
+  },
+  "include": ["cli/**/*.ts"],
+  "exclude": ["cli/dist/**", "cli/tests/**"]
+}

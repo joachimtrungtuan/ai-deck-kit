@@ -117,3 +117,9 @@ engine/storybook-static/
 # The distribution entrypoint is intentionally tracked.
 !/bin/
 !/bin/create-ai-deck-kit
+
+# The CLI's compiled output is what users actually run: Node cannot strip types
+# under node_modules, so the build has to be committed rather than produced at
+# install time. Tracked despite the blanket dist/ rule above.
+!/engine/cli/dist/
+!/engine/cli/dist/**

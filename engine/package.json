@@ -16,6 +16,7 @@
     "templates",
     "README.md",
     "tsconfig.json",
+    "tsconfig.cli-build.json",
     "tsconfig.storybook.json",
     "vite.config.ts",
     "vite.export.config.ts"
@@ -25,6 +26,8 @@
   },
   "scripts": {
     "aideck": "node cli/index.mjs",
+    "build": "tsc --project tsconfig.cli-build.json",
+    "build:watch": "tsc --watch --preserveWatchOutput --project tsconfig.cli-build.json",
     "dev": "vite --host 127.0.0.1",
     "preview": "vite preview --host 127.0.0.1",
     "storybook": "storybook dev -p 6006",

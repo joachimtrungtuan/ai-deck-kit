@@ -1,8 +1,8 @@
 import { existsSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import { copyTree, readJson } from "../lib/fs.ts";
+import { engineRoot } from "../lib/engine-root.ts";
 import { ensureWorkspaceDirs, writePointer } from "../lib/workspace.ts";
 import { checkPrerequisites, formatPrerequisiteReport, hasFailures } from "../lib/prerequisites.ts";
 import { writeProjectWrapper } from "../lib/command-registration.ts";
@@ -30,7 +30,7 @@ export function initCommand(args: string[]): void {
   const pointerPath = resolve(projectRoot, "ai-deck-kit.json");
   if (existsSync(pointerPath)) throw new Error(`Workspace already initialized: ${pointerPath}`);
 
-  const distributionRoot = process.env[DISTRIBUTION_ROOT_ENV] ? resolve(process.env[DISTRIBUTION_ROOT_ENV]!) : fileURLToPath(new URL("../..", import.meta.url));
+  const distributionRoot = process.env[DISTRIBUTION_ROOT_ENV] ? resolve(process.env[DISTRIBUTION_ROOT_ENV]!) : engineRoot();
   const sourceEngine = existsSync(resolve(distributionRoot, "engine.version.json")) ? distributionRoot : resolve(distributionRoot, "engine");
   copyTree(sourceEngine, targetEngine);
   const engineVersion = readJson<{ engineVersion: string }>(resolve(targetEngine, "engine.version.json")).engineVersion;

@@ -10,6 +10,9 @@
   },
   "engines": { "node": ">=22.6.0" },
   "scripts": {
+    "build": "npm --prefix engine run build",
+    "build:watch": "npm --prefix engine run build:watch",
+    "build:check": "node scripts/check-cli-build-is-current.mjs",
     "lint": "node scripts/lint.mjs",
     "typecheck": "npm --prefix engine run typecheck",
     "validate": "node scripts/validate.mjs",
