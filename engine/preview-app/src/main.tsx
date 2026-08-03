@@ -11,17 +11,12 @@ import "@fontsource/jetbrains-mono/500.css";
 import "@fontsource-variable/newsreader/wght.css";
 import "@fontsource-variable/newsreader/wght-italic.css";
 import "./preview-shell.css";
-import "../../templates/clarity-courseware.template/design-system.css";
-import "../../templates/clarity-courseware.template/animation-presets.css";
-import "../../templates/swiss-modern.template/design-system.css";
-import "../../templates/swiss-modern.template/animation-presets.css";
-import "../../templates/linear-dark.template/design-system.css";
-import "../../templates/linear-dark.template/animation-presets.css";
 import "../../primitives/blocks/primitives.css";
 import { resolveMorphPairs } from "../../primitives/motion/morph-anchor-resolver";
-import { SOURCES } from "./deck-registry";
 import { FixedSlideCanvas } from "./fixed-slide-canvas";
-import { runtimeDeck, runtimeTemplate } from "virtual:aideck-deck";
+// Template styles and the gallery both come from the virtual module, which the CLI populates with
+// the templates this project can actually resolve. Nothing about a template is hardcoded here.
+import { runtimeDeck, runtimeGallery, runtimeTemplate } from "virtual:aideck-deck";
 import { PrimitivesDemo } from "./primitives-demo";
 import { TemplateGallery } from "./template-gallery";
 import type { PreviewSource } from "./preview-types";
@@ -93,9 +88,10 @@ function AppRouter() {
   if (runtimeDeck) return <PreviewApp source={runtimeDeck} />;
 
   const params = new URLSearchParams(window.location.search);
+  const gallery: PreviewSource[] = runtimeGallery ?? [];
   const sources = runtimeTemplate
-    ? [runtimeTemplate, ...SOURCES.filter((source) => source.id !== runtimeTemplate.id)]
-    : SOURCES;
+    ? [runtimeTemplate, ...gallery.filter((source) => source.id !== runtimeTemplate.id)]
+    : gallery;
   const requestedTemplate = params.get("template");
   const showGallery = params.has("gallery") || (!runtimeTemplate && !requestedTemplate);
   if (showGallery) return <TemplateGallery sources={sources} />;

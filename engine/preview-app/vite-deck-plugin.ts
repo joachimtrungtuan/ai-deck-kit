@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import type { Plugin } from "vite";
 
 const virtualId = "virtual:aideck-deck";
@@ -7,12 +7,27 @@ const resolvedVirtualId = `\0${virtualId}`;
 const deckPathKey = "AIDECK_DECK" + "_PATH";
 const templatePathKey = "AIDECK_TEMPLATE" + "_PATH";
 const engineRootKey = "AIDECK_ENGINE" + "_ROOT";
+const galleryKey = "AIDECK_TEMPLATE" + "_GALLERY";
+
+/** One resolvable template, as the CLI resolved it. The preview never resolves templates itself. */
+export type GalleryEntry = { name: string; root: string; origin: string };
+
+export function parseGallery(raw = process.env[galleryKey]): GalleryEntry[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as GalleryEntry[];
+    return Array.isArray(parsed) ? parsed.filter((entry) => entry?.name && entry?.root) : [];
+  } catch {
+    return [];
+  }
+}
 
 type LayoutEntry = { component: string; source: string };
 type TemplateManifest = {
   name: string;
   displayName: string;
   deckClass?: string;
+  layoutVariants?: Record<string, string[]>;
   supportedSlideTypes: string[];
 };
 type TemplateDefinition = {
@@ -28,19 +43,31 @@ export function aideckDeckPlugin(
   deckPath = process.env[deckPathKey],
   templatePath = process.env[templatePathKey],
   engineRoot = process.env[engineRootKey] ?? process.cwd(),
+  gallery = parseGallery(),
 ): Plugin {
   const watchedFiles = new Set<string>();
+  const galleryRoots = gallery.map((entry) => resolve(entry.root));
 
   return {
     name: "aideck-deck-manifest",
     async resolveId(id, importer) {
       if (id === virtualId) return resolvedVirtualId;
+      const migratedTemplateImport = deckPath && importer
+        ? resolveGeneratedTemplateImport(id, importer.split("?")[0], deckPath, engineRoot)
+        : undefined;
+      if (migratedTemplateImport) {
+        return this.resolve(migratedTemplateImport, importer, { skipSelf: true });
+      }
       const activeTemplateRoot = templatePath
         ? resolve(templatePath)
         : deckPath
           ? resolve(deckPath, "template")
           : undefined;
-      if (!activeTemplateRoot || !importer || !isWithin(activeTemplateRoot, importer.split("?")[0])) return undefined;
+      // Gallery templates live outside the active target — their layouts still need engine-relative
+      // resolution for React, primitives and other bare imports.
+      const importerPath = importer?.split("?")[0];
+      const owningRoot = [activeTemplateRoot, ...galleryRoots].find((root) => root && importerPath && isWithin(root, importerPath));
+      if (!owningRoot || !importer) return undefined;
       const match = id.replaceAll("\\", "/").match(/(?:^|\/)primitives(?:\/(.*))?$/);
       if (match) return this.resolve(join(resolve(engineRoot), "primitives", match[1] ?? ""), importer, { skipSelf: true });
       if (/^(?:@|[A-Za-z])/.test(id)) {
@@ -56,8 +83,9 @@ export function aideckDeckPlugin(
         : templatePath
           ? loadTemplateSource(resolve(templatePath), watchedFiles)
           : "export const runtimeDeck = null;\nexport const runtimeTemplate = null;";
+      const combined = `${loadGallerySource(gallery, watchedFiles)}\n${source}`;
       watchedFiles.forEach((file) => this.addWatchFile(file));
-      return source;
+      return combined;
     },
     handleHotUpdate({ file, server }) {
       if (!watchedFiles.has(resolve(file))) return;
@@ -68,6 +96,22 @@ export function aideckDeckPlugin(
       }
     },
   };
+}
+
+export function resolveGeneratedTemplateImport(
+  id: string,
+  importer: string,
+  deckRoot: string,
+  engineRoot: string,
+): string | undefined {
+  if (!isWithin(resolve(deckRoot), importer)) return undefined;
+  const requested = resolve(dirname(importer), id);
+  const templatesRoot = resolve(engineRoot, "templates");
+  if (!isWithin(templatesRoot, requested)) return undefined;
+  const [templateName, ...nestedPath] = relative(templatesRoot, requested).split(/[\\/]/);
+  if (!templateName || templateName.endsWith(".template")) return undefined;
+  const migrated = join(templatesRoot, `${templateName}.template`, ...nestedPath);
+  return existsSync(migrated) ? migrated : undefined;
 }
 
 function loadDeckSource(root: string, engineRoot: string, watchedFiles: Set<string>): string {
@@ -100,19 +144,59 @@ export const runtimeDeck = createManifestDeckSource(${JSON.stringify(manifest)},
 export const runtimeTemplate = null;`;
 }
 
+/** Preview slides for one template, with component names optionally aliased to avoid collisions. */
+function templateSlideEntries(definition: TemplateDefinition, alias: (component: string) => string = (name) => name): string[] {
+  const { manifest } = definition;
+  return manifest.supportedSlideTypes.flatMap((type) => {
+    const entry = definition.layouts[type];
+    const variants = manifest.layoutVariants?.[type];
+    if (!variants?.length) {
+      return [`{ type: ${JSON.stringify(type)}, Component: ${alias(entry.component)}, props: previewProps }`];
+    }
+    return variants.map((variant) => (
+      `{ id: ${JSON.stringify(templatePreviewSlideId(type, variant))}, type: ${JSON.stringify(`${type} · ${variant}`)}, Component: ${alias(entry.component)}, props: { ...previewProps, layoutVariant: ${JSON.stringify(variant)} } }`
+    ));
+  });
+}
+
+/**
+ * The gallery is exactly the set of templates the CLI could resolve for this project — shipped
+ * defaults and the user's own, with the user's winning. Nothing here is hardcoded per template.
+ */
+function loadGallerySource(gallery: GalleryEntry[], watchedFiles: Set<string>): string {
+  const imports: string[] = [];
+  const entries: string[] = [];
+  gallery.forEach((entry, index) => {
+    let definition: TemplateDefinition;
+    try {
+      definition = loadTemplateDefinition(resolve(entry.root), watchedFiles);
+    } catch {
+      return; // A broken bundle is `template validate`'s business; it must not blank the gallery.
+    }
+    // Two templates may export the same component name, so every import is aliased per template.
+    const alias = (component: string) => `g${index}_${component}`;
+    definition.imports.forEach((names, source) => {
+      imports.push(`import { ${[...names].map((name) => `${name} as ${alias(name)}`).join(", ")} } from ${JSON.stringify(source)};`);
+    });
+    imports.push(`import ${JSON.stringify(definition.designSystemPath)};`);
+    imports.push(`import ${JSON.stringify(definition.animationPath)};`);
+    entries.push(`{ id: ${JSON.stringify(definition.manifest.name)}, label: ${JSON.stringify(definition.manifest.displayName)}, origin: ${JSON.stringify(entry.origin)}, deckClass: ${JSON.stringify(definition.deckClass)}, slides: [${templateSlideEntries(definition, alias).join(",\n")}] }`);
+  });
+  // Declared here, before the target source that also renders template previews, so both can use it.
+  return `${imports.join("\n")}
+const previewProps = ${JSON.stringify(templatePreviewProps())};
+export const runtimeGallery = [${entries.join(",\n")}];`;
+}
+
 function loadTemplateSource(root: string, watchedFiles: Set<string>): string {
   const definition = loadTemplateDefinition(root, watchedFiles);
   const { manifest } = definition;
-  const slides = manifest.supportedSlideTypes.map((type) => {
-    const entry = definition.layouts[type];
-    return `{ type: ${JSON.stringify(type)}, Component: ${entry.component}, props: previewProps }`;
-  });
+  const slides = templateSlideEntries(definition);
   const componentImports = renderComponentImports(definition.imports);
 
   return `${componentImports.join("\n")}
 import ${JSON.stringify(definition.designSystemPath)};
 import ${JSON.stringify(definition.animationPath)};
-const previewProps = ${JSON.stringify(templatePreviewProps())};
 export const runtimeDeck = null;
 export const runtimeTemplate = {
   id: ${JSON.stringify(manifest.name)},
@@ -120,6 +204,10 @@ export const runtimeTemplate = {
   deckClass: ${JSON.stringify(definition.deckClass)},
   slides: [${slides.join(",\n")}],
 };`;
+}
+
+export function templatePreviewSlideId(type: string, variant: string): string {
+  return JSON.stringify([type, variant]);
 }
 
 function templatePreviewProps(): Record<string, unknown> {
@@ -205,11 +293,25 @@ function renderComponentImports(imports: Map<string, Set<string>>): string[] {
   return [...imports].map(([source, names]) => `import { ${[...names].join(", ")} } from ${JSON.stringify(source)};`);
 }
 
+/**
+ * A deck renders from its own frozen snapshot. The fallbacks below exist only for a deck whose
+ * snapshot was lost, and they follow the CLI's precedence — the user's template before the shipped
+ * default — so the preview can never quietly substitute a different design.
+ */
 function deckTemplateRoot(root: string, engineRoot: string, templateName?: string): string {
   const embedded = join(root, "template");
   if (existsSync(join(embedded, "template-manifest.json"))) return embedded;
   if (!templateName) throw new Error(`Deck template is missing: ${root}`);
-  return join(engineRoot, "templates", `${templateName}.template`);
+  const projectRoot = resolve(engineRoot, "..");
+  const candidates = [
+    join(projectRoot, "templates", `${templateName}.template`),
+    join(engineRoot, "templates", `${templateName}.template`),
+  ];
+  const found = candidates.find((candidate) => existsSync(join(candidate, "template-manifest.json")));
+  if (!found) {
+    throw new Error(`Deck "${root}" has no template snapshot and template "${templateName}" was not found. Run: aideck deck retemplate <slug> --to <template>`);
+  }
+  return found;
 }
 
 function isWithin(root: string, file: string): boolean {
