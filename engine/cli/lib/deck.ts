@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import { copyTree, readJson, writeJson, writeText } from "./fs.ts";
-import { getTemplate } from "./templates.ts";
+import { resolveTemplate } from "./templates.ts";
 import type { DeckManifest, DeckSlide, Workspace } from "./types.ts";
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -34,7 +34,7 @@ export function createDeck(workspace: Workspace, slug: string, templateName: str
   if (!SLUG_RE.test(slug)) throw new Error(`Invalid deck slug "${slug}". Use kebab-case.`);
   const root = deckPath(workspace, slug);
   if (existsSync(root)) throw new Error(`Deck already exists: ${root}`);
-  const template = getTemplate(workspace, templateName);
+  const template = resolveTemplate(workspace, templateName);
   mkdirSync(join(root, "assets"), { recursive: true });
   copyTree(template.root, join(root, "template"));
   const firstType = template.manifest.supportedSlideTypes.includes("title") ? "title" : template.manifest.supportedSlideTypes[0];
@@ -46,7 +46,7 @@ export function createDeck(workspace: Workspace, slug: string, templateName: str
     slug,
     audience: "",
     goal: "",
-    template: { set: template.manifest.name, version: template.manifest.templateVersion },
+    template: { set: template.manifest.name, version: template.manifest.templateVersion, origin: template.origin },
     slideTypeCatalog: template.manifest.slideTypeCatalog,
     blockCatalog: template.manifest.blockCatalog ?? "v1",
     contentSchemaVersion: "1.0.0",

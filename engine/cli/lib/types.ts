@@ -12,7 +12,9 @@ export type DeckManifest = {
   slug: string;
   audience: string;
   goal: string;
-  template: { set: string; version: string };
+  /** `origin` records which source the deck was born from, so drift reporting can tell an engine
+   *  upgrade apart from the user editing their own copy. Absent on decks created before it existed. */
+  template: { set: string; version: string; origin?: "project" | "shipped" };
   slideTypeCatalog: string;
   blockCatalog: string;
   contentSchemaVersion: string;

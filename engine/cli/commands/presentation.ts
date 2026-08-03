@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { createDeck, parseSections, readDeck, setYamlField, slideContent, titleFromSlug, writeDeck } from "../lib/deck.ts";
-import { getTemplate } from "../lib/templates.ts";
+import { resolveTemplate } from "../lib/templates.ts";
 import { findWorkspace } from "../lib/workspace.ts";
 import type { DeckSlide } from "../lib/types.ts";
 
@@ -49,7 +49,7 @@ function slideCommand(workspace: ReturnType<typeof findWorkspace>, action: strin
 function addSlide(loaded: ReturnType<typeof readDeck>, id: string, type: string, after?: string): void {
   if (!id || !/^slide-[a-z0-9-]+$/.test(id)) throw new Error("Slide id must look like slide-02 or slide-summary.");
   if (loaded.manifest.slides.some((slide) => slide.id === id)) throw new Error(`Slide already exists: ${id}`);
-  const template = getTemplate(findWorkspace(), loaded.manifest.template.set);
+  const template = resolveTemplate(findWorkspace(), loaded.manifest.template.set);
   if (!template.manifest.supportedSlideTypes.includes(type)) throw new Error(`Template does not support slide type "${type}".`);
   const slide: DeckSlide = { id, type, file: `content.md#${id}`, animation: loaded.manifest.defaults.animation, transition: loaded.manifest.defaults.transition };
   const insertAt = after ? loaded.manifest.slides.findIndex((candidate) => candidate.id === after) + 1 : loaded.manifest.slides.length;
