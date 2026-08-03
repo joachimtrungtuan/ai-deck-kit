@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { createDeck, parseSections, readDeck, setYamlField, slideContent, titleFromSlug, writeDeck } from "../lib/deck.js";
-import { getTemplate } from "../lib/templates.js";
+import { resolveTemplate } from "../lib/templates.js";
 import { findWorkspace } from "../lib/workspace.js";
 export const presentationHelp = `Presentation commands:
   new <slug> [--template <set>]  Create a .deck bundle with a starter slide
@@ -57,7 +57,7 @@ function addSlide(loaded, id, type, after) {
         throw new Error("Slide id must look like slide-02 or slide-summary.");
     if (loaded.manifest.slides.some((slide) => slide.id === id))
         throw new Error(`Slide already exists: ${id}`);
-    const template = getTemplate(findWorkspace(), loaded.manifest.template.set);
+    const template = resolveTemplate(findWorkspace(), loaded.manifest.template.set);
     if (!template.manifest.supportedSlideTypes.includes(type))
         throw new Error(`Template does not support slide type "${type}".`);
     const slide = { id, type, file: `content.md#${id}`, animation: loaded.manifest.defaults.animation, transition: loaded.manifest.defaults.transition };

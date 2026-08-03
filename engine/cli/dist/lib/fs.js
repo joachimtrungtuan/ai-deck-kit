@@ -47,6 +47,10 @@ export function replaceTree(source, destination) {
         removeTree(staging);
         if (existsSync(backup) && !existsSync(target))
             renameSync(backup, target);
+        const message = error instanceof Error ? error.message : String(error);
+        // If the rollback could not put the original back, the only copy of it is the backup — say where.
+        if (existsSync(backup))
+            throw new Error(`${message}\nThe previous contents are kept at: ${backup}`);
         throw error;
     }
 }

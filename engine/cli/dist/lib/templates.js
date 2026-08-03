@@ -1,31 +1,59 @@
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, renameSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import { copyTree, readJson, writeJson, writeText } from "./fs.js";
-export function templateManifestPath(workspace, name) {
-    assertTemplateName(name);
-    return join(workspace.engineRoot, "templates", `${name}.template`, "template-manifest.json");
+import { readJson, writeJson, writeText } from "./fs.js";
+/** User-authored templates. The only place a template is ever edited. */
+export function projectTemplatesRoot(workspace) {
+    return join(workspace.root, "templates");
 }
-export function getTemplate(workspace, name) {
-    const manifestPath = templateManifestPath(workspace, name);
-    if (!existsSync(manifestPath))
-        throw new Error(`Template "${name}" is not installed in ${workspace.engineRoot}/templates.`);
-    const manifest = readJson(manifestPath);
-    return { root: resolve(manifestPath, ".."), manifest };
+/** Defaults shipped with the engine. Read-only; replaced wholesale on upgrade. */
+export function shippedTemplatesRoot(workspace) {
+    return join(workspace.engineRoot, "templates");
 }
-export function getPreviewTemplate(workspace, name) {
+/**
+ * Locate a template without validating it. Project templates take precedence over shipped
+ * defaults of the same name — that is the supported way to customise a default.
+ */
+export function findTemplate(workspace, name) {
     assertTemplateName(name);
-    const draftRoot = join(workspace.root, "templates", `${name}.template`);
-    const installedRoot = join(workspace.engineRoot, "templates", `${name}.template`);
-    const root = existsSync(join(draftRoot, "template-manifest.json")) ? draftRoot : installedRoot;
-    const manifestPath = join(root, "template-manifest.json");
-    if (!existsSync(manifestPath)) {
-        throw new Error(`Template "${name}" was not found as a draft or installed template.`);
+    const candidates = [
+        ["project", join(projectTemplatesRoot(workspace), `${name}.template`)],
+        ["shipped", join(shippedTemplatesRoot(workspace), `${name}.template`)],
+    ];
+    for (const [origin, root] of candidates) {
+        const manifestPath = join(root, "template-manifest.json");
+        if (existsSync(manifestPath))
+            return { root, manifest: readJson(manifestPath), origin };
     }
-    const manifest = readJson(manifestPath);
-    const errors = validateTemplateBundle(root, manifest);
+    return undefined;
+}
+/** Locate and validate a template. Every command that renders or copies a bundle goes through here. */
+export function resolveTemplate(workspace, name) {
+    const found = findTemplate(workspace, name);
+    if (!found) {
+        const available = listTemplates(workspace).map((entry) => entry.name);
+        const hint = available.length ? ` Available: ${available.join(", ")}.` : "";
+        throw new Error(`Template "${name}" was not found in ${projectTemplatesRoot(workspace)} or ${shippedTemplatesRoot(workspace)}.${hint}`);
+    }
+    const errors = validateTemplateBundle(found.root, found.manifest);
     if (errors.length)
-        throw new Error(`Template validation failed:\n${errors.map((error) => `- ${error}`).join("\n")}`);
-    return { root, manifest };
+        throw new Error(`Template "${name}" failed validation (${found.root}):\n${errors.map((error) => `- ${error}`).join("\n")}`);
+    return found;
+}
+/** Every template usable in this workspace, one row per name, project entries shadowing shipped ones. */
+export function listTemplates(workspace) {
+    const shipped = new Set(templateNamesIn(shippedTemplatesRoot(workspace)));
+    const names = new Set([...templateNamesIn(projectTemplatesRoot(workspace)), ...shipped]);
+    return [...names].sort().flatMap((name) => {
+        const found = findTemplate(workspace, name);
+        return found ? [{ ...found, name, overridesShipped: found.origin === "project" && shipped.has(name) }] : [];
+    });
+}
+function templateNamesIn(root) {
+    if (!existsSync(root))
+        return [];
+    return readdirSync(root)
+        .filter((entry) => entry.endsWith(".template") && existsSync(join(root, entry, "template-manifest.json")))
+        .map((entry) => entry.slice(0, -".template".length));
 }
 export function validateTemplateBundle(root, manifest = readJson(join(root, "template-manifest.json"))) {
     const errors = validateTemplateManifest(manifest);
@@ -124,20 +152,37 @@ export function createTemplate(workspace, name) {
     writeJson(join(target, "layouts", "layout-index.json"), { version: "1.0.0", layouts: {} });
     return target;
 }
-export function registerTemplate(workspace, name) {
-    assertTemplateName(name);
-    const source = join(workspace.root, "templates", `${name}.template`);
-    const manifest = readJson(join(source, "template-manifest.json"));
-    const errors = validateTemplateBundle(source, manifest);
-    if (errors.length)
-        throw new Error(`Template validation failed:\n${errors.map((error) => `- ${error}`).join("\n")}`);
-    if (manifest.name !== name)
-        throw new Error(`Template manifest name "${manifest.name}" does not match "${name}".`);
-    const target = join(workspace.engineRoot, "templates", `${name}.template`);
-    if (existsSync(target))
-        throw new Error(`Template already installed: ${target}`);
-    copyTree(source, target);
-    return target;
+/**
+ * Names the engine ships. Anything else sitting in the engine's template folder was put there by the
+ * retired `template register` command and belongs to the user.
+ */
+export function shippedTemplateNames(engineRoot) {
+    const versionPath = join(engineRoot, "engine.version.json");
+    if (!existsSync(versionPath))
+        return [];
+    return readJson(versionPath).shippedTemplates ?? [];
+}
+/**
+ * One-time bridge for workspaces created before user templates moved out of the engine. Relocates
+ * every non-shipped bundle in the engine's template folder into the project's own. Idempotent.
+ */
+export function migrateLegacyRegisteredTemplates(workspace, engineRoot = workspace.engineRoot) {
+    const shipped = new Set(shippedTemplateNames(engineRoot));
+    if (!shipped.size)
+        return [];
+    const moved = [];
+    for (const name of templateNamesIn(shippedTemplatesRoot(workspace))) {
+        if (shipped.has(name))
+            continue;
+        const source = join(shippedTemplatesRoot(workspace), `${name}.template`);
+        const target = join(projectTemplatesRoot(workspace), `${name}.template`);
+        if (existsSync(target))
+            continue; // The project copy already wins; leave the stale engine copy to the upgrade.
+        mkdirSync(projectTemplatesRoot(workspace), { recursive: true });
+        renameSync(source, target);
+        moved.push(name);
+    }
+    return moved;
 }
 export function bumpVersion(version, part) {
     const match = version.match(/^(\d+)\.(\d+)\.(\d+)$/);

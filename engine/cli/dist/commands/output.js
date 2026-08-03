@@ -1,11 +1,12 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { existsSync, mkdirSync, readdirSync } from "node:fs";
+import { basename, join, resolve } from "node:path";
 import { deckPath } from "../lib/deck.js";
-import { getPreviewTemplate } from "../lib/templates.js";
+import { listTemplates, resolveTemplate } from "../lib/templates.js";
 import { findWorkspace } from "../lib/workspace.js";
 export const outputHelp = `Output commands:
-  serve [--deck <id> | --template <name>] [--port <port>] [--no-open]
+  serve [<deck-id> | deck <id> | template <name> | --deck <id> | --template <name>]
+        [--port <port>] [--no-open]
                                       Start the shared Vite preview runtime
   export html <deck-id>               Build standalone HTML through the existing runtime
   export pdf <deck-id>                Build HTML, then the flattened PDF
@@ -30,21 +31,22 @@ function runServe(workspace, args) {
     const vite = join(workspace.engineRoot, "node" + "_modules", ".bin", "vite");
     if (!existsSync(vite))
         throw new Error(`Vite executable missing: ${vite}`);
-    const viteArgs = ["--host", "127.0.0.1"];
-    const port = optionValueAfter(args, "--port");
-    if (port)
-        viteArgs.push("--port", port);
-    const selectedDeck = optionValueAfter(args, "--deck");
-    const selectedTemplate = optionValueAfter(args, "--template");
-    if (selectedDeck && selectedTemplate)
-        throw new Error("Choose either --deck or --template, not both.");
-    const deckRoot = selectedDeck ? deckPath(workspace, selectedDeck) : "";
-    const templateRoot = selectedTemplate ? getPreviewTemplate(workspace, selectedTemplate).root : "";
-    if (!args.includes("--no-open"))
-        viteArgs.push("--open");
+    const options = parseServeArgs(args);
+    const viteArgs = buildServeViteArgs(options);
+    const deckRoot = options.deck ? resolveDeckForServe(workspace, options.deck) : "";
+    const template = options.template ? resolveTemplate(workspace, options.template) : undefined;
+    const templateRoot = template?.root ?? "";
+    // Say out loud what is about to be rendered, so a wrong target is caught before the browser opens.
+    if (deckRoot)
+        console.log(`Serving deck ${basename(deckRoot)}: ${deckRoot}`);
+    if (template)
+        console.log(`Serving template ${template.manifest.name} (${template.origin} ${template.manifest.templateVersion}): ${template.root}`);
+    if (!deckRoot && !templateRoot)
+        console.log("Serving the template gallery (no deck or template selected).");
     const deckPathKey = "AIDECK_DECK" + "_PATH";
     const templatePathKey = "AIDECK_TEMPLATE" + "_PATH";
     const engineRootKey = "AIDECK_ENGINE" + "_ROOT";
+    const galleryKey = "AIDECK_TEMPLATE" + "_GALLERY";
     const result = spawnSync(vite, viteArgs, {
         cwd: workspace.engineRoot,
         stdio: "inherit",
@@ -53,10 +55,108 @@ function runServe(workspace, args) {
             [deckPathKey]: deckRoot,
             [templatePathKey]: templateRoot,
             [engineRootKey]: workspace.engineRoot,
+            // The gallery renders exactly what this project can resolve — never a hardcoded shipped set.
+            [galleryKey]: JSON.stringify(galleryEntries(workspace)),
         },
     });
     if (result.status !== 0)
         throw new Error(`Preview server exited with code ${result.status ?? 1}.`);
+}
+/** Templates the preview may show, resolved through the same precedence every other command uses. */
+function galleryEntries(workspace) {
+    return listTemplates(workspace).flatMap((entry) => {
+        try {
+            resolveTemplate(workspace, entry.name);
+        }
+        catch {
+            return []; // A broken bundle is reported by `template validate`; it must not break the gallery.
+        }
+        return [{ name: entry.name, root: entry.root, origin: entry.origin }];
+    });
+}
+function resolveDeckForServe(workspace, deck) {
+    const root = deckPath(workspace, deck);
+    if (existsSync(join(root, "deck.json")))
+        return root;
+    const templateMatch = listTemplates(workspace).find((entry) => entry.name === deck);
+    if (templateMatch)
+        throw new Error(`"${deck}" is a template, not a deck. Run: aideck serve template ${deck}`);
+    const available = existsSync(workspace.decksRoot)
+        ? readdirSync(workspace.decksRoot).filter((entry) => entry.endsWith(".deck")).map((entry) => entry.slice(0, -".deck".length))
+        : [];
+    const hint = available.length ? ` Available decks: ${available.join(", ")}.` : " This project has no decks yet.";
+    throw new Error(`Deck not found: ${root}.${hint}`);
+}
+export function parseServeArgs(args) {
+    const tokens = args[0] === "serve" ? args.slice(1) : args;
+    const positionals = [];
+    let deck;
+    let template;
+    let port;
+    let open = true;
+    for (let index = 0; index < tokens.length; index += 1) {
+        const token = tokens[index];
+        if (token === "--no-open") {
+            open = false;
+            continue;
+        }
+        if (token === "--deck" || token === "--template" || token === "--port") {
+            const value = tokens[index + 1];
+            if (!value || value.startsWith("--"))
+                throw new Error(`${token} requires a value.`);
+            if (token === "--deck") {
+                if (deck)
+                    throw new Error("--deck can only be provided once.");
+                deck = value;
+            }
+            if (token === "--template") {
+                if (template)
+                    throw new Error("--template can only be provided once.");
+                template = value;
+            }
+            if (token === "--port")
+                port = value;
+            index += 1;
+            continue;
+        }
+        if (token.startsWith("--"))
+            throw new Error(`Unknown serve option: ${token}`);
+        positionals.push(token);
+    }
+    if (positionals.length > 0 && (deck || template)) {
+        throw new Error("Choose one serve target. Choose either --deck or --template, not both.");
+    }
+    if (positionals.length === 1) {
+        if (positionals[0] === "deck" || positionals[0] === "template") {
+            throw new Error(`${positionals[0]} requires a value.`);
+        }
+        deck = positionals[0];
+    }
+    else if (positionals.length === 2 && (positionals[0] === "deck" || positionals[0] === "template")) {
+        if (positionals[0] === "deck")
+            deck = positionals[1];
+        else
+            template = positionals[1];
+    }
+    else if (positionals.length > 0) {
+        throw new Error(`Unknown serve arguments: ${positionals.join(" ")}`);
+    }
+    if (deck && template)
+        throw new Error("Choose either --deck or --template, not both.");
+    return {
+        ...(deck ? { deck } : {}),
+        open,
+        ...(port ? { port } : {}),
+        ...(template ? { template } : {}),
+    };
+}
+export function buildServeViteArgs(options) {
+    const args = ["--host", "127.0.0.1"];
+    if (options.port)
+        args.push("--port", options.port);
+    if (options.open)
+        args.push("--open");
+    return args;
 }
 function runExport(workspace, format, deck) {
     if (!deck)
@@ -82,7 +182,7 @@ function runPack(workspace, deck, output) {
         throw new Error(`Deck not found: ${source}`);
     const target = resolve(workspace.root, output ?? `${source}.zip`);
     mkdirSync(join(target, ".."), { recursive: true });
-    const bundleName = source.split("/").at(-1);
+    const bundleName = basename(source);
     const result = spawnSync("zip", ["-qr", target, bundleName, "-x", "*/.build/*", "-x", "*/.DS_Store"], { cwd: join(source, ".."), stdio: "inherit" });
     if (result.status !== 0)
         throw new Error("Could not create zip bundle.");
@@ -108,13 +208,4 @@ function runUnpack(workspace, archive, output) {
 function valueAfter(args, option) {
     const index = args.indexOf(option);
     return index === -1 ? undefined : args[index + 1];
-}
-function optionValueAfter(args, option) {
-    const index = args.indexOf(option);
-    if (index === -1)
-        return undefined;
-    const value = args[index + 1];
-    if (!value || value.startsWith("--"))
-        throw new Error(`${option} requires a value.`);
-    return value;
 }

@@ -1,7 +1,10 @@
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { readJson, writeJson } from "../lib/fs.js";
 import { checkPrerequisites, formatPrerequisiteReport, hasFailures } from "../lib/prerequisites.js";
+import { previewRuntimeBinary, previewRuntimeReady } from "../lib/engine-dependencies.js";
+import { deckBundles, deckDrift, describeDrift } from "../lib/deck-template-sync.js";
+import { migrateLegacyRegisteredTemplates } from "../lib/templates.js";
 import { findWorkspace } from "../lib/workspace.js";
 import { initCommand } from "./init.js";
 import { upgradeCommand } from "./upgrade.js";
@@ -41,6 +44,12 @@ function doctorCommand(workspace) {
         errors.push(`Engine root missing: ${workspace.engineRoot}`);
     if (!existsSync(workspace.decksRoot))
         errors.push(`Decks root missing: ${workspace.decksRoot}`);
+    if (existsSync(workspace.engineRoot) && !previewRuntimeReady(workspace.engineRoot)) {
+        errors.push(`Preview runtime is not installed (${previewRuntimeBinary(workspace.engineRoot)} is missing). Run "aideck reinstall".`);
+    }
+    const rescued = migrateLegacyRegisteredTemplates(workspace);
+    if (rescued.length)
+        console.log(`Moved your templates out of the engine into ./templates: ${rescued.join(", ")}\n`);
     const versionPath = join(workspace.engineRoot, "engine.version.json");
     let version = {};
     if (!existsSync(versionPath))
@@ -50,7 +59,8 @@ function doctorCommand(workspace) {
         if (version.engineVersion !== workspace.pointer.engineVersion)
             errors.push(`Version mismatch: pointer=${workspace.pointer.engineVersion}, engine=${version.engineVersion}`);
     }
-    const decks = existsSync(workspace.decksRoot) ? readdirSync(workspace.decksRoot).filter((entry) => entry.endsWith(".deck")) : [];
+    const decks = deckBundles(workspace);
+    const notes = [];
     for (const entry of decks) {
         const manifestPath = join(workspace.decksRoot, entry, "deck.json");
         try {
@@ -64,19 +74,23 @@ function doctorCommand(workspace) {
             if (version.supportedSlideTypeCatalogs && manifest.slideTypeCatalog && !version.supportedSlideTypeCatalogs.includes(manifest.slideTypeCatalog))
                 errors.push(`${entry}: unsupported slide-type catalog ${manifest.slideTypeCatalog}.`);
             if (manifest.template?.set) {
-                const templatePath = join(workspace.engineRoot, "templates", `${manifest.template.set}.template`, "template-manifest.json");
-                if (!existsSync(templatePath))
-                    errors.push(`${entry}: missing template ${manifest.template.set}@${manifest.template.version}.`);
-                else {
-                    const template = readJson(templatePath);
-                    if (template.templateVersion !== manifest.template.version)
-                        errors.push(`${entry}: template version mismatch, deck=${manifest.template.version}, installed=${template.templateVersion ?? "missing"}.`);
-                }
+                // A deck renders from its own frozen snapshot, so drift from the source is news, not damage.
+                // Only a vanished source is an error: nothing can re-sync the deck until it is resolved.
+                const drift = deckDrift(workspace, entry);
+                if (drift.state === "source-missing")
+                    errors.push(`${entry}: ${drift.detail}. Run "aideck deck retemplate ${drift.slug} --to <template>".`);
+                else if (drift.state !== "current")
+                    notes.push(`${entry}: template ${drift.templateName} is ${describeDrift(drift)}. Run "aideck deck retemplate ${drift.slug}" when you are ready.`);
             }
         }
         catch (error) {
             errors.push(`${entry}: ${error instanceof Error ? error.message : String(error)}`);
         }
+    }
+    if (notes.length) {
+        console.log("Templates that moved on since a deck was created:");
+        notes.forEach((note) => console.log(`- ${note}`));
+        console.log("");
     }
     if (errors.length) {
         console.error("Doctor found problems:");
@@ -107,12 +121,13 @@ function listCommand(workspace) {
         console.log("No decks found.");
         return;
     }
-    const decks = readdirSync(workspace.decksRoot).filter((entry) => entry.endsWith(".deck")).sort();
+    const decks = deckBundles(workspace);
     if (!decks.length)
         return console.log("No decks found.");
     decks.forEach((entry) => {
         const manifest = readJson(join(workspace.decksRoot, entry, "deck.json"));
-        console.log(`${manifest.slug}\t${manifest.status}\t${manifest.template?.set ?? "?"}@${manifest.template?.version ?? "?"}\t${manifest.slides?.length ?? 0} slides\t${manifest.title}`);
+        const drift = deckDrift(workspace, entry);
+        console.log(`${manifest.slug}\t${manifest.status}\t${manifest.template?.set ?? "?"}@${manifest.template?.version ?? "?"}\t${describeDrift(drift)}\t${manifest.slides?.length ?? 0} slides\t${manifest.title}`);
     });
 }
 function option(args, name) {
