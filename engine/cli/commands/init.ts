@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { relative, resolve } from "node:path";
-import { spawnSync } from "node:child_process";
 import { copyTree, readJson } from "../lib/fs.ts";
+import { installEngineDependencies } from "../lib/engine-dependencies.ts";
 import { engineRoot } from "../lib/engine-root.ts";
 import { ensureWorkspaceDirs, writePointer } from "../lib/workspace.ts";
 import { checkPrerequisites, formatPrerequisiteReport, hasFailures } from "../lib/prerequisites.ts";
@@ -13,7 +13,6 @@ import { wireSkillsInteractively } from "./wire-skills.ts";
 import type { Workspace, WorkspacePointer } from "../lib/types.ts";
 
 const DISTRIBUTION_ROOT_ENV = "AIDECK_" + "DISTRIBUTION_ROOT";
-const SKIP_INSTALL_ENV = "AIDECK_" + "SKIP_INSTALL";
 
 export function initCommand(args: string[]): void {
   const here = args.includes("--here");
@@ -42,7 +41,7 @@ export function initCommand(args: string[]): void {
   const workspace = { root: projectRoot, pointerPath, pointer, engineRoot: targetEngine, decksRoot: resolve(projectRoot, "decks") } as Workspace;
   writePointer(projectRoot, pointer);
   ensureWorkspaceDirs(workspace);
-  installDependencies(targetEngine);
+  installEngineDependencies(targetEngine);
 
   console.log("");
   console.log(`Set up AI Deck Kit in: ${projectRoot}`);
@@ -98,24 +97,6 @@ function printNextSteps(): void {
   console.log("");
   console.log("Not sure something is set up right?  aideck doctor");
   console.log(`If "aideck" is not found, use ./aideck instead, from this folder.`);
-}
-
-function installDependencies(engineRoot: string): void {
-  if (process.env[SKIP_INSTALL_ENV] === "1") return;
-  console.log("");
-  console.log("Installing the toolkit's components. This can take a minute.");
-  const result = spawnSync("npm", ["install", "--prefix", engineRoot, "--no-audit", "--no-fund"], { stdio: "inherit" });
-  if (result.status !== 0) {
-    throw new Error(
-      [
-        "Could not install the toolkit's components.",
-        "",
-        "  - Check that you are connected to the internet.",
-        "  - If you are behind a company proxy or VPN, that is the usual cause.",
-        "  - Then run the install command again.",
-      ].join("\n"),
-    );
-  }
 }
 
 function isWithin(root: string, candidate: string): boolean {

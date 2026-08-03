@@ -3,6 +3,8 @@ import { join, relative, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { replaceTree, readJson, writeJson } from "../lib/fs.ts";
+import { installEngineDependencies } from "../lib/engine-dependencies.ts";
+import { migrateLegacyRegisteredTemplates } from "../lib/templates.ts";
 import type { Workspace } from "../lib/types.ts";
 
 const ENGINE_SOURCE_ENV = "AIDECK_" + "ENGINE_SOURCE";
@@ -22,9 +24,15 @@ export function upgradeCommand(workspace: Workspace, args: string[], afterUpgrad
     console.log(`Engine already uses bundled version ${sourceVersion}; decks were untouched.`);
     return;
   }
+  // Templates the user authored under the old layout still sit in the engine root. Move them to the
+  // project before the engine tree is replaced, or the upgrade would take them with it.
+  const rescued = migrateLegacyRegisteredTemplates(workspace, sourceEngine);
+  if (rescued.length) console.log(`Moved your templates out of the engine into ./templates: ${rescued.join(", ")}`);
   replaceTree(sourceEngine, workspace.engineRoot);
   writeJson(workspace.pointerPath, { ...workspace.pointer, engineVersion: sourceVersion });
-  console.log(`Upgraded engine to ${sourceVersion}; decks were untouched.`);
+  // The new engine ships its own package.json; its components must be installed or preview breaks.
+  installEngineDependencies(workspace.engineRoot);
+  console.log(`Upgraded engine to ${sourceVersion}; your decks and templates were untouched.`);
   afterUpgrade();
 }
 
