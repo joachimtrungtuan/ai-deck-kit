@@ -80,7 +80,7 @@ aideck serve --template swiss-modern
 
 The browser opens automatically. Add `--no-open` for automation and `--port <port>` to select a port. `--deck` and `--template` are mutually exclusive.
 
-Template selection checks `templates/{name}.template/` first so an agent can edit and review a user draft. If no draft exists, it loads the installed template from `engine/templates/{name}.template/`. The CLI validates the selected template's manifest, CSS files, layout index, and declared layout sources before starting Vite.
+Template selection checks the project's `templates/{name}.template/` first, then the shipped default at `engine/templates/{name}.template/`. If neither resolves, `serve` fails naming both locations — it never substitutes a different template. The CLI validates the selected template's manifest, CSS files, layout index, and declared layout sources before starting Vite, and prints what it resolved (deck path, or template name + origin + version + path) so the target is verifiable from the terminal. Passing a template name where a deck is expected fails with the correct command.
 
 ## Upgrade
 
@@ -91,7 +91,19 @@ aideck upgrade
 aideck upgrade --to 0.2.0
 ```
 
-An upgrade replaces only the resolved `engineRoot`, updates `engineVersion` in `ai-deck-kit.json`, and runs `aideck doctor`. The `decks/` and project `templates/` roots are never copied, removed, or migrated. `aideck doctor` reports schema, slide-catalog, and template-version mismatches without silently rewriting a deck. The same commands can be run through the copied CLI entrypoint shown above.
+An upgrade replaces only the resolved `engineRoot`, reinstalls engine dependencies so the preview runtime works immediately, updates `engineVersion` in `ai-deck-kit.json`, and runs `aideck doctor`. Before the engine tree is replaced, any non-shipped template bundle left inside `engine/templates/` by the old two-location layout is moved into the project's `templates/`, so an upgrade cannot delete a user's template. The `decks/` and project `templates/` roots are never copied, removed, or migrated. `aideck doctor` reports schema, slide-catalog, and template-version mismatches without silently rewriting a deck. Upgrading is a single command — never delete-and-reinstall.
+
+## Removal And Repair
+
+```sh
+aideck reinstall                                        # reinstall engine dependencies
+aideck remove deck <slug> --yes
+aideck remove template <name> --reassign <other> --yes
+aideck uninstall --yes                                  # remove engine + pointer, keep user data
+aideck uninstall --purge --yes                          # also remove decks/ and templates/
+```
+
+Every destructive command prints its full target list before deleting, requires `--yes`, and refuses any path at or outside the project root. `remove template` refuses shipped defaults, and refuses to delete a template decks still use unless `--reassign` is given — in which case affected decks are re-templated first.
 
 For a local release smoke test, pass an engine directory explicitly:
 

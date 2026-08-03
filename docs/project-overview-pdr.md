@@ -38,7 +38,9 @@
 
 - **Deck author (via agent):** prompts Claude → agent runs `aideck new` to scaffold a `.deck`, authors `content.md`, previews, exports.
 - **Deck author (via CLI):** runs `aideck new my-talk --template swiss-modern`, edits content, `aideck serve`, `aideck export`.
-- **Template author:** `aideck template new <name>` scaffolds a template set; agent designs the design system + layouts; `aideck template register`.
+- **Template author:** `aideck template new <name>` scaffolds a template set in the project's `templates/`; agent designs the design system + layouts, then `aideck template validate` and `aideck template version --bump <part>`. Templates never move; there is no install step.
+- **Deck maintainer:** `aideck deck status` shows which decks trail their template; the agent re-syncs one at a time with `aideck deck retemplate` and reconciles the rendered result.
+- **Project owner:** full control over what the kit put in their folder — `remove deck`, `remove template --reassign`, `reinstall`, `uninstall [--purge]`.
 - **Sharer/recipient:** receives a `.deck` bundle (or zip), runs the toolkit, previews/exports without touching engine internals.
 
 ## 6. Product Naming

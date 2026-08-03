@@ -17,9 +17,12 @@ in as many projects as you like — each keeps its own copy and its own version.
 
 ## 1. Before you install
 
+**Supported systems: macOS and Linux.** Windows is not supported yet — the toolkit
+shells out to Unix tools for packing and exporting. On Windows, use WSL (Windows
+Subsystem for Linux) and follow the Linux instructions inside it.
+
 The kit needs a few pieces of free software. Check what you already have by pasting
-this into your terminal (Terminal on macOS/Linux, PowerShell on Windows) and pressing
-Enter:
+this into your terminal and pressing Enter:
 
 ```sh
 node --version
@@ -42,8 +45,7 @@ install it first:
 
 - **Node.js and npm** — download the "LTS" installer from <https://nodejs.org> and run
   it. This installs both. Close and reopen your terminal afterwards.
-- **git** — macOS: run `xcode-select --install`. Windows: download from
-  <https://git-scm.com/download/win>. Linux: `sudo apt install git` (or your
+- **git** — macOS: run `xcode-select --install`. Linux: `sudo apt install git` (or your
   distribution's package manager).
 - **Google Chrome** — <https://www.google.com/chrome/>. Skip it if you never need PDFs.
 
@@ -79,7 +81,7 @@ The installer will:
 4. Ask where to connect the AI skills — see [step 3](#3-connect-the-ai-skills).
 5. Offer to register the `aideck` command — see [step 4](#4-make-aideck-typeable).
 
-**Options**
+**Options**:
 
 ```sh
 # Keep the toolkit in a subfolder instead of the project root:
@@ -94,7 +96,7 @@ npx github:joachimtrungtuan/ai-deck-kit init --here --skip-checks
 
 ### What you end up with
 
-```
+```text
 my-presentations/
 ├── ai-deck-kit.json   ← marks this folder as a deck workspace
 ├── aideck             ← launcher, so ./aideck always works here
@@ -200,18 +202,28 @@ the browser (next step) and ask for changes in plain language.
 ## 6. See it in your browser
 
 ```sh
-aideck serve --deck my-talk
+aideck serve my-talk
 ```
 
 Your browser opens with the deck. Leave it running while you and the agent work —
 it refreshes as the content changes. Press `Ctrl + C` in the terminal to stop.
 
 ```sh
-aideck serve                          # gallery of all installed templates
-aideck serve --template swiss-modern  # preview a design on its own
-aideck serve --deck my-talk --port 4000
-aideck serve --deck my-talk --no-open # do not open a browser window
+aideck serve                              # gallery of every design available here
+aideck serve my-talk                      # preview a deck
+aideck serve deck my-talk                 # explicit deck form
+aideck serve template swiss-modern        # preview a design on its own
+aideck serve --deck my-talk --port 4000   # flag form remains supported
+aideck serve my-talk --no-open            # do not open a browser window
 ```
+
+The positional, explicit `deck`/`template`, and `--deck`/`--template` forms are
+equivalent. Ambiguous or unknown targets fail instead of falling back to the gallery.
+
+Before the browser opens, `serve` prints exactly what it resolved — the deck's folder,
+or the design's name, where it came from, and its version. If you ask for a deck and
+name a design (or the other way round), it says so and tells you the right command
+rather than showing you something else.
 
 The preview is read-only: you cannot break a deck by clicking around in it.
 
@@ -234,14 +246,37 @@ agent, open it in this folder and name the deck — the skills and the deck's ow
 Working on a design rather than a deck:
 
 ```sh
-aideck template new my-brand        # start your own design in templates/
-aideck serve --template my-brand    # review it
-aideck template register my-brand   # check it and install it for use in decks
+aideck template new my-brand         # start your own design in templates/
+aideck serve --template my-brand     # review it
+aideck template validate my-brand    # check it
+aideck template list                 # every design this project can use
 ```
+
+Designs live in one place: your project's `templates/` folder. The designs that came
+with the toolkit sit in `engine/templates/` and are never edited in place — if you
+give your own design the same name as one of them, yours is the one that gets used.
 
 ---
 
-## 8. Export and share
+## 8. When a design changes
+
+A deck keeps its own copy of the design it was built with. Editing a design never
+disturbs decks you already made — that is deliberate, so a tweak cannot quietly
+reflow a finished presentation.
+
+```sh
+aideck deck status                       # how each deck compares to its design
+aideck deck retemplate my-talk           # bring one deck up to the current design
+aideck deck retemplate my-talk --to other-design   # move it to a different design
+```
+
+Do this one deck at a time, with your agent, and look at the result afterwards.
+The command swaps the design copy and never touches your words; if the new design
+cannot render a slide type the deck uses, it refuses and leaves the deck alone.
+
+---
+
+## 9. Export and share
 
 ```sh
 aideck export html my-talk   # one self-contained file, opens in any browser
@@ -261,7 +296,7 @@ Packing uses the `zip` command, which macOS and most Linux systems already have.
 
 ---
 
-## 9. Keeping the toolkit current
+## 10. Keeping the toolkit current
 
 ```sh
 aideck upgrade              # latest engine
@@ -269,12 +304,37 @@ aideck upgrade --to 0.2.0   # a specific version
 ```
 
 Only `engine/` is replaced. Your `decks/` and `templates/` are never copied, moved,
-or rewritten. After upgrading, the kit runs its own health check and reports any deck
-that expects an older format — it will not silently rewrite your content.
+or rewritten. Upgrading is a single command — you never delete and reinstall, and you
+never lose work. After upgrading, the kit runs its own health check and reports any
+deck that expects an older format; it will not silently rewrite your content.
 
 ---
 
-## 10. If something goes wrong
+## 11. Removing things
+
+Everything the kit created can be removed from your project with one command. All of
+them list exactly what will be deleted first, and all of them require `--yes` so
+nothing goes away by accident.
+
+```sh
+aideck remove deck old-talk --yes                 # delete one deck
+aideck remove template old-brand --reassign swiss-modern --yes
+aideck reinstall                                  # repair the toolkit's parts
+aideck uninstall --yes                            # remove the toolkit, keep your work
+aideck uninstall --purge --yes                    # remove the toolkit AND your decks/designs
+```
+
+Removing a design that decks are using needs `--reassign`: the kit moves those decks
+onto the design you name **before** deleting anything, so no deck is ever left
+pointing at something that is gone. It refuses rather than guessing.
+
+`aideck uninstall` on its own removes `engine/` and the workspace pointer and leaves
+`decks/` and `templates/` untouched — your presentations survive. `--purge` is the
+one that deletes your work too.
+
+---
+
+## 12. If something goes wrong
 
 Run this first. It checks your software, the workspace, and every deck:
 
@@ -290,6 +350,8 @@ aideck doctor
 | Install fails while downloading | Usually internet, a company proxy, or a VPN. Reconnect and run it again. |
 | PDF export fails | Install Google Chrome, or use `aideck export html` instead. |
 | The agent does not know about decks | Run `aideck skills wire` and point it at your `.claude` or `.agents` folder. |
+| Preview fails to start after an upgrade | Run `aideck reinstall`. |
+| A deck looks out of date | Run `aideck deck status`, then re-sync it with your agent (section 8). |
 
 Full command list:
 
@@ -311,5 +373,6 @@ are authored in *other* projects that install the kit.
 
 ```sh
 npm run lint && npm run typecheck && npm run validate
-npm run test:serve && npm run test:smoke
+npm run test:serve && npm run test:lifecycle && npm run test:smoke
+npm run build && npm run build:check   # dist/ is committed; keep it current
 ```

@@ -22,18 +22,19 @@ Install creates two logical roots plus a root pointer:
 ├── <engine-root>/              ← engine (root or a subfolder, user's choice)
 │   ├── cli/                     ← Node/TS CLI core (aideck)
 │   ├── skills/                  ← skill bundles (crafting, template, generation)
-│   ├── templates/               ← versioned *.template presets + catalogs
+│   ├── templates/               ← SHIPPED DEFAULTS ONLY (read-only) + catalogs
 │   ├── preview-app/             ← shared React preview + export runtime
 │   └── engine.version.json      ← pinned engine version
 ├── decks/                       ← user presentations (one .deck each) — user data
 │   └── my-talk.deck/
-└── templates/                   ← user-CREATED .template bundles — user data, upgrade-safe
+└── templates/                   ← ALL authored .template bundles — user data, upgrade-safe
     └── my-brand.template/
 ```
 
 - `engine/` (incl. shipped preset templates) is the only tree upgrades write to.
 - `decks/` and project `templates/` are user data: never touched by upgrade; users edit here.
-- **Two template locations:** `engine/templates/{name}.template/` = shipped/installed presets (upgradable); project `templates/{name}.template/` = user-authored drafts (safe from upgrades). `aideck template new` writes to project `templates/` by default, and `aideck template register` installs the validated bundle without stripping its `.template` suffix.
+- **One template home:** project `templates/{name}.template/` is where every authored or customized template lives, and it stays there — there is no install step and no draft/installed distinction. `engine/templates/` holds only the defaults shipped with the toolkit: read-only, replaced wholesale on upgrade, and refused by `aideck template version --bump`. When both roots hold the same name, the project copy wins for every resolution (`serve`, gallery, deck creation, re-sync); `aideck template list` marks it `overrides shipped`. Resolution failure is an error naming both roots — never a silent fallback to a different template.
+- **Legacy rescue:** `aideck upgrade` and `aideck doctor` move any non-shipped bundle left inside `engine/templates/` by the old two-location layout into project `templates/` before the engine tree is replaced, so an upgrade cannot delete a user's template.
 - **Shipped presets:** `swiss-modern`, `linear-dark`, and `clarity-courseware`.
   Clarity declares the named `clarity-courseware-v1` compact catalog (10 types,
   25 layout variants) rather than changing the shared v1/v2 catalogs.
@@ -84,7 +85,9 @@ Each module has a deterministic CLI surface and, where creative, a paired skill.
 | **Onboarding** | `link`/`unlink` (register the workspace-resolving `aideck` launcher), `skills wire` (link engine skills into `.claude`/`.agents`) | — |
 | **Design primitives** | `blocks list`, `motion list`, `tokens print` (read/scaffold shared blocks + motion + tokens) | choose/compose blocks, tune motion |
 | **Presentation** | `new`, `slide add/remove/move`, `anim toggle`, `transition set` (scaffold + flag flips in `content.md`/manifest) | author & edit slide content |
-| **Template mgmt** | `template new`, `template register`, `template list`, `template version` | design tokens, layouts, overrides |
+| **Deck maintenance** | `deck status` (drift vs source template), `deck retemplate` (re-sync one deck's frozen snapshot) | judge the diff, reconcile `content.md`, decide when to re-sync |
+| **Template mgmt** | `template new`, `template validate`, `template list`, `template version --bump` | design tokens, layouts, overrides, **choosing the version bump** |
+| **Removal / repair** | `remove deck`, `remove template --reassign`, `uninstall [--purge]`, `reinstall` | — |
 | **Generation** | `gen scaffold` (deck skeleton from template + outline) | outline-first: input → structure → slides |
 | **Export / package** | `export html`, `export pdf`, `pack` (`.deck` → zip), `unpack` (zip → `.deck`) | — |
 | **Preview** | `serve` (shared preview-app) | — |
@@ -121,11 +124,21 @@ Small and curated — not a general animation engine.
 
 - Single shared **React preview app** renders any `.deck` by reading its manifest + content + assets.
 - For a manifest-backed deck, the runtime resolves `deck/template/` first; when
-  absent, it resolves `engine/templates/<template.set>.template/`. The selected
-  bundle supplies its manifest, layout index, React components, CSS, animation
-  CSS, and deck class, so no template-name branch is needed. Deck validation
-  checks an embedded bundle's name, version, and slide-type catalog against
-  `deck.json`.
+  absent, it resolves the source template project-first
+  (`templates/<set>.template/`, then `engine/templates/<set>.template/`) and
+  **errors** if neither exists rather than substituting a different template. The
+  selected bundle supplies its manifest, layout index, React components, CSS,
+  animation CSS, and deck class, so no template-name branch is needed. Deck
+  validation checks an embedded bundle's name, version, and slide-type catalog
+  against `deck.json`.
+- **No template is named in runtime source.** The CLI passes what it resolved to
+  `preview-app/vite-deck-plugin.ts`, which generates the virtual module
+  `virtual:aideck-deck` (`runtimeDeck`, `runtimeTemplate`, `runtimeGallery`).
+  Hardcoded template CSS imports were the mechanism by which a deck could render
+  in another template's styling; the entry files now import only from that module.
+  The bare-`serve` gallery is built by resolving every visible template and
+  aliasing components per entry, so same-named exports across templates cannot
+  collide. A template that fails to resolve is omitted from the gallery, not fatal.
 - Export reuses the existing pipeline: standalone self-contained `index.html` (bundled) and flattened raster PDF (Chrome screenshot + ImageMagick). See existing `export-runtime-contract.md`.
 - Templates remain code-owned (design-system CSS + React layouts per slide type); one template set per deck.
 
@@ -137,6 +150,47 @@ Small and curated — not a general animation engine.
 - `content_schema_version` — `.deck` content/manifest schema version.
 
 Old decks pinned to older catalogs stay valid; upgrades never silently retype slides or blocks.
+
+### 6.1 Template drift & re-sync
+
+A deck freezes a copy of its template at creation and records `{ set, version, origin }` in
+`deck.json`. `origin` is provenance — which root the snapshot was taken from (`project` or
+`shipped`) — so the CLI can tell "the template moved forward" apart from "the template you are
+now resolving is a different one with the same name".
+
+`aideck deck status` compares the snapshot against the live source and reports one state per deck:
+
+| State | Meaning |
+|---|---|
+| `current` | Snapshot version equals the source version. |
+| `behind` / `ahead` | Source moved forward / snapshot is newer than the source. |
+| `source-switched` | The name now resolves from a different origin than the snapshot recorded. |
+| `source-missing` | No template of that name resolves any more (a `doctor` error; the others are notes). |
+
+This depends entirely on **agent-owned versioning discipline**: the CLI never edits template
+content and never infers a bump. `presentation-template-creation` requires a `templateVersion`
+bump after every edit, sized patch/minor/major by the scale of the change. An unbumped edit is
+invisible drift.
+
+`aideck deck retemplate <slug> [--to <name>]` re-syncs **one** deck. It refuses a target that
+does not support every slide type the deck uses, backs the snapshot up and restores it on any
+failure, and updates `deck.json` only — `content.md` is never rewritten. A major-version gap is
+reported as requiring visual review. Re-sync is deliberately per-deck and agent-run: only the
+agent can look at the rendered result and reconcile what moved.
+
+### 6.2 Removal & repair
+
+Full user control over an installed project, all destructive commands printing every target
+first and requiring `--yes`, and all refusing paths at or outside the project root:
+
+- `remove deck <slug>` — deletes one `.deck` bundle.
+- `remove template <name>` — refuses shipped defaults; refuses while decks still reference the
+  template unless `--reassign <name>` is given, in which case every affected deck is
+  re-templated **before** the deletion. No deck is ever left pointing at a template that is gone.
+- `uninstall` — removes `engine/` and the pointer, leaving `decks/` and `templates/`;
+  `--purge` also removes user data.
+- `reinstall` — reinstalls engine dependencies (shared with `init` and `upgrade`), the fix for a
+  preview runtime broken by a partial install.
 
 ## 7. Data Flow (author a deck)
 

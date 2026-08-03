@@ -40,7 +40,7 @@ Activate the `presentation-crafting` skill for deck work (content → slides) an
 
 1. **One canonical Markdown content file per deck** (`decks/{slug}.deck/content.md`) — the source of truth for text, images, icons, speaker notes, and review annotations.
 2. **One and only one template set per presentation.** Every slide derives from a declared slide type in the active slide-type catalog. No off-template improvisation.
-3. **Templates are versioned** against the slide-types catalog version they implement.
+3. **Templates are versioned** against the slide-types catalog version they implement, and live in exactly one place: the project's `templates/`. `engine/templates/` holds only the shipped defaults (read-only). **Bump `templateVersion` after every template edit** — patch/minor/major by scale of change; the CLI reads versions to detect drift but never bumps for you.
 4. **Overrides (layout/animation) are an explicit, recorded edge case** — justified in the content file, never the default flow.
 5. **Icons:** icon-font approach, Phosphor-first (see skill's `icon-policy.md`).
 6. **Animations:** gentle, attention-holding, from the approved preset vocabulary only.
