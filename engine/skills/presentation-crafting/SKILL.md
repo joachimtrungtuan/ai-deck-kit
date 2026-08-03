@@ -24,15 +24,39 @@ This skill handles deck content normalization, React deck source, standalone HTM
 
 ## Workflow
 
-1. Read the available user material and select exactly one installed template set. If no suitable set exists, stop and switch to `presentation-template-creation`; never improvise a deck style.
+1. Read the available user material and select exactly one template set from `aideck template list`. If no suitable set exists, stop and switch to `presentation-template-creation`; never improvise a deck style.
 2. For slide-ready input, preserve the supplied structure. For a prompt, document, notes, or transcript, first create a proposed Markdown outline and obtain approval before scaffolding. Follow `references/outline-first-generation.md`.
 3. Scaffold the bundle through the CLI:
    - Slide-ready or manually structured: `aideck new <slug> --template <set>`.
    - Approved outline: `aideck gen scaffold <slug> --template <set> --outline <approved-outline.md>`.
 4. Author or refine only `decks/<slug>.deck/content.md`: visible copy, intent, visual direction, speaker notes, design notes, review questions, and valid structured blocks. Use `aideck slide add|remove|move`, `aideck anim toggle`, and `aideck transition set` for structure or motion metadata.
 5. Validate the canonical bundle with `aideck validate <slug>`. Resolve every manifest/content mismatch before preview or export.
-6. Review through the shared runtime with `aideck serve --deck <slug>`. During the Phase 04-to-06 transition, export still requires a registered legacy preview entry; do not claim arbitrary-deck preview/export support before Phase 06 delivers its resolver.
+6. Review through the shared runtime with `aideck serve --deck <slug>`. The command prints the deck path and the resolved template before Vite starts — read it back and confirm it is the deck and template you intended.
 7. When the deck is renderable, export with `aideck export html <slug>` or `aideck export pdf <slug>`, then perform the HTML/PDF visual checks in `references/export-workflow.md`.
+
+## Re-Syncing A Deck's Template
+
+Each deck carries a frozen copy of its template, taken at creation. Editing the source template never touches existing decks — that isolation is the point. Re-syncing is how a deck deliberately picks up the newer template, and it is an agent-run workflow, not something to hand a user as a one-liner: only the agent can look at the result and resolve what moved.
+
+Run `aideck deck status` to see every deck's relationship to its source. States:
+
+| State | Meaning | Action |
+|-------|---------|--------|
+| `current` | Snapshot matches the source version. | Nothing. |
+| `behind` | The source template moved forward. | Offer a re-sync; the version gap tells you how much review it needs. |
+| `ahead` | The snapshot is newer than the source — usually a template reverted or restored from an old copy. | Ask the user before doing anything. |
+| `source-switched` | The template resolves from a different origin now (e.g. the project copy was deleted, leaving a shipped default). | Confirm which one the deck should follow. |
+| `source-missing` | The template is gone. | The deck cannot re-sync until a template is chosen: `aideck deck retemplate <slug> --to <name>`. |
+
+Re-sync **one deck at a time**:
+
+1. `aideck deck status <slug>` — confirm the state and the version gap.
+2. `aideck deck retemplate <slug>` (or `--to <name>` to move the deck onto a different template). The CLI refuses if the target template does not support every slide type the deck uses, and it restores the old snapshot if anything fails, so a refusal leaves the deck exactly as it was.
+3. The CLI replaces the snapshot and updates `deck.json` only. It **never rewrites `content.md`** — slide content is yours to reconcile.
+4. `aideck validate <slug>`, then `aideck serve --deck <slug>` and step through every slide. A major-version change can reposition or drop content; treat the visual pass as mandatory there, not optional.
+5. Fix what moved by editing `content.md`, and report to the user what changed and what you had to reconcile.
+
+Never batch re-syncs across decks to "catch everything up". Each deck's content reacts differently to the same template change.
 
 ## User Intake
 
@@ -80,11 +104,12 @@ Template authoring (manifests, catalogs, versioning, new template sets) lives in
 ## Scripts
 
 - `aideck validate <slug>` checks a `.deck` bundle's `deck.json` manifest against its `content.md` (parity, required fields, override reasons).
+- `aideck deck status [<slug>]` reports how each deck compares to its source template; `aideck deck retemplate <slug> [--to <name>]` re-syncs one deck's frozen snapshot.
 - `aideck export html <slug>` builds one self-contained HTML file. `aideck export pdf <slug>` follows with the flattened PDF pipeline.
 
 ## Templates
 
-- `templates/export-runtime/` contains reusable source files for the preview/export shell. Copy only when missing; otherwise patch the existing shared runtime.
+- `templates/export-runtime/` is a legacy snapshot of the preview/export shell from before the `.deck` format. Do not copy from it; the live runtime is `engine/preview-app/`. See `references/export-runtime-contract.md`.
 
 ## Security
 

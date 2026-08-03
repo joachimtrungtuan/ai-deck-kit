@@ -5,9 +5,9 @@ The root pointer resolves the installed engine and user deck roots. Keep authore
 ```text
 <project-root>/
 ├── ai-deck-kit.json
-├── engine/                         # installed/upgradable runtime
+├── engine/                         # installed/upgradable runtime; replaced wholesale on upgrade
 │   ├── skills/
-│   ├── templates/
+│   ├── templates/                  # shipped defaults ONLY — read-only, never edited in place
 │   └── preview-app/
 ├── decks/
 │   └── {presentation-slug}.deck/
@@ -17,14 +17,19 @@ The root pointer resolves the installed engine and user deck roots. Keep authore
 │       ├── template/               # pinned template snapshot
 │       └── .build/                 # generated, disposable source/export
 └── templates/
-    └── {template-name}.template/   # user-authored template before registration
+    └── {template-name}.template/   # every template the project authors or customizes
 ```
+
+Templates live in one place. `templates/` is where authoring happens and where a template stays;
+`engine/templates/` only holds the defaults the toolkit ships. A project template shadows a shipped
+default of the same name everywhere the CLI resolves one.
 
 ## Rules
 
 - `deck.json` owns slide order, IDs, types, template binding, and defaults. Change it through `aideck` commands.
 - `content.md` is the one canonical authored file: copy, visual direction, speaker notes, design notes, review questions, and explicit override reasons.
 - `assets/` stores deck-specific images, generated graphics, exported diagrams, and local media.
+- `template/` is the deck's frozen snapshot, taken at creation. It is what preview and export render, so editing the source template never disturbs an existing deck. Replace it only through `aideck deck retemplate`.
 - `.build/` stores regenerated source and exports; never treat it as canonical input.
 - Do not create per-template or per-deck app scaffolds. `engine/preview-app/` is the one shared runtime.
 

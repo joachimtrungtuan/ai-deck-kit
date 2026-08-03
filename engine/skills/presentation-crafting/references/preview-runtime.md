@@ -19,15 +19,16 @@ Use the shared runtime to review:
 
 - Do not create one React app per template.
 - Do not create one React app per presentation.
-- Keep reusable template code under `engine/templates/`.
+- Keep authored templates under the project's `templates/`; `engine/templates/` holds only the shipped defaults.
 - Keep generated deck-specific source under `decks/{presentation-slug}.deck/.build/source/`; it is never canonical input.
-- Use a targeted CLI preview for a deck or template; reserve static preview entries for the curated installed-template gallery.
+- Never name a template in runtime source. Everything the runtime renders arrives through `virtual:aideck-deck`, built from what the CLI resolved.
 - Run the shared runtime through `aideck serve`; the CLI resolves the workspace from `ai-deck-kit.json`.
 
 ## Review Flow
 
 1. Run `aideck serve --deck <slug>` or `aideck serve --template <name>` from the workspace. The browser opens automatically; use `--no-open` for automation.
-2. For template authoring, the resolver prefers `templates/<name>.template/` and otherwise uses `engine/templates/<name>.template/`. Bare `aideck serve` remains the curated installed-template gallery.
-3. Review all relevant slide types or deck slides in browser.
-4. Fix template/source issues at their source.
-5. Run structural validators again before export.
+2. Read the resolution line the CLI prints before Vite starts — deck path, or template name with its origin, version, and path. Confirm it is what you asked for. A deck reviews with its own frozen snapshot, not the live source template.
+3. `templates/<name>.template/` wins over `engine/templates/<name>.template/`. Bare `aideck serve` opens a gallery built from every template the project can resolve.
+4. Review all relevant slide types or deck slides in browser.
+5. Fix template/source issues at their source.
+6. Run structural validators again before export.

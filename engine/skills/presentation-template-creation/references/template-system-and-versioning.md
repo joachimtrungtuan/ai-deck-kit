@@ -28,6 +28,12 @@ Version three things separately:
 
 When `slide-types-v2` is created later, old templates that declared `v1` remain valid. Do not silently force old decks into newer slide types.
 
+`templateVersion` is the drift signal. A deck freezes a copy of its template at creation and records the version it froze; `aideck deck status` compares that against the live source. This only works if the agent bumps the version after every edit — the CLI reads versions, it never writes template content or infers a bump. See SKILL.md → Versioning Discipline for the patch/minor/major decision.
+
+## Where Templates Live
+
+One place: the project's `templates/{name}.template/`. `engine/templates/` holds only the defaults shipped with the toolkit — read-only, replaced wholesale on upgrade, and refused by `aideck template version --bump`. To evolve a shipped default, copy it into `templates/` under a new name. When both roots hold the same name, the project's copy wins everywhere: `serve`, the gallery, deck creation, and re-sync.
+
 ## Template Manifest Shape
 
 ```json

@@ -12,8 +12,9 @@ Build order and file checklist for a new template set. Mirror an existing set (e
 6. **Icon policy** — template-specific application of the Phosphor-first rules.
 7. **React layouts** — shared helpers, then category files, then `index.ts`.
 8. **Specs** — `layout-contracts.md` (per-category layout rules) + `layout-index.json` (complete type→component map).
-9. **Register** — run `aideck template register <name>`; it validates and installs the bundle into `engine/templates/<name>.template/`.
-10. **Preview registration + verification** — see `preview-registration-and-verification.md`.
+9. **Validate** — run `aideck template validate <name>`. The bundle stays in `templates/<name>.template/`; nothing is copied into the engine and there is no install step.
+10. **Preview + verification** — see `preview-and-verification.md`.
+11. **Version** — bump `templateVersion` via `aideck template version <name> --bump patch|minor|major` to match the scale of the change (SKILL.md → Versioning Discipline). Every edit to an existing template ends here; a new template starts at the scaffolded `1.0.0` and needs no bump.
 
 ## Manifest Checklist
 

@@ -50,13 +50,18 @@ if (manifest.blockCatalog && manifest.blockCatalog !== "v1") {
 if (manifest.template?.set) {
   const workspaceRoot = findWorkspaceRoot(deckDir);
   const pointer = workspaceRoot ? readJson(path.join(workspaceRoot, "ai-deck-kit.json")) : { engineRoot: "./engine" };
-  const embeddedTemplateManifestPath = path.join(deckDir, "template", "template-manifest.json");
-  const installedTemplateManifestPath = path.resolve(workspaceRoot ?? path.resolve(deckDir, "..", ".."), pointer.engineRoot, "templates", `${manifest.template.set}.template`, "template-manifest.json");
-  const templateManifestPath = fs.existsSync(embeddedTemplateManifestPath)
-    ? embeddedTemplateManifestPath
-    : installedTemplateManifestPath;
-  if (!fs.existsSync(templateManifestPath)) {
-    errors.push(`deck.json: template.set "${manifest.template.set}" has no installed template-manifest.json.`);
+  const projectRoot = workspaceRoot ?? path.resolve(deckDir, "..", "..");
+  const bundle = `${manifest.template.set}.template`;
+  // The deck's own frozen snapshot is authoritative. Only a snapshot-less deck falls back to a
+  // source template, and there the project's copy wins over the engine's shipped default.
+  const candidates = [
+    path.join(deckDir, "template", "template-manifest.json"),
+    path.join(projectRoot, "templates", bundle, "template-manifest.json"),
+    path.resolve(projectRoot, pointer.engineRoot, "templates", bundle, "template-manifest.json"),
+  ];
+  const templateManifestPath = candidates.find((candidate) => fs.existsSync(candidate));
+  if (!templateManifestPath) {
+    errors.push(`deck.json: template.set "${manifest.template.set}" has no template-manifest.json in the deck snapshot, ./templates, or the engine defaults.`);
   } else {
     templateManifest = readJson(templateManifestPath);
     if (templateManifest.name !== manifest.template.set) {
