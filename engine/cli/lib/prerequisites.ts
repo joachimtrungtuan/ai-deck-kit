@@ -23,7 +23,7 @@ export type PrerequisiteReport = { hard: PrerequisiteCheck[]; soft: Prerequisite
 
 export function checkPrerequisites(): PrerequisiteReport {
   return {
-    hard: [checkNode(), checkCommand("npm", "installing engine dependencies", npmRemedy()), checkCommand("git", "downloading the kit from GitHub", gitRemedy())],
+    hard: [checkPlatform(), checkNode(), checkCommand("npm", "installing engine dependencies", npmRemedy()), checkCommand("git", "downloading the kit from GitHub", gitRemedy())],
     soft: [checkArchiveTools(), checkChrome(), checkImageMagick()],
   };
 }
@@ -78,6 +78,23 @@ function checkCommand(command: string, neededFor: string, remedy: string[]): Pre
   return { name: command, ok: found, detail: found ? "found" : "not found on your PATH", neededFor, remedy };
 }
 
+// Packing and PDF export shell out to Unix tools. Rather than half-working on Windows, say so
+// once, up front. WSL reports itself as linux, so it passes.
+function checkPlatform(): PrerequisiteCheck {
+  const supported = process.platform === "darwin" || process.platform === "linux";
+  return {
+    name: "Operating system",
+    ok: supported,
+    detail: supported ? `${process.platform} — supported` : `${process.platform} — not supported`,
+    neededFor: "running the toolkit at all",
+    remedy: [
+      "This toolkit supports macOS and Linux.",
+      "On Windows, install WSL (Windows Subsystem for Linux) and run the toolkit inside it:",
+      "  https://learn.microsoft.com/windows/wsl/install",
+    ],
+  };
+}
+
 function npmRemedy(): string[] {
   return [
     "npm normally arrives together with Node.js.",
@@ -90,7 +107,6 @@ function gitRemedy(): string[] {
   const byPlatform: Record<string, string> = {
     darwin: "Run:  xcode-select --install    (or:  brew install git)",
     linux: "Debian/Ubuntu:  sudo apt install git      Fedora:  sudo dnf install git",
-    win32: "Download the installer from https://git-scm.com/download/win",
   };
   return [
     "git is required because the toolkit is downloaded straight from GitHub.",
@@ -108,11 +124,7 @@ function checkArchiveTools(): PrerequisiteCheck {
     neededFor: "sharing a deck as a zip file (aideck pack / unpack)",
     remedy: [
       "Everything else works without this. You only need it to share decks as zip files.",
-      process.platform === "win32"
-        ? "On Windows, install these through Git Bash or WSL."
-        : process.platform === "darwin"
-          ? "Run:  brew install zip unzip"
-          : "Debian/Ubuntu:  sudo apt install zip unzip",
+      process.platform === "darwin" ? "Run:  brew install zip unzip" : "Debian/Ubuntu:  sudo apt install zip unzip",
     ],
   };
 }
@@ -124,8 +136,6 @@ function checkChrome(): PrerequisiteCheck {
     "/usr/bin/google-chrome",
     "/usr/bin/chromium",
     "/usr/bin/chromium-browser",
-    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
   ];
   const found = candidates.some((path) => existsSync(path)) || onPath("google-chrome") || onPath("chromium");
   return {
@@ -150,18 +160,13 @@ function checkImageMagick(): PrerequisiteCheck {
     neededFor: "exporting a deck to PDF (aideck export pdf)",
     remedy: [
       "HTML export and browser preview work without this. Only PDF export needs it.",
-      process.platform === "darwin"
-        ? "Run:  brew install imagemagick"
-        : process.platform === "win32"
-          ? "Download the installer from https://imagemagick.org/script/download.php#windows"
-          : "Debian/Ubuntu:  sudo apt install imagemagick",
+      process.platform === "darwin" ? "Run:  brew install imagemagick" : "Debian/Ubuntu:  sudo apt install imagemagick",
     ],
   };
 }
 
 function onPath(command: string): boolean {
-  const probe = process.platform === "win32" ? "where" : "which";
-  return spawnSync(probe, [command], { encoding: "utf8" }).status === 0;
+  return spawnSync("which", [command], { encoding: "utf8" }).status === 0;
 }
 
 function compareVersions(current: string, minimum: readonly number[]): number {
