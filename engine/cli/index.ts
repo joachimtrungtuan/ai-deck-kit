@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { runCatalog, catalogHelp } from "./commands/catalog.ts";
 import { coreHelp, runCore } from "./commands/core.ts";
+import { deckHelp, runDeck } from "./commands/deck-maintenance.ts";
+import { removalHelp, runRemoval } from "./commands/removal.ts";
 import { generationHelp, runGeneration } from "./commands/generation.ts";
 import { linkHelp, runLink } from "./commands/link.ts";
 import { outputHelp, runOutput } from "./commands/output.ts";
@@ -22,7 +24,11 @@ ${skillsHelp}
 
 ${presentationHelp}
 
+${deckHelp}
+
 ${templateHelp}
+
+${removalHelp}
 
 ${catalogHelp}
 
@@ -44,7 +50,9 @@ export function main(argv = process.argv.slice(2)): void {
   if (command === "link" || command === "unlink") return runLink([command, ...args]);
   if (command === "skills") return runSkills(args);
   if (command === "new" || command === "slide" || command === "anim" || command === "transition" || command === "validate") return runPresentation([command, ...args]);
+  if (command === "deck") return runDeck(args);
   if (command === "template") return runTemplates(args);
+  if (command === "remove" || command === "uninstall" || command === "reinstall") return runRemoval([command, ...args]);
   if (command === "blocks" || command === "motion" || command === "tokens") return runCatalog([command, ...args]);
   if (command === "gen") return runGeneration(args);
   if (command === "serve" || command === "export" || command === "pack" || command === "unpack") return runOutput([command, ...args]);
