@@ -17,6 +17,7 @@
     "typecheck": "npm --prefix engine run typecheck",
     "validate": "node scripts/validate.mjs",
     "test:serve": "node --experimental-strip-types --test engine/cli/tests/serve.test.ts",
+    "test:lifecycle": "node --experimental-strip-types --test engine/cli/tests/deck-lifecycle.test.ts",
     "test:smoke": "node scripts/ci-smoke.mjs"
   }
 }

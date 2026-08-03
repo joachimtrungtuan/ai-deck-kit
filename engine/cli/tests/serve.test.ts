@@ -6,16 +6,71 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { createTemplate, getPreviewTemplate, getTemplate, registerTemplate, validateTemplateManifest, type TemplateManifest } from "../lib/templates.ts";
+import { buildServeViteArgs, parseServeArgs } from "../commands/output.ts";
+import { createTemplate, listTemplates, migrateLegacyRegisteredTemplates, resolveTemplate, validateTemplateManifest, type TemplateManifest } from "../lib/templates.ts";
 import type { Workspace } from "../lib/types.ts";
+import { resolveGeneratedTemplateImport, templatePreviewSlideId } from "../../preview-app/vite-deck-plugin.ts";
 
 const projectRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const cli = join(projectRoot, "engine", "cli", "index.mjs");
 
 test("serve help documents template selection and headless mode", () => {
   const output = execFileSync(process.execPath, [cli, "--help"], { cwd: projectRoot, encoding: "utf8" });
-  assert.match(output, /serve \[--deck <id> \| --template <name>\]/);
+  assert.match(output, /serve \[<deck-id> \| deck <id> \| template <name>/);
   assert.match(output, /--no-open/);
+});
+
+test("serve normalizes gallery, deck, and template command forms", () => {
+  assert.deepEqual(parseServeArgs(["serve"]), { open: true });
+  assert.deepEqual(parseServeArgs(["serve", "vivimoon-website"]), { deck: "vivimoon-website", open: true });
+  assert.deepEqual(parseServeArgs(["serve", "deck", "vivimoon-website"]), { deck: "vivimoon-website", open: true });
+  assert.deepEqual(parseServeArgs(["serve", "--deck", "vivimoon-website"]), { deck: "vivimoon-website", open: true });
+  assert.deepEqual(parseServeArgs(["serve", "template", "clarity-courseware"]), { open: true, template: "clarity-courseware" });
+  assert.deepEqual(parseServeArgs(["serve", "--template", "clarity-courseware"]), { open: true, template: "clarity-courseware" });
+});
+
+test("serve validates ambiguous targets and forwards browser-open options", () => {
+  assert.throws(() => parseServeArgs(["serve", "deck"]), /deck requires a value/);
+  assert.throws(() => parseServeArgs(["serve", "unknown", "extra"]), /Unknown serve arguments/);
+  assert.throws(
+    () => parseServeArgs(["serve", "vivimoon-website", "--template", "clarity-courseware"]),
+    /Choose one serve target/,
+  );
+  assert.throws(() => parseServeArgs(["serve", "--deck", "first", "--deck", "second"]), /--deck can only be provided once/);
+  assert.throws(
+    () => parseServeArgs(["serve", "--template", "first", "--template", "second"]),
+    /--template can only be provided once/,
+  );
+  assert.deepEqual(buildServeViteArgs(parseServeArgs(["serve", "--port", "4173"])), [
+    "--host", "127.0.0.1", "--port", "4173", "--open",
+  ]);
+  assert.deepEqual(buildServeViteArgs(parseServeArgs(["serve", "--no-open"])), ["--host", "127.0.0.1"]);
+});
+
+test("generated deck sources resolve legacy unsuffixed installed template imports", () => {
+  const workspace = fixtureWorkspace();
+  const source = join(workspace.decksRoot, "legacy.deck", ".build", "source", "legacy-deck.tsx");
+  const installed = join(workspace.engineRoot, "templates", "linear-dark.template", "layouts", "react");
+  mkdirSync(installed, { recursive: true });
+  mkdirSync(join(source, ".."), { recursive: true });
+  writeFileSync(source, "export const legacySlides = [];\n");
+
+  assert.equal(
+    resolveGeneratedTemplateImport(
+      "../../../../engine/templates/linear-dark/layouts/react",
+      source,
+      workspace.decksRoot,
+      workspace.engineRoot,
+    ),
+    installed,
+  );
+});
+
+test("template preview variant identities cannot collide with display-label delimiters", () => {
+  assert.notEqual(
+    templatePreviewSlideId("a", "b · c"),
+    templatePreviewSlideId("a · b", "c"),
+  );
 });
 
 test("serve uses the shared review shell for deck targets", () => {
@@ -53,34 +108,46 @@ test("serve reports a missing template before starting Vite", () => {
     encoding: "utf8",
   });
   assert.equal(result.status, 1);
-  assert.match(result.stderr, /was not found as a draft or installed template/);
+  assert.match(result.stderr, /was not found in/);
 });
 
-test("preview template resolution prefers a valid user draft", () => {
+test("a project template wins over the shipped default of the same name", () => {
   const workspace = fixtureWorkspace();
-  writeTemplate(join(workspace.engineRoot, "templates", "sample.template"), "Installed");
-  assert.equal(getPreviewTemplate(workspace, "sample").manifest.displayName, "Installed");
-  writeTemplate(join(workspace.root, "templates", "sample.template"), "Draft");
-  const selected = getPreviewTemplate(workspace, "sample");
-  assert.equal(selected.manifest.displayName, "Draft");
+  writeTemplate(join(workspace.engineRoot, "templates", "sample.template"), "Shipped");
+  assert.equal(resolveTemplate(workspace, "sample").origin, "shipped");
+  writeTemplate(join(workspace.root, "templates", "sample.template"), "Mine");
+  const selected = resolveTemplate(workspace, "sample");
+  assert.equal(selected.manifest.displayName, "Mine");
+  assert.equal(selected.origin, "project");
   assert.equal(selected.root, join(workspace.root, "templates", "sample.template"));
+  const listed = listTemplates(workspace).find((entry) => entry.name === "sample");
+  assert.equal(listed?.overridesShipped, true);
 });
 
-test("preview template resolution validates layout coverage", () => {
+test("template resolution validates layout coverage", () => {
   const workspace = fixtureWorkspace();
   const root = join(workspace.engineRoot, "templates", "sample.template");
   writeTemplate(root, "Broken");
   writeFileSync(join(root, "layouts", "layout-index.json"), "{}\n");
-  assert.throws(() => getPreviewTemplate(workspace, "sample"), /Missing layout index entry/);
+  assert.throws(() => resolveTemplate(workspace, "sample"), /Missing layout index entry/);
 });
 
-test("preview template resolution rejects layout sources outside the template", () => {
+test("template resolution rejects layout sources outside the template", () => {
   const workspace = fixtureWorkspace();
   const root = join(workspace.engineRoot, "templates", "sample.template");
   writeTemplate(root, "Unsafe");
   writeFileSync(join(root, "layouts", "layout-index.json"), `${JSON.stringify({ title: { component: "SampleTitle", source: "../../outside.tsx" } })}\n`);
   writeFileSync(join(root, "outside.tsx"), "export function SampleTitle() { return null; }\n");
-  assert.throws(() => getPreviewTemplate(workspace, "sample"), /must stay inside layouts/);
+  assert.throws(() => resolveTemplate(workspace, "sample"), /must stay inside layouts/);
+});
+
+test("resolution failures name both places a template could live", () => {
+  const workspace = fixtureWorkspace();
+  writeTemplate(join(workspace.root, "templates", "present.template"), "Present");
+  assert.throws(
+    () => resolveTemplate(workspace, "absent"),
+    (error: Error) => /templates/.test(error.message) && /Available: present/.test(error.message),
+  );
 });
 
 test("template manifests accept an optional CSS-safe deck class", () => {
@@ -113,10 +180,13 @@ test("manifest deck rendering resolves components from the active template witho
   assert.doesNotMatch(source, /manifest\.template\?\.set\s*===/);
 });
 
-test("deck validation prefers its portable embedded template snapshot", () => {
+test("deck validation prefers its portable embedded template snapshot, then the project template, then the shipped default", () => {
   const source = readFileSync(join(projectRoot, "engine", "skills", "presentation-crafting", "scripts", "validate-slide-content.mjs"), "utf8");
-  assert.match(source, /embeddedTemplateManifestPath/);
-  assert.match(source, /fs\.existsSync\(embeddedTemplateManifestPath\)/);
+  const candidates = source.match(/const candidates = \[[\s\S]*?\];/);
+  assert.ok(candidates, "expected an ordered candidate list");
+  const order = [...candidates[0].matchAll(/path\.(?:join|resolve)\((.+?), "template-manifest\.json"\)/g)].map((match) => match[1]);
+  assert.deepEqual(order, [`deckDir, "template"`, `projectRoot, "templates", bundle`, `projectRoot, pointer.engineRoot, "templates", bundle`]);
+  assert.match(source, /candidates\.find\(/);
 });
 
 test("deck validation rejects an embedded template with the wrong identity", () => {
@@ -186,15 +256,34 @@ test("new template scaffolds declare and scope their preview deck class", () => 
   assert.match(readFileSync(join(root, "design-system.css"), "utf8"), /^\.new-template-deck \{/);
 });
 
-test("template registration preserves the bundle suffix", () => {
+test("upgrade rescues templates the old layout left inside the engine", () => {
   const workspace = fixtureWorkspace();
-  writeTemplate(join(workspace.root, "templates", "registered-template.template"), "Registered Template", "registered-template");
-  const installed = registerTemplate(workspace, "registered-template");
-  assert.equal(installed, join(workspace.engineRoot, "templates", "registered-template.template"));
-  assert.equal(getTemplate(workspace, "registered-template").root, installed);
+  declareShippedTemplates(workspace, ["shipped-default"]);
+  writeTemplate(join(workspace.engineRoot, "templates", "shipped-default.template"), "Shipped Default", "shipped-default");
+  writeTemplate(join(workspace.engineRoot, "templates", "my-template.template"), "Mine", "my-template");
+
+  assert.deepEqual(migrateLegacyRegisteredTemplates(workspace), ["my-template"]);
+  const moved = resolveTemplate(workspace, "my-template");
+  assert.equal(moved.origin, "project");
+  assert.equal(moved.root, join(workspace.root, "templates", "my-template.template"));
+  // The shipped default stays put; the engine owns it and replaces it wholesale on upgrade.
+  assert.equal(resolveTemplate(workspace, "shipped-default").origin, "shipped");
 });
 
-test("Vite serves draft layouts, resolves shared primitives, and reloads manifest changes", { timeout: 30_000 }, async () => {
+test("a shipped default cannot be version-bumped in place", () => {
+  const workspace = fixtureWorkspace();
+  declareShippedTemplates(workspace, ["locked"]);
+  writeFileSync(workspace.pointerPath, `${JSON.stringify(workspace.pointer)}\n`);
+  writeTemplate(join(workspace.engineRoot, "templates", "locked.template"), "Locked", "locked");
+  const result = spawnSync(process.execPath, [cli, "template", "version", "locked", "--bump", "minor"], {
+    cwd: workspace.root,
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /shipped default and cannot be edited/);
+});
+
+test("Vite serves project template layouts, resolves shared primitives, and reloads manifest changes", { timeout: 30_000 }, async () => {
   const name = `serve-integration-${process.pid}`;
   const templateRoot = join(projectRoot, "templates", `${name}.template`);
   const engineRoot = join(projectRoot, "engine");
@@ -209,6 +298,10 @@ test("Vite serves draft layouts, resolves shared primitives, and reloads manifes
     const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
     manifest.name = name;
     manifest.displayName = "Integration Draft";
+    const firstType = manifest.supportedSlideTypes[0];
+    manifest.layoutVariants = Object.fromEntries(
+      manifest.supportedSlideTypes.map((type: string) => [type, type === firstType ? ["variant-a", "variant-b"] : [`${type}-default`]]),
+    );
     writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
     vite = spawn(join(engineRoot, "node_modules", ".bin", "vite"), ["--host", "127.0.0.1", "--port", String(port), "--strictPort"], {
@@ -228,6 +321,8 @@ test("Vite serves draft layouts, resolves shared primitives, and reloads manifes
     const virtualUrl = `${baseUrl}/@id/__x00__virtual:aideck-deck`;
     const virtualSource = await (await fetch(virtualUrl)).text();
     assert.match(virtualSource, new RegExp(`templates/${name}\\.template`));
+    assert.match(virtualSource, new RegExp(`${firstType} · variant-a`));
+    assert.match(virtualSource, /layoutVariant: "variant-a"/);
 
     const sharedPath = join(templateRoot, "layouts", "react", "shared.tsx");
     const sharedUrl = new URL(`/@fs${sharedPath}`, baseUrl);
@@ -235,11 +330,15 @@ test("Vite serves draft layouts, resolves shared primitives, and reloads manifes
     assert.match(sharedSource, /engine\/primitives\/blocks\/index\.ts/);
 
     manifest.displayName = "Integration Draft Reloaded";
+    delete manifest.layoutVariants;
     writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
     await waitFor(
       async () => (await (await fetch(virtualUrl)).text()).includes("Integration Draft Reloaded"),
       () => `Vite did not reload the changed manifest:\n${output}`,
     );
+    const reloadedSource = await (await fetch(virtualUrl)).text();
+    assert.doesNotMatch(reloadedSource, /variant-a/);
+    assert.match(reloadedSource, new RegExp(`type: "${firstType}"`));
   } finally {
     if (vite && vite.exitCode === null) {
       vite.kill("SIGTERM");
@@ -259,6 +358,11 @@ function fixtureWorkspace(): Workspace {
     pointerPath: join(root, "ai-deck-kit.json"),
     pointer: { engineRoot: "engine", decksRoot: "decks", engineVersion: "0.1.0" },
   };
+}
+
+function declareShippedTemplates(workspace: Workspace, shippedTemplates: string[]): void {
+  mkdirSync(workspace.engineRoot, { recursive: true });
+  writeFileSync(join(workspace.engineRoot, "engine.version.json"), `${JSON.stringify({ engineVersion: "0.1.0", shippedTemplates })}\n`);
 }
 
 function writeTemplate(root: string, displayName: string, name = "sample"): void {
