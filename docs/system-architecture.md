@@ -35,9 +35,7 @@ Install creates two logical roots plus a root pointer:
 - `decks/` and project `templates/` are user data: never touched by upgrade; users edit here.
 - **One template home:** project `templates/{name}.template/` is where every authored or customized template lives, and it stays there — there is no install step and no draft/installed distinction. `engine/templates/` holds only the defaults shipped with the toolkit: read-only, replaced wholesale on upgrade, and refused by `aideck template version --bump`. When both roots hold the same name, the project copy wins for every resolution (`serve`, gallery, deck creation, re-sync); `aideck template list` marks it `overrides shipped`. Resolution failure is an error naming both roots — never a silent fallback to a different template.
 - **Legacy rescue:** `aideck upgrade` and `aideck doctor` move any non-shipped bundle left inside `engine/templates/` by the old two-location layout into project `templates/` before the engine tree is replaced, so an upgrade cannot delete a user's template.
-- **Shipped presets:** `swiss-modern`, `linear-dark`, and `clarity-courseware`.
-  Clarity declares the named `clarity-courseware-v1` compact catalog (10 types,
-  25 layout variants) rather than changing the shared v1/v2 catalogs.
+- **Shipped presets:** `swiss-modern` and `linear-dark`.
 
 ### What ships vs user data (git boundary)
 

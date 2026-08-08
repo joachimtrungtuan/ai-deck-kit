@@ -1,5 +1,9 @@
 # AI Deck Kit — Project Changelog
 
+## 2026-08-08
+
+- Removed the `clarity-courseware` template (bundle, catalog doc, registry entries) from this repo; it now lives as a project template in the target project it serves.
+
 ## 2026-07-25
 
 - Added the shipped `clarity-courseware` template: a compact 10-type courseware profile with 25 curated layout variants and white, orange, and black background modes.

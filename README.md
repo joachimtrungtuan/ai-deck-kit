@@ -190,7 +190,6 @@ aideck template list
 | --- | --- |
 | `swiss-modern` | Clean, typographic business decks |
 | `linear-dark` | Dark, product-launch style decks |
-| `clarity-courseware` | Teaching and training material |
 
 **Now hand it to your agent.** Open your AI agent in this folder and ask for what you
 want, for example: *"Fill in my-talk with a 10-slide pitch for our Q3 launch."* The

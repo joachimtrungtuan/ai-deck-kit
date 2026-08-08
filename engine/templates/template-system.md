@@ -20,4 +20,3 @@ This folder stores reusable presentation template sets.
 | --- | --- | --- | --- |
 | `swiss-modern` | `1.0.0` | `v1` | Typography-first Swiss style decks with strong grid discipline, bold hierarchy, and restrained motion. |
 | `linear-dark` | `1.0.0` | `v2` | Dark, cinematic narrative decks with expressive editorial layouts. |
-| `clarity-courseware` | `1.0.0` | `clarity-courseware-v1` | White-first instructional decks with 10 courseware types, 25 layout variants, and Inter/Newsreader mixed headings. |

@@ -17,7 +17,6 @@ run([cli, "init", "--dir", "tools/ai-deck-kit"], workspace, env);
 for (const [slug, template] of [
   ["swiss-smoke", "swiss-modern"],
   ["linear-smoke", "linear-dark"],
-  ["clarity-smoke", "clarity-courseware"],
 ]) {
   const targetCli = join(workspace, "tools", "ai-deck-kit", "cli", "index.mjs");
   run([targetCli, "new", slug, "--template", template], workspace, env);

@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const validator = join(root, "engine", "skills", "presentation-template-creation", "scripts", "validate-template-manifest.mjs");
-const shippedTemplates = ["swiss-modern", "linear-dark", "clarity-courseware"];
+const shippedTemplates = ["swiss-modern", "linear-dark"];
 for (const name of shippedTemplates) {
   const manifest = join(root, "engine", "templates", `${name}.template`, "template-manifest.json");
   const result = spawnSync(process.execPath, [validator, manifest], { stdio: "inherit" });

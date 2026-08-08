@@ -7,10 +7,7 @@
 
 AI Deck Kit is a single-package, agent-native presentation toolkit. The root package exposes the `ai-deck-kit` installer and `aideck` binary. The `engine/` tree contains the deterministic CLI, preview/export runtime, primitives, skills, and shipped templates. User decks and user-authored templates are separate workspace data roots.
 
-The shipped template set comprises `swiss-modern`, `linear-dark`, and
-`clarity-courseware`. Clarity is a compact courseware profile with 10 semantic
-types and 25 layout variants; it supports optional course metadata, three
-background modes, and Newsreader only for approved instructional emphasis.
+The shipped template set comprises `swiss-modern` and `linear-dark`.
 
 ```text
 AI Presentation/

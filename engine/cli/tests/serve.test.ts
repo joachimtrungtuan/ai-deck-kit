@@ -25,15 +25,15 @@ test("serve normalizes gallery, deck, and template command forms", () => {
   assert.deepEqual(parseServeArgs(["serve", "vivimoon-website"]), { deck: "vivimoon-website", open: true });
   assert.deepEqual(parseServeArgs(["serve", "deck", "vivimoon-website"]), { deck: "vivimoon-website", open: true });
   assert.deepEqual(parseServeArgs(["serve", "--deck", "vivimoon-website"]), { deck: "vivimoon-website", open: true });
-  assert.deepEqual(parseServeArgs(["serve", "template", "clarity-courseware"]), { open: true, template: "clarity-courseware" });
-  assert.deepEqual(parseServeArgs(["serve", "--template", "clarity-courseware"]), { open: true, template: "clarity-courseware" });
+  assert.deepEqual(parseServeArgs(["serve", "template", "linear-dark"]), { open: true, template: "linear-dark" });
+  assert.deepEqual(parseServeArgs(["serve", "--template", "linear-dark"]), { open: true, template: "linear-dark" });
 });
 
 test("serve validates ambiguous targets and forwards browser-open options", () => {
   assert.throws(() => parseServeArgs(["serve", "deck"]), /deck requires a value/);
   assert.throws(() => parseServeArgs(["serve", "unknown", "extra"]), /Unknown serve arguments/);
   assert.throws(
-    () => parseServeArgs(["serve", "vivimoon-website", "--template", "clarity-courseware"]),
+    () => parseServeArgs(["serve", "vivimoon-website", "--template", "linear-dark"]),
     /Choose one serve target/,
   );
   assert.throws(() => parseServeArgs(["serve", "--deck", "first", "--deck", "second"]), /--deck can only be provided once/);
