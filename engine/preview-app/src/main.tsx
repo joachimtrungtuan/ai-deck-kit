@@ -12,6 +12,7 @@ import "@fontsource-variable/newsreader/wght.css";
 import "@fontsource-variable/newsreader/wght-italic.css";
 import "./preview-shell.css";
 import "../../primitives/blocks/primitives.css";
+import { Agentation } from "agentation";
 import { resolveMorphPairs } from "../../primitives/motion/morph-anchor-resolver";
 import { FixedSlideCanvas } from "./fixed-slide-canvas";
 // Template styles and the gallery both come from the virtual module, which the CLI populates with
@@ -107,5 +108,6 @@ function AppRouter() {
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AppRouter />
+    <Agentation />
   </StrictMode>,
 );

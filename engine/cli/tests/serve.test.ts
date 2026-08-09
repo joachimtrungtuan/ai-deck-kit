@@ -85,6 +85,15 @@ test("bare serve uses a dedicated template gallery before opening the viewer", (
   assert.match(source, /<PreviewApp galleryHref="\?gallery" source=\{source\}/);
 });
 
+test("serve mounts the Agentation feedback toolbar alongside every preview route", () => {
+  const source = readFileSync(join(projectRoot, "engine", "preview-app", "src", "main.tsx"), "utf8");
+  assert.match(source, /import \{ Agentation \} from "agentation";/);
+  assert.match(source, /<AppRouter \/>\s*\n\s*<Agentation \/>/);
+
+  const exportSource = readFileSync(join(projectRoot, "engine", "preview-app", "src", "export-main.tsx"), "utf8");
+  assert.doesNotMatch(exportSource, /agentation/i);
+});
+
 test("serve rejects deck and template targets together", () => {
   const result = spawnSync(process.execPath, [cli, "serve", "--deck", "sample", "--template", "swiss-modern", "--no-open"], {
     cwd: projectRoot,
