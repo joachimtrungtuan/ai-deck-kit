@@ -57,7 +57,11 @@ function fetchEngine(version, configuredSource) {
     const repository = process.env[GITHUB_REPOSITORY_ENV];
     const packageSource = configuredSource ?? (repository ? `github:${repository}` : `ai-deck-kit`);
     const spec = process.env[PACKAGE_SPEC_ENV] ?? `${packageSource}${version && packageSource.startsWith("github:") ? `#v${version}` : version ? `@${version}` : ""}`;
-    const packed = spawnSync("npm", ["pack", spec, "--pack-destination", destination], { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] });
+    const packed = spawnSync("npm", ["pack", spec, "--pack-destination", destination], {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "inherit"],
+        env: { ...process.env, npm_config_allow_git: "all" },
+    });
     if (packed.status !== 0)
         throw new Error(`Could not fetch engine source from ${spec}.`);
     const archive = readdirSync(destination).find((entry) => entry.endsWith(".tgz"));
