@@ -94,6 +94,17 @@ npx github:joachimtrungtuan/ai-deck-kit#v0.1.0 init --here
 npx github:joachimtrungtuan/ai-deck-kit init --here --skip-checks
 ```
 
+**Seeing `npm error code EALLOWGIT` / `Fetching packages of type "git" have been disabled`?**
+Your npm version (12+) blocks git-based installs by default. Prefix the command with
+`npm_config_allow_git=all`:
+
+```sh
+npm_config_allow_git=all npx github:joachimtrungtuan/ai-deck-kit init --here
+```
+
+`aideck upgrade` (used later to update an installed kit) already sets this internally, so it is
+unaffected — this workaround is only needed for the initial `npx` install above.
+
 ### What you end up with
 
 ```text
