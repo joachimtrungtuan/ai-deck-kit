@@ -89,7 +89,7 @@ Each module has a deterministic CLI surface and, where creative, a paired skill.
 | **Generation** | `gen scaffold` (deck skeleton from template + outline) | outline-first: input → structure → slides |
 | **Export / package** | `export html`, `export pdf`, `pack` (`.deck` → zip), `unpack` (zip → `.deck`) | — |
 | **Preview** | `serve` (shared preview-app) | — |
-| **Annotation** | `validate` surfaces annotations | reuse existing in-content annotation policy |
+| **Annotation** | `validate` surfaces annotations; `serve` mounts the `agentation` feedback toolbar (preview-only, absent from exports) | reuse existing in-content annotation policy |
 
 **CLI ⇄ skill contract:** skills call the CLI for anything deterministic (scaffolding, validation, export) instead of re-deriving it; the CLI never calls a model. This keeps boilerplate out of the agent and creativity out of the CLI.
 

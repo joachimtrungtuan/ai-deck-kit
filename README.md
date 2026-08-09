@@ -224,7 +224,9 @@ or the design's name, where it came from, and its version. If you ask for a deck
 name a design (or the other way round), it says so and tells you the right command
 rather than showing you something else.
 
-The preview is read-only: you cannot break a deck by clicking around in it.
+The preview is read-only: you cannot break a deck by clicking around in it. A feedback
+toolbar (bottom-right) lets you click an element, leave a note, and copy your notes to
+paste into your agent — it never shows up in `aideck export html/pdf` output.
 
 ---
 
@@ -369,6 +371,7 @@ are authored in *other* projects that install the kit.
 - [docs/system-architecture.md](docs/system-architecture.md) — module map
 - [docs/deck-format-spec.md](docs/deck-format-spec.md) — the `.deck` bundle format
 - [docs/deployment-guide.md](docs/deployment-guide.md) — install, upgrade, CI/CD
+- [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) — third-party licenses (e.g. `agentation`)
 
 ```sh
 npm run lint && npm run typecheck && npm run validate
