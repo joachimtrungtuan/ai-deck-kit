@@ -10,10 +10,12 @@ type DocumentRef = { current: Document | null };
 
 export function FixedSlideCanvas({
   documentRef,
+  mountAgentation,
   slide,
   source,
 }: {
   documentRef?: DocumentRef;
+  mountAgentation?: boolean;
   slide: PreviewSlide;
   source: PreviewSource;
 }) {
@@ -46,6 +48,13 @@ export function FixedSlideCanvas({
     doc.documentElement.style.background = "#000";
     doc.body.style.margin = "0";
     doc.body.style.background = "#000";
+    if (mountAgentation && !doc.querySelector("script[data-agentation-entry]")) {
+      const script = doc.createElement("script");
+      script.type = "module";
+      script.src = new URL("/src/iframe-agentation-entry.tsx", window.location.origin).href;
+      script.dataset.agentationEntry = "";
+      doc.body.appendChild(script);
+    }
     if (documentRef) documentRef.current = doc;
     setFrameBody(doc.body);
   }

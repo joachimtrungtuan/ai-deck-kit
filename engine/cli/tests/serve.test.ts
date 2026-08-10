@@ -86,10 +86,21 @@ test("bare serve uses a dedicated template gallery before opening the viewer", (
   assert.match(source, /<PreviewApp galleryHref="\?gallery" source=\{source\}/);
 });
 
-test("serve mounts the Agentation feedback toolbar alongside every preview route", () => {
-  const source = readFileSync(join(projectRoot, "engine", "preview-app", "src", "main.tsx"), "utf8");
-  assert.match(source, /import \{ Agentation \} from "agentation";/);
-  assert.match(source, /<AppRouter \/>\s*\n\s*<Agentation \/>/);
+test("serve mounts the Agentation feedback toolbar inside the slide iframe, not the shell", () => {
+  const mainSource = readFileSync(join(projectRoot, "engine", "preview-app", "src", "main.tsx"), "utf8");
+  assert.doesNotMatch(mainSource, /from "agentation"/);
+  assert.doesNotMatch(mainSource, /<Agentation \/>/);
+  assert.match(mainSource, /<FixedSlideCanvas documentRef=\{frameDocumentRef\} mountAgentation slide=\{activeSlide\}/);
+
+  const canvasSource = readFileSync(join(projectRoot, "engine", "preview-app", "src", "fixed-slide-canvas.tsx"), "utf8");
+  assert.match(canvasSource, /mountAgentation\?: boolean/);
+  assert.match(canvasSource, /iframe-agentation-entry\.tsx/);
+
+  const entrySource = readFileSync(join(projectRoot, "engine", "preview-app", "src", "iframe-agentation-entry.tsx"), "utf8");
+  assert.match(entrySource, /import \{ Agentation \} from "agentation";/);
+
+  const exportDeckSource = readFileSync(join(projectRoot, "engine", "preview-app", "src", "deck-export.tsx"), "utf8");
+  assert.doesNotMatch(exportDeckSource, /mountAgentation/);
 
   const exportSource = readFileSync(join(projectRoot, "engine", "preview-app", "src", "export-main.tsx"), "utf8");
   assert.doesNotMatch(exportSource, /agentation/i);

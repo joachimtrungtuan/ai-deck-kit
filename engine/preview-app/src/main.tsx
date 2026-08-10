@@ -12,7 +12,6 @@ import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/500.css";
 import "./preview-shell.css";
 import "../../primitives/blocks/primitives.css";
-import { Agentation } from "agentation";
 import { resolveMorphPairs } from "../../primitives/motion/morph-anchor-resolver";
 import { FixedSlideCanvas } from "./fixed-slide-canvas";
 // Template styles and the gallery both come from the virtual module, which the CLI populates with
@@ -78,7 +77,7 @@ function PreviewApp({ galleryHref, source }: { galleryHref?: string; source: Pre
         </nav>
       </aside>
       <section className="preview-stage" aria-label={activeSlide.type}>
-        <FixedSlideCanvas documentRef={frameDocumentRef} slide={activeSlide} source={source} />
+        <FixedSlideCanvas documentRef={frameDocumentRef} mountAgentation slide={activeSlide} source={source} />
       </section>
     </main>
   );
@@ -108,6 +107,5 @@ function AppRouter() {
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AppRouter />
-    <Agentation />
   </StrictMode>,
 );
