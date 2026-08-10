@@ -36,8 +36,12 @@ const nextEngine = join(workspace, "next-engine");
 const generatedDirectories = new Set(["node_modules", "storybook-static", "dist", ".build"]);
 cpSync(join(root, "engine"), nextEngine, { recursive: true, filter: (source) => !generatedDirectories.has(basename(source)) });
 const versionFile = join(nextEngine, "engine.version.json");
-writeFileSync(versionFile, readFileSync(versionFile, "utf8").replace('"0.1.0"', '"0.1.1"'));
-run([join(workspace, "tools", "ai-deck-kit", "cli", "index.mjs"), "upgrade", "--to", "0.1.1", "--source", nextEngine], workspace, env);
+// Derive the target from whatever the engine currently is: any higher version exercises the same
+// path, and hard-coding one leaves this rehearsal upgrading to a version that no longer exists.
+const engineVersion = JSON.parse(readFileSync(versionFile, "utf8"));
+const nextVersion = engineVersion.engineVersion.replace(/\d+$/, (patch) => String(Number(patch) + 1));
+writeFileSync(versionFile, `${JSON.stringify({ ...engineVersion, engineVersion: nextVersion }, null, 2)}\n`);
+run([join(workspace, "tools", "ai-deck-kit", "cli", "index.mjs"), "upgrade", "--to", nextVersion, "--source", nextEngine], workspace, env);
 if (hashTree(join(workspace, "decks")) !== decksBefore) throw new Error("Upgrade changed the decks tree.");
 console.log(`CI smoke passed in ${workspace}`);
 
