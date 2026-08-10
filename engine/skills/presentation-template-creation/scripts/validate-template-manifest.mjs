@@ -44,6 +44,19 @@ if (manifest.supportedSlideTypes && !Array.isArray(manifest.supportedSlideTypes)
   errors.push("supportedSlideTypes must be an array.");
 }
 
+if (manifest.fonts !== undefined && (!Array.isArray(manifest.fonts) || manifest.fonts.some((family) => typeof family !== "string"))) {
+  errors.push("fonts must be an array of font family keys from the engine's font catalog.");
+}
+
+// Preview fixtures live beside the manifest so a template never edits the engine to add one.
+const previewPropsPath = path.join(path.dirname(file), "preview-props.json");
+if (fs.existsSync(previewPropsPath)) {
+  const previewProps = readJson(previewPropsPath);
+  if (!previewProps || typeof previewProps !== "object" || Array.isArray(previewProps)) {
+    errors.push("preview-props.json must be a JSON object keyed by prop name.");
+  }
+}
+
 if (Array.isArray(manifest.supportedSlideTypes) && manifest.supportedSlideTypes.length === 0) {
   errors.push("supportedSlideTypes must include at least one slide type.");
 }

@@ -51,8 +51,14 @@ external `assets/` folder.
 
 ## Changing The Runtime
 
-Patch the files in `engine/preview-app/`. If a deck needs custom controls or canvas behavior,
-record the override in the deck's `content.md` before changing the shared runtime.
+The runtime lives in `engine/preview-app/`, which is read-only in an installed project — see
+`workspace-boundary.md`. If a deck needs custom controls or canvas behavior, record the
+override in the deck's `content.md`, then **stop and report** what the runtime cannot do. The
+change belongs in the kit's own repository and reaches this project through `aideck upgrade`.
+
+Deck styling, layout, fonts, and preview fixtures are never runtime changes — they belong to
+the template bundle. Check that first; the genuine runtime gaps are controls, canvas
+behaviour, and export plumbing.
 
 `templates/export-runtime/` in this skill is a **legacy snapshot** from before the `.deck` bundle
 format; it still assumes a `deck-registry.tsx` and `working-files/` layout that no longer exist.

@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import { buildServeViteArgs, parseServeArgs } from "../commands/output.ts";
 import { createTemplate, listTemplates, migrateLegacyRegisteredTemplates, resolveTemplate, validateTemplateManifest, type TemplateManifest } from "../lib/templates.ts";
 import type { Workspace } from "../lib/types.ts";
+import { resolveFontImports } from "../lib/font-catalog.ts";
 import { resolveGeneratedTemplateImport, templatePreviewSlideId } from "../../preview-app/vite-deck-plugin.ts";
 
 const projectRoot = fileURLToPath(new URL("../../..", import.meta.url));
@@ -251,10 +252,22 @@ None.
   assert.match(result.stderr, /template set mismatch, deck=expected-template, embedded=sample/);
 });
 
-test("standalone export loads both Newsreader styles", () => {
+test("a declared serif contributes both its roman and its italic styles", () => {
+  // Italics were once missing because a single stylesheet was imported by hand. The catalog now
+  // answers for a family as a whole, so the omission cannot come back one template at a time.
+  assert.deepEqual(resolveFontImports(["newsreader"]), [
+    "@fontsource-variable/newsreader/wght.css",
+    "@fontsource-variable/newsreader/wght-italic.css",
+  ]);
+});
+
+test("the export entry hardcodes no typeface beyond its own shell", () => {
+  // Every other family belongs to a template's manifest. Hardcoding one here is how a template
+  // ended up needing an engine edit to change its type.
   const source = readFileSync(join(projectRoot, "engine", "preview-app", "src", "export-main.tsx"), "utf8");
-  assert.match(source, /@fontsource-variable\/newsreader\/wght\.css/);
-  assert.match(source, /@fontsource-variable\/newsreader\/wght-italic\.css/);
+  const shell = ["@fontsource/inter/", "@fontsource/jetbrains-mono/"];
+  const strays = [...source.matchAll(/@fontsource[^"]*/g)].map((match) => match[0]).filter((specifier) => !shell.some((prefix) => specifier.startsWith(prefix)));
+  assert.deepEqual(strays, []);
 });
 
 test("new template scaffolds declare and scope their preview deck class", () => {

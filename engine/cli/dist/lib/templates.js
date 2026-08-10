@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, renameSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { readJson, writeJson, writeText } from "./fs.js";
+import { fontCatalogNames, unknownFontFamilies } from "./font-catalog.js";
 /** User-authored templates. The only place a template is ever edited. */
 export function projectTemplatesRoot(workspace) {
     return join(workspace.root, "templates");
@@ -83,7 +84,21 @@ export function validateTemplateBundle(root, manifest = readJson(join(root, "tem
         errors.push("Missing animation-presets.css.");
     if (!existsSync(join(root, "icon-policy.md")))
         errors.push("Missing icon-policy.md.");
+    errors.push(...validatePreviewProps(root));
     return errors;
+}
+/**
+ * `preview-props.json` is optional and holds only the fixtures a template's own preview needs.
+ * It is checked here because a malformed one breaks the gallery, which silently drops broken bundles.
+ */
+export function validatePreviewProps(root) {
+    const path = join(root, "preview-props.json");
+    if (!existsSync(path))
+        return [];
+    const declared = readJson(path);
+    if (!declared || typeof declared !== "object" || Array.isArray(declared))
+        return ["preview-props.json must be a JSON object keyed by prop name."];
+    return [];
 }
 export function validateTemplateManifest(manifest) {
     const errors = [];
@@ -97,6 +112,15 @@ export function validateTemplateManifest(manifest) {
         errors.push("deckClass must be a CSS-safe kebab-case class name.");
     if (!Array.isArray(manifest.runtime))
         errors.push("runtime must be an array.");
+    if (manifest.fonts !== undefined) {
+        if (!Array.isArray(manifest.fonts) || manifest.fonts.some((family) => typeof family !== "string"))
+            errors.push("fonts must be an array of font family keys.");
+        else {
+            const unknown = unknownFontFamilies(manifest.fonts);
+            if (unknown.length)
+                errors.push(`fonts names families the engine does not ship: ${unknown.join(", ")}. Available: ${fontCatalogNames().join(", ")}.`);
+        }
+    }
     if (!Array.isArray(manifest.supportedSlideTypes) || manifest.supportedSlideTypes.length === 0)
         errors.push("supportedSlideTypes must include at least one slide type.");
     if (manifest.layoutVariants !== undefined) {
@@ -143,12 +167,16 @@ export function createTemplate(workspace, name) {
         runtime: ["react", "static-html"],
         iconFamily: "phosphor-react",
         defaultAnimation: "gentle-rise",
+        fonts: ["inter", "jetbrains-mono"],
         supportedSlideTypes: ["title", "section-divider", "closing", "text-statement"],
     };
     writeJson(join(target, "template-manifest.json"), manifest);
     writeText(join(target, "design-system.css"), `.${name}-deck {\n  /* Add template design tokens here. */\n}\n`);
     writeText(join(target, "animation-presets.css"), "/* Add approved animation overrides here. */\n");
     writeText(join(target, "icon-policy.md"), "# Icon policy\n\nUse the Phosphor icon family.\n");
+    // Fixtures this template's preview slides need beyond the engine defaults. Adding a key here is
+    // how a new layout gets preview content — never by editing the engine.
+    writeJson(join(target, "preview-props.json"), {});
     writeJson(join(target, "layouts", "layout-index.json"), { version: "1.0.0", layouts: {} });
     return target;
 }

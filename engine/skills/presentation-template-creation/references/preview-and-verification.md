@@ -14,7 +14,12 @@ The template must contain a valid manifest, `design-system.css`, `animation-pres
 
 There is no registration step and no per-template preview file. Bare `aideck serve` builds the gallery by resolving every template the project can see, so a new bundle in `templates/` appears as soon as it validates. A template that fails to resolve is left out of the gallery rather than breaking it.
 
-Fonts are the one runtime touchpoint: load any template fonts via `@fontsource` imports in `engine/preview-app/src/main.tsx`, and check `engine/package.json` before adding dependencies (Inter, JetBrains Mono, and Newsreader are already present).
+## Fonts And Preview Fixtures
+
+Both are declared inside the template bundle. Neither is a reason to edit the engine.
+
+- **Typefaces**: list family keys in the manifest's `fonts` array; the runtime imports exactly those stylesheets for preview, gallery, and export. The available keys are the catalog in `engine/cli/lib/font-catalog.ts` — read it to choose. An unknown key fails validation loudly rather than silently rendering a fallback. If the family you need is absent, **stop and report it**: adding one costs an npm dependency in the engine, so it is kit work released through `aideck upgrade`.
+- **Preview fixtures**: `preview-props.json` at the bundle root supplies the sample content a layout's preview slide needs. It is optional, shallow-merged over the engine defaults, and scoped to this template alone — a key you add here cannot affect another template's gallery entry.
 
 ## Verification Gates (all must pass before handoff)
 
@@ -23,7 +28,7 @@ Fonts are the one runtime touchpoint: load any template fonts via `@fontsource` 
 3. **Visual pass**: run `aideck serve --template {template-name}`, step through EVERY slide type, and confirm it renders without clipping at 1600x900. Then run bare `aideck serve` and confirm the template appears in the gallery and the others still render correctly.
 4. **Catalog coverage**: every type ID in the declared `slide-types-vN.md` exists in `layout-index.json` and the manifest's `supportedSlideTypes`.
 5. **Token discipline**: no hardcoded colors in TSX (grep for `#` hex values outside CSS); accent usage follows the template's declared policy.
-6. **Constraint audits**: grep `font-weight` (respect declared max), `font-family` / `@fontsource` (only declared fonts), and confirm all class names carry the template prefix.
+6. **Constraint audits**: grep `font-weight` (respect declared max) and `font-family` (only families listed in the manifest's `fonts`), and confirm all class names carry the template prefix.
 7. **Version bumped**: `aideck template version {template-name}` shows a higher version than before the edit, at the level the change earned (see SKILL.md → Versioning Discipline).
 8. **Downstream decks named**: `aideck deck status` run, and any deck now `behind` reported to the user.
 

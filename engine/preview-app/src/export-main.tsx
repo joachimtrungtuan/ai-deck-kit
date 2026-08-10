@@ -1,5 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+// The export shell's own typefaces, named literally in export-shell.css. A deck's typefaces are not
+// here: they come from its template's manifest through virtual:aideck-deck.
 // Latin + Latin-ext + Vietnamese subsets only (decks may use Vietnamese diacritics).
 // Cyrillic/Greek are intentionally excluded to keep the inlined single-file export small.
 import "@fontsource/inter/latin-300.css";
@@ -21,8 +23,6 @@ import "@fontsource/jetbrains-mono/latin-400.css";
 import "@fontsource/jetbrains-mono/vietnamese-400.css";
 import "@fontsource/jetbrains-mono/latin-500.css";
 import "@fontsource/jetbrains-mono/vietnamese-500.css";
-import "@fontsource-variable/newsreader/wght.css";
-import "@fontsource-variable/newsreader/wght-italic.css";
 // The deck's own template styles arrive through virtual:aideck-deck, so no template is named here.
 import "../../primitives/blocks/primitives.css";
 import "./export-shell.css";

@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import type { Plugin } from "vite";
+import { resolveFontImports } from "../cli/lib/font-catalog.ts";
 
 const virtualId = "virtual:aideck-deck";
 const resolvedVirtualId = `\0${virtualId}`;
@@ -27,6 +28,7 @@ type TemplateManifest = {
   name: string;
   displayName: string;
   deckClass?: string;
+  fonts?: string[];
   layoutVariants?: Record<string, string[]>;
   supportedSlideTypes: string[];
 };
@@ -34,9 +36,11 @@ type TemplateDefinition = {
   animationPath: string;
   deckClass: string;
   designSystemPath: string;
+  fontImports: string[];
   imports: Map<string, Set<string>>;
   layouts: Record<string, LayoutEntry>;
   manifest: TemplateManifest;
+  previewProps: Record<string, unknown>;
 };
 
 export function aideckDeckPlugin(
@@ -128,6 +132,7 @@ function loadDeckSource(root: string, engineRoot: string, watchedFiles: Set<stri
   if (source && sourceExport) {
     watchedFiles.add(source);
     return `import { ${sourceExport} } from ${JSON.stringify(source)};
+${renderFontImports(definition).join("\n")}
 import ${JSON.stringify(definition.designSystemPath)};
 import ${JSON.stringify(definition.animationPath)};
 export const runtimeDeck = { id: ${JSON.stringify(manifest.slug)}, label: ${JSON.stringify(manifest.title)}, deckClass: ${JSON.stringify(definition.deckClass)}, slides: ${sourceExport} };
@@ -136,6 +141,7 @@ export const runtimeTemplate = null;`;
   const componentImports = renderComponentImports(definition.imports);
   const componentMap = Object.entries(definition.layouts).map(([type, entry]) => `${JSON.stringify(type)}: ${entry.component}`);
   return `${componentImports.join("\n")}
+${renderFontImports(definition).join("\n")}
 import ${JSON.stringify(definition.designSystemPath)};
 import ${JSON.stringify(definition.animationPath)};
 import { createManifestDeckSource } from ${JSON.stringify(join(process.cwd(), "preview-app/src/manifest-deck-source.tsx"))};
@@ -144,19 +150,27 @@ export const runtimeDeck = createManifestDeckSource(${JSON.stringify(manifest)},
 export const runtimeTemplate = null;`;
 }
 
-/** Preview slides for one template, with component names optionally aliased to avoid collisions. */
-function templateSlideEntries(definition: TemplateDefinition, alias: (component: string) => string = (name) => name): string[] {
+/**
+ * Preview slides for one template. Component names and the props binding are both parameterised
+ * because the gallery renders several templates in one module, where each owns its own fixtures.
+ */
+function templateSlideEntries(definition: TemplateDefinition, alias: (component: string) => string = (name) => name, propsBinding = "previewProps"): string[] {
   const { manifest } = definition;
   return manifest.supportedSlideTypes.flatMap((type) => {
     const entry = definition.layouts[type];
     const variants = manifest.layoutVariants?.[type];
     if (!variants?.length) {
-      return [`{ type: ${JSON.stringify(type)}, Component: ${alias(entry.component)}, props: previewProps }`];
+      return [`{ type: ${JSON.stringify(type)}, Component: ${alias(entry.component)}, props: ${propsBinding} }`];
     }
     return variants.map((variant) => (
-      `{ id: ${JSON.stringify(templatePreviewSlideId(type, variant))}, type: ${JSON.stringify(`${type} · ${variant}`)}, Component: ${alias(entry.component)}, props: { ...previewProps, layoutVariant: ${JSON.stringify(variant)} } }`
+      `{ id: ${JSON.stringify(templatePreviewSlideId(type, variant))}, type: ${JSON.stringify(`${type} · ${variant}`)}, Component: ${alias(entry.component)}, props: { ...${propsBinding}, layoutVariant: ${JSON.stringify(variant)} } }`
     ));
   });
+}
+
+/** Side-effect imports for the typefaces a template declared. Duplicates across templates are harmless. */
+function renderFontImports(definition: TemplateDefinition): string[] {
+  return definition.fontImports.map((specifier) => `import ${JSON.stringify(specifier)};`);
 }
 
 /**
@@ -165,6 +179,7 @@ function templateSlideEntries(definition: TemplateDefinition, alias: (component:
  */
 function loadGallerySource(gallery: GalleryEntry[], watchedFiles: Set<string>): string {
   const imports: string[] = [];
+  const declarations: string[] = [];
   const entries: string[] = [];
   gallery.forEach((entry, index) => {
     let definition: TemplateDefinition;
@@ -178,13 +193,17 @@ function loadGallerySource(gallery: GalleryEntry[], watchedFiles: Set<string>): 
     definition.imports.forEach((names, source) => {
       imports.push(`import { ${[...names].map((name) => `${name} as ${alias(name)}`).join(", ")} } from ${JSON.stringify(source)};`);
     });
+    imports.push(...renderFontImports(definition));
     imports.push(`import ${JSON.stringify(definition.designSystemPath)};`);
     imports.push(`import ${JSON.stringify(definition.animationPath)};`);
-    entries.push(`{ id: ${JSON.stringify(definition.manifest.name)}, label: ${JSON.stringify(definition.manifest.displayName)}, origin: ${JSON.stringify(entry.origin)}, deckClass: ${JSON.stringify(definition.deckClass)}, slides: [${templateSlideEntries(definition, alias).join(",\n")}] }`);
+    // Fixtures are per template for the same reason components are: one template's extra props must
+    // never leak into another's preview.
+    const propsBinding = `g${index}_previewProps`;
+    declarations.push(`const ${propsBinding} = ${JSON.stringify(definition.previewProps)};`);
+    entries.push(`{ id: ${JSON.stringify(definition.manifest.name)}, label: ${JSON.stringify(definition.manifest.displayName)}, origin: ${JSON.stringify(entry.origin)}, deckClass: ${JSON.stringify(definition.deckClass)}, slides: [${templateSlideEntries(definition, alias, propsBinding).join(",\n")}] }`);
   });
-  // Declared here, before the target source that also renders template previews, so both can use it.
   return `${imports.join("\n")}
-const previewProps = ${JSON.stringify(templatePreviewProps())};
+${declarations.join("\n")}
 export const runtimeGallery = [${entries.join(",\n")}];`;
 }
 
@@ -195,8 +214,10 @@ function loadTemplateSource(root: string, watchedFiles: Set<string>): string {
   const componentImports = renderComponentImports(definition.imports);
 
   return `${componentImports.join("\n")}
+${renderFontImports(definition).join("\n")}
 import ${JSON.stringify(definition.designSystemPath)};
 import ${JSON.stringify(definition.animationPath)};
+const previewProps = ${JSON.stringify(definition.previewProps)};
 export const runtimeDeck = null;
 export const runtimeTemplate = {
   id: ${JSON.stringify(manifest.name)},
@@ -210,7 +231,11 @@ export function templatePreviewSlideId(type: string, variant: string): string {
   return JSON.stringify([type, variant]);
 }
 
-function templatePreviewProps(): Record<string, unknown> {
+/**
+ * Baseline fixtures every template preview starts from. Templates extend or replace individual keys
+ * through their own `preview-props.json`; nothing here is a template-specific value.
+ */
+function defaultPreviewProps(): Record<string, unknown> {
   return {
     kicker: "Template Preview",
     index: "01",
@@ -283,10 +308,27 @@ function loadTemplateDefinition(root: string, watchedFiles: Set<string>): Templa
     animationPath,
     designSystemPath,
     deckClass: manifest.deckClass ?? inferDeckClass(readFileSync(designSystemPath, "utf8"), manifest.name),
+    fontImports: resolveFontImports(manifest.fonts),
     imports,
     layouts,
     manifest,
+    previewProps: loadPreviewProps(root, watchedFiles),
   };
+}
+
+/**
+ * Fixture props for the template's own preview slides. A template supplies whatever the engine's
+ * defaults do not cover through `preview-props.json` at its bundle root — this is why adding a
+ * layout that needs a novel prop never requires touching the engine.
+ */
+function loadPreviewProps(root: string, watchedFiles: Set<string>): Record<string, unknown> {
+  const path = join(root, "preview-props.json");
+  if (!existsSync(path)) return defaultPreviewProps();
+  watchedFiles.add(path);
+  const declared = JSON.parse(readFileSync(path, "utf8")) as unknown;
+  if (!declared || typeof declared !== "object" || Array.isArray(declared)) throw new Error(`Template preview props must be a JSON object: ${path}`);
+  // Shallow merge: a template replacing `items` means its whole list, not a blend with the default.
+  return { ...defaultPreviewProps(), ...(declared as Record<string, unknown>) };
 }
 
 function renderComponentImports(imports: Map<string, Set<string>>): string[] {

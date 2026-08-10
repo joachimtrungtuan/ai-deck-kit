@@ -1,6 +1,8 @@
 import { StrictMode, useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { flushSync } from "react-dom";
+// The shell's own typefaces, named literally in preview-shell.css and template-gallery.css.
+// A template's typefaces are not here: they come from its manifest through virtual:aideck-deck.
 import "@fontsource/inter/300.css";
 import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
@@ -8,8 +10,6 @@ import "@fontsource/inter/600.css";
 import "@fontsource/inter/700.css";
 import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/500.css";
-import "@fontsource-variable/newsreader/wght.css";
-import "@fontsource-variable/newsreader/wght-italic.css";
 import "./preview-shell.css";
 import "../../primitives/blocks/primitives.css";
 import { Agentation } from "agentation";
