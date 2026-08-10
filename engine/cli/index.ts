@@ -46,7 +46,7 @@ export function main(argv = process.argv.slice(2)): void {
     console.log(VERSION);
     return;
   }
-  if (command === "init" || command === "upgrade" || command === "doctor" || command === "config" || command === "list") return runCore([command, ...args]);
+  if (command === "init" || command === "upgrade" || command === "doctor" || command === "verify" || command === "config" || command === "list") return runCore([command, ...args]);
   if (command === "link" || command === "unlink") return runLink([command, ...args]);
   if (command === "skills") return runSkills(args);
   if (command === "new" || command === "slide" || command === "anim" || command === "transition" || command === "validate") return runPresentation([command, ...args]);

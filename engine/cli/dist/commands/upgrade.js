@@ -4,7 +4,10 @@ import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { replaceTree, readJson, writeJson } from "../lib/fs.js";
 import { installEngineDependencies } from "../lib/engine-dependencies.js";
+import { describeEngineDrift, engineDrift, hasEngineDrift, writeEngineIntegrityManifest } from "../lib/engine-integrity.js";
+import { offerProjectAgentRules } from "../lib/project-agent-rules.js";
 import { migrateLegacyRegisteredTemplates } from "../lib/templates.js";
+import { rewireProjectAgentHomes } from "./wire-skills.js";
 const ENGINE_SOURCE_ENV = "AIDECK_" + "ENGINE_SOURCE";
 const DISTRIBUTION_ROOT_ENV = "AIDECK_" + "DISTRIBUTION_ROOT";
 const PACKAGE_SPEC_ENV = "AIDECK_" + "PACKAGE_SPEC";
@@ -28,12 +31,37 @@ export function upgradeCommand(workspace, args, afterUpgrade) {
     const rescued = migrateLegacyRegisteredTemplates(workspace, sourceEngine);
     if (rescued.length)
         console.log(`Moved your templates out of the engine into ./templates: ${rescued.join(", ")}`);
+    warnAboutEngineEdits(workspace.engineRoot);
     replaceTree(sourceEngine, workspace.engineRoot);
     writeJson(workspace.pointerPath, { ...workspace.pointer, engineVersion: sourceVersion });
     // The new engine ships its own package.json; its components must be installed or preview breaks.
     installEngineDependencies(workspace.engineRoot);
+    writeEngineIntegrityManifest(workspace.engineRoot);
     console.log(`Upgraded engine to ${sourceVersion}; your decks and templates were untouched.`);
+    // Asked here too, so projects installed before the boundary rules existed pick them up, and a
+    // revised block reaches everyone. Without a TTY only an existing block is refreshed.
+    offerProjectAgentRules(workspace.root, relative(workspace.root, workspace.engineRoot), false);
+    // Skill links and the safeguard scripts both point into the engine tree just replaced, so one
+    // upgrade refreshes everything an installed project runs rather than leaving it half-old.
+    rewireProjectAgentHomes(workspace.root, workspace.engineRoot);
     afterUpgrade();
+}
+/**
+ * Announce edits the replacement is about to destroy, then continue. Blocking would strand a user
+ * whose only route forward is the upgrade; saying nothing is how the loss became invisible.
+ */
+function warnAboutEngineEdits(engineRoot) {
+    const drift = engineDrift(engineRoot);
+    if (!hasEngineDrift(drift))
+        return;
+    console.log("");
+    console.log("Heads up: the installed engine has been edited, and upgrading replaces the whole");
+    console.log("engine folder. These changes are about to be lost:");
+    describeEngineDrift(drift).forEach((line) => console.log(`  ${line}`));
+    console.log("");
+    console.log("Copy anything you still need out of the engine now. Template work belongs in");
+    console.log("templates/, deck work in decks/. Continuing with the upgrade.");
+    console.log("");
 }
 function resolveSourceEngine(workspace, requestedVersion, sourceOption) {
     const explicit = sourceOption ?? process.env[ENGINE_SOURCE_ENV];

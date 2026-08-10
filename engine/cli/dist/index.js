@@ -43,7 +43,7 @@ export function main(argv = process.argv.slice(2)) {
         console.log(VERSION);
         return;
     }
-    if (command === "init" || command === "upgrade" || command === "doctor" || command === "config" || command === "list")
+    if (command === "init" || command === "upgrade" || command === "doctor" || command === "verify" || command === "config" || command === "list")
         return runCore([command, ...args]);
     if (command === "link" || command === "unlink")
         return runLink([command, ...args]);

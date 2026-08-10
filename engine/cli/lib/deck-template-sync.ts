@@ -1,7 +1,7 @@
 // Compares each deck's frozen template snapshot against the template it came from, and re-syncs it.
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { copyTree, readJson, removeTree, writeJson } from "./fs.ts";
+import { copyTree, hashTree, readJson, removeTree, writeJson } from "./fs.ts";
 import { findTemplate, type ResolvedTemplate } from "./templates.ts";
 import type { DeckManifest, Workspace } from "./types.ts";
 
@@ -44,6 +44,24 @@ export function deckDrift(workspace: Workspace, bundle: string): DeckDrift {
   if (comparison < 0) return { ...found, state: "behind", detail: `${deckVersion} → ${sourceVersion}` };
   if (comparison > 0) return { ...found, state: "ahead", detail: `deck ${deckVersion} is newer than source ${sourceVersion}` };
   return { ...found, state: "current", detail: sourceVersion };
+}
+
+/**
+ * Files in a deck's frozen template snapshot that no longer match the template they were copied
+ * from. The snapshot is CLI-owned — it is written whole and never touched again — so at a matching
+ * version any difference is a template edit made in the wrong place, inside the deck.
+ *
+ * Only meaningful while the deck sits at the source's version: once it is behind or ahead the two
+ * trees are expected to differ, and an edit hides among the legitimate differences.
+ */
+export function snapshotEdits(workspace: Workspace, bundle: string): string[] {
+  const drift = deckDrift(workspace, bundle);
+  if (drift.state !== "current") return [];
+  const source = findTemplate(workspace, drift.templateName);
+  if (!source) return [];
+  const snapshot = hashTree(join(workspace.decksRoot, bundle, "template"));
+  const original = hashTree(source.root);
+  return [...new Set([...Object.keys(snapshot), ...Object.keys(original)])].filter((file) => snapshot[file] !== original[file]).sort();
 }
 
 export function describeDrift(drift: DeckDrift): string {

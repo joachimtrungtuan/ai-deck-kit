@@ -4,6 +4,8 @@
 // second agent, after moving the project, or when the install was told to skip.
 import { relative } from "node:path";
 import { findAgentHomes, resolveAgentHome, wireSkills, type AgentHome } from "../lib/agent-skills.ts";
+import { claudeEngineGuardRegistered, installClaudeEngineGuard } from "../lib/claude-engine-guard.ts";
+import { claudeVerifyHookRegistered, installClaudeVerifyHook } from "../lib/claude-verify-hook.ts";
 import { isInteractive, promptChoice, promptLine } from "../lib/prompt.ts";
 import { findWorkspace } from "../lib/workspace.ts";
 
@@ -76,6 +78,18 @@ export function wireSkillsInteractively(projectRoot: string, engineRoot: string,
   report(engineRoot, homes[0]);
 }
 
+/**
+ * Re-run the wiring for agent homes that sit at the project root. Called by `upgrade`: the engine
+ * tree it replaced is what the skill links and the safeguard scripts point at, so a project that was
+ * set up once keeps working without the user remembering to run `aideck skills wire` again.
+ * Homes further up are left alone — they may serve other projects, and were an explicit choice.
+ */
+export function rewireProjectAgentHomes(projectRoot: string, engineRoot: string): void {
+  findAgentHomes(projectRoot)
+    .filter((home) => home.distance === 0)
+    .forEach((home) => report(engineRoot, home));
+}
+
 function report(engineRoot: string, home: AgentHome): void {
   const result = wireSkills(engineRoot, home);
   console.log("");
@@ -87,6 +101,33 @@ function report(engineRoot: string, home: AgentHome): void {
     console.log(`Skipped entries above already exist in ${relative(process.cwd(), result.home) || result.home}.`);
     console.log("Remove or rename them, then run 'aideck skills wire' again to replace them.");
   }
+  offerClaudeSafeguards(home);
+}
+
+/**
+ * Two Claude-specific safeguards: one refuses a write to a file the kit owns, the other checks the
+ * workspace once the agent stops editing. They are one question because they are one job — keeping
+ * the agent's work where an upgrade will not erase it.
+ *
+ * They edit a settings file the user owns, so they are asked for and never installed silently. Once
+ * a home already runs them, a later upgrade refreshes the scripts without asking again: consent was
+ * given, and a stale script is worse than no script.
+ */
+function offerClaudeSafeguards(home: AgentHome): void {
+  if (home.name !== ".claude") return;
+  const installed = claudeEngineGuardRegistered(home.path) && claudeVerifyHookRegistered(home.path);
+  if (!installed) {
+    if (!isInteractive()) return;
+    console.log("");
+    const choice = promptChoice(
+      "Protect the toolkit from accidental edits?\n\nThis adds two rules to .claude/settings.json: one stops the agent writing inside\nthe engine folder, which upgrades replace wholesale; the other checks your designs\nand presentations after the agent finishes editing. Your files are never changed\nby either of them.",
+      ["Yes — add the safeguards (recommended)", "No thanks"],
+    );
+    if (choice !== 0) return;
+  }
+  const settingsPath = installClaudeEngineGuard(home.path).settingsPath;
+  installClaudeVerifyHook(home.path);
+  console.log(installed ? `Refreshed the safeguards in ${settingsPath}` : `Added the safeguards to ${settingsPath}`);
 }
 
 function shorten(path: string): string {
