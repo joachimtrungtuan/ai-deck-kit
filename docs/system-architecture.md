@@ -50,6 +50,33 @@ node_modules/
 
 In a user's own project the same `.gitignore` applies: they commit `decks/` + `ai-deck-kit.json` if they choose, and gitignore `engine/` (installed/upgradable).
 
+### Write boundary (installed projects)
+
+Same split, stated as an ownership rule: in an installed project `engine/**` is read-only. `upgrade` calls `replaceTree` on the whole folder and the folder is gitignored, so an edit there is invisible while it lives and lost without trace when it goes. Template work belongs in `templates/{name}.template/`, deck work in `decks/{slug}.deck/`.
+
+That only holds if a template can express everything it needs inside its bundle. Two things previously lived in the engine and were moved:
+
+- **Preview fixtures** — `preview-props.json` in the bundle, shallow-merged over the runtime defaults and scoped per template in the gallery, so one template's props cannot bleed into another's preview.
+- **Typefaces** — the manifest's `fonts` array, resolved against the closed catalog in `engine/cli/lib/font-catalog.ts` (`@fontsource` packages pre-installed by the engine). The preview and export entries import only the shell's own Inter + JetBrains Mono; every other family reaches the bundle through `virtual:aideck-deck`. A family outside the catalog is a gap to report upstream, not a local edit.
+
+The same ownership rule applies inside a deck bundle: the agent owns `content.md` and `assets/`; `deck.json`, the frozen `template/` snapshot and `.build/` are written by the CLI and rewritten by it, so a hand edit there is either discarded by the next sync or leaves the bundle inconsistent.
+
+Five enforcement layers, weakest to strongest:
+
+| Layer | Where | Behaviour |
+|---|---|---|
+| Boundary contract | `engine/skills/*/SKILL.md` + `presentation-crafting/references/workspace-boundary.md` | The rule the agent reads before editing, with the supported route for each need |
+| Project rules block | `AGENTS.md` + `CLAUDE.md` at the project root | Marker-delimited, refreshed on upgrade, never clobbers user content |
+| Integrity manifest | `engine/.engine-integrity.json` (`cli/lib/engine-integrity.ts`) | sha256 of every engine file, written by `init`/`upgrade`. `verify`/`doctor` = error, `upgrade` = warn then proceed |
+| Write hook (Claude only) | `.claude/hooks/aideck-engine-guard.mjs` | PreToolUse deny (exit 2) on writes inside the engine or the CLI-owned parts of a deck |
+| Pass verifier (Claude only) | `.claude/hooks/aideck-verify.mjs` | Stop hook: runs `aideck verify`, exit 2 with its output so the agent fixes the workspace before it finishes |
+
+`aideck verify` (`cli/commands/verify.ts`) is the runtime-agnostic statement of the boundary and what the Stop hook runs: engine drift, per-template manifest + source parse (`cli/lib/template-source-syntax.ts`, esbuild), deck manifest/content validation, template edits made inside a deck's snapshot (`snapshotEdits`), and loose files beside the bundles. It is read-only and spawns nothing but the content validator, because it runs after every editing pass; `doctor` is `verify` plus the machine-prerequisite probes.
+
+Both hooks are written by `aideck skills wire` behind one consent prompt (they edit a user-owned `settings.json`) and refreshed by `upgrade`, which re-runs the wiring for agent homes at the project root.
+
+Every layer keys off artifacts the installer creates. The kit's own repository has no integrity manifest and no installed engine, so the checks and both hooks are structurally inert here — engine edits are the work in this repo.
+
 ### Install-location flexibility (root or subfolder)
 
 The engine may be installed **at the project root** or **in any subfolder** — user's choice at `init` time. In both cases the installer writes `ai-deck-kit.json` **at the project root**, recording the resolved engine + decks paths:
@@ -79,7 +106,7 @@ Each module has a deterministic CLI surface and, where creative, a paired skill.
 
 | Module | CLI (deterministic) | Skill (AI-driven) |
 |---|---|---|
-| **Core / orchestration** | `init`, `upgrade`, `doctor`, `config`, `list` (deck registry), workspace resolution | workflow routing |
+| **Core / orchestration** | `init`, `upgrade`, `verify`, `doctor`, `config`, `list` (deck registry), workspace resolution | workflow routing |
 | **Onboarding** | `link`/`unlink` (register the workspace-resolving `aideck` launcher), `skills wire` (link engine skills into `.claude`/`.agents`) | — |
 | **Design primitives** | `blocks list`, `motion list`, `tokens print` (read/scaffold shared blocks + motion + tokens) | choose/compose blocks, tune motion |
 | **Presentation** | `new`, `slide add/remove/move`, `anim toggle`, `transition set` (scaffold + flag flips in `content.md`/manifest) | author & edit slide content |

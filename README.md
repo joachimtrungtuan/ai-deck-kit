@@ -112,6 +112,8 @@ my-presentations/
 ├── ai-deck-kit.json   ← marks this folder as a deck workspace
 ├── aideck             ← launcher, so ./aideck always works here
 ├── .gitignore         ← keeps the installed engine out of version control
+├── AGENTS.md          ← tells any AI agent where presentation work belongs
+├── CLAUDE.md          ← the same, for Claude Code
 ├── engine/            ← the toolkit itself. Upgradable — leave it alone.
 ├── decks/             ← YOUR presentations live here
 └── templates/         ← YOUR own designs live here
@@ -123,6 +125,36 @@ If you keep this folder in git, the installer sets up `.gitignore` for you: the 
 and build output are left out (anyone can reinstall them), while your decks and
 `ai-deck-kit.json` are **not** ignored, so your work is committed as usual. An existing
 `.gitignore` is added to, never replaced.
+
+### Why `engine/` is off limits
+
+`engine/` is the toolkit. `aideck upgrade` replaces that folder whole, and it is
+gitignored — so an edit made there is invisible to git while it exists and gone
+without warning afterwards. Read it freely; never write into it.
+
+Everything a design needs lives inside its own bundle in `templates/`: layouts, CSS,
+icon policy, preview fixtures (`preview-props.json`) and typefaces (the manifest's
+`fonts` array). Everything a presentation needs lives inside its `.deck` folder. If
+something genuinely seems to need an engine change, that is a gap to report here, not
+to patch locally.
+
+Inside a deck the same idea applies in miniature: `content.md` and `assets/` are yours
+and your agent's. `deck.json`, the `template/` copy and `.build/` are written by the
+toolkit — edit the real template and re-sync instead.
+
+Four things keep this honest:
+
+- `aideck verify` reads your workspace and reports what is out of place: an edited
+  engine, a template edited inside a deck, a layout that no longer parses, a file left
+  loose beside the bundles. `aideck doctor` runs it too, after checking your machine.
+- `aideck upgrade` lists any engine edits before it replaces them.
+- The installer offers to add a boundary section to your `AGENTS.md` and `CLAUDE.md`.
+  Your own content in those files is never touched.
+- For Claude Code, `aideck skills wire` offers two safeguards: one refuses a write to a
+  file the toolkit owns as it happens, the other runs `aideck verify` when the agent
+  finishes editing and sends it back to fix anything it broke. Remove them any time by
+  deleting `.claude/hooks/aideck-engine-guard.mjs`, `.claude/hooks/aideck-verify.mjs`
+  and their entries in `.claude/settings.json`.
 
 ---
 
@@ -354,6 +386,9 @@ Run this first. It checks your software, the workspace, and every deck:
 aideck doctor
 ```
 
+`aideck verify` is the same workspace check without the software part — quick enough to
+run any time, and what the Claude safeguard runs after your agent finishes editing.
+
 | Symptom | What to do |
 | --- | --- |
 | `aideck: command not found` | Use `./aideck` from your project folder, or run `./aideck link` and follow its `PATH` instructions. |
@@ -386,6 +421,6 @@ are authored in *other* projects that install the kit.
 
 ```sh
 npm run lint && npm run typecheck && npm run validate
-npm run test:serve && npm run test:lifecycle && npm run test:smoke
+npm run test:serve && npm run test:lifecycle && npm run test:boundary && npm run test:smoke
 npm run build && npm run build:check   # dist/ is committed; keep it current
 ```

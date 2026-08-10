@@ -7,6 +7,22 @@ description: Author or evolve presentation template sets for the browser present
 
 Author complete, versioned template sets that the `presentation-crafting` skill consumes when building decks. A template set is a full visual system: design tokens, React layouts for every slide type in its declared catalog, animation presets, icon policy, and a validated manifest.
 
+## Workspace Boundary (read before any edit)
+
+```text
+engine/**                          READ-ONLY. Replaced wholesale on upgrade. Never write.
+templates/{name}.template/**       template work goes here, and only here
+decks/{slug}.deck/
+├── content.md, assets/            agent-owned
+└── deck.json, template/, .build/  CLI-owned — change through `aideck` commands
+```
+
+`engine/` is the toolkit itself. In an installed project it is gitignored and `aideck upgrade` replaces the whole tree, so an edit there is invisible while it exists and gone without warning afterwards. Read it freely — catalogs, shipped templates, and primitives are reference material — but never write into it. Everything a template needs lives inside its own bundle: layouts, CSS, icon policy, preview fixtures (`preview-props.json`), and typeface choices (the manifest's `fonts` array).
+
+If a task appears to need an engine change — a font the catalog lacks, a new slide-type catalog version, a runtime capability — **stop, report exactly what is missing, and escalate to the kit's own repository.** Finish the rest of the task around the gap; do not work around the boundary. This rule does not apply inside the kit's own repository, where editing the engine is the work.
+
+Details, including how to tell the two workspaces apart: `../presentation-crafting/references/workspace-boundary.md`.
+
 ## Scope
 
 This skill handles template-set authoring and slide-type catalog evolution. It does NOT handle deck creation, content normalization, or deck review — switch to `presentation-crafting` for those.
@@ -15,7 +31,7 @@ This skill handles template-set authoring and slide-type catalog evolution. It d
 
 - One template set = one coherent style. Never blend styles within a set.
 - A template implements EVERY slide type in its declared catalog version. No partial coverage.
-- Slide-type catalogs are versioned and additive: never modify an existing `slide-types-vN.md`; create `v(N+1)` and leave older templates valid.
+- Slide-type catalogs are versioned and additive: never modify an existing `slide-types-vN.md`. A new catalog version is engine work — see **Slide-Type Catalogs** below.
 - New templates must mirror the structural conventions of existing sets (file layout, prop shape, export pattern) so the content schema and preview runtime work unchanged.
 - Slide props for a new template must be a superset of the existing shared prop shape — never rename or repurpose an inherited field.
 - All CSS classes, variables, and component names carry a template-unique prefix, with global styles scoped under the template's deck class so multiple templates coexist in the preview app.
@@ -26,10 +42,10 @@ This skill handles template-set authoring and slide-type catalog evolution. It d
 
 1. Gather the style brief: aesthetic direction, target presentation domain, typography constraints, accent policy.
 2. Read `engine/templates/template-system.md` and the newest `engine/templates/slide-types-v*.md`; read one existing template set (e.g. `swiss-modern.template/`) as the structural reference.
-3. Decide catalog version: reuse the newest catalog, or — if the domain needs new slide types — create the next `slide-types-v(N+1).md` (copy previous catalog verbatim, append new categories/types with purpose + required props). See `references/template-system-and-versioning.md`.
+3. Declare the catalog version: use the newest `slide-types-vN.md` the engine ships. If the domain genuinely needs slide types no catalog offers, stop and follow **Slide-Type Catalogs** below. See `references/template-system-and-versioning.md`.
 4. Scaffold the user-owned template bundle through `aideck template new <name>`. It creates `templates/<name>.template/`; do not hand-create its manifest or base files.
-5. Build its `design-system.css` (tokens + class inventory), `animation-presets.css` (re-skin the approved vocabulary with the same preset names), `icon-policy.md`, layouts, layout index, and layout contracts. Compose `engine/primitives/blocks` where a catalog block fits.
-6. Validate the completed bundle with `aideck template validate <name>`. It stays where it was authored — there is no install step and nothing is copied into the engine.
+5. Build its `design-system.css` (tokens + class inventory), `animation-presets.css` (re-skin the approved vocabulary with the same preset names), `icon-policy.md`, layouts, layout index, and layout contracts. Compose `engine/primitives/blocks` where a catalog block fits. Declare typefaces in the manifest's `fonts` array and any preview fixtures in `preview-props.json` — both live in the bundle.
+6. Validate the completed bundle with `aideck template validate <name>`. It stays where it was authored — there is no install step and nothing is copied into the engine. When you finish an editing pass, run `aideck verify` as well: it parses every layout in the bundle and reports edits that landed outside it.
 7. Bump the version to match the size of the change (see **Versioning Discipline** below): `aideck template version <name> --bump patch|minor|major`. Reading it back is `aideck template version <name>`.
 8. Run all verification gates per `references/preview-and-verification.md`. The preview app discovers templates automatically — there is no registration file to edit.
 9. When editing a template decks already use, run `aideck deck status` afterwards and tell the user which decks are now behind. Re-syncing is a separate, deliberate act — see `presentation-crafting`.
@@ -60,13 +76,26 @@ templates/{template-name}.template/       # the one and only home of a template
 ├── design-system.css
 ├── animation-presets.css
 ├── icon-policy.md
+├── preview-props.json                    # optional preview fixtures for this template
 └── layouts/
     ├── layout-index.json
     ├── react/   (index.ts, shared.tsx, one file per slide category)
     └── specs/layout-contracts.md
 ```
 
-Plus, when a new catalog version is created: `engine/templates/slide-types-v(N+1).md`.
+Nothing outside this folder. A template that seems to need a file elsewhere is a template asking for an engine change — report it instead.
+
+## Slide-Type Catalogs
+
+Catalogs are engine-owned, and a new version is not something a consumer project can produce. It requires two coordinated engine changes: the file `engine/templates/slide-types-v(N+1).md`, and an entry in `engine.version.json` → `supportedSlideTypeCatalogs`, which `aideck doctor` enforces. A catalog written anywhere else declares a version no workspace accepts.
+
+So when a template needs slide types no shipped catalog offers:
+
+1. **Stop.** Do not write a catalog file, and do not edit an existing one.
+2. Report the gap: which types are missing, their purpose, and the required props each would need — enough for the kit to author the catalog.
+3. Offer the user the two real options: build the template against the newest existing catalog now, or wait for a kit release that adds the types.
+
+Inside the kit's own repository this is ordinary work: copy the previous catalog verbatim, append the new categories and types, register the version, and release.
 
 ## References
 
@@ -78,7 +107,7 @@ Plus, when a new catalog version is created: `engine/templates/slide-types-v(N+1
 - `../../primitives/blocks/block-catalog-v1.md` - stable block contracts for layout composition.
 - `../../primitives/motion/motion-catalog-v1.md` - capped motion and morph vocabulary.
 
-Cross-skill (canonical, do not duplicate here): `presentation-crafting/references/animation-presets.md` (approved preset vocabulary), `icon-policy.md` (icon family rules), `folder-structure.md` (repository layout), `preview-runtime.md` (shared runtime rules).
+Cross-skill (canonical, do not duplicate here): `../presentation-crafting/references/workspace-boundary.md` (what may be written and how to escalate), `animation-presets.md` (approved preset vocabulary), `icon-policy.md` (icon family rules), `folder-structure.md` (repository layout), `preview-runtime.md` (shared runtime rules).
 
 ## Scripts
 

@@ -7,6 +7,22 @@ description: Create polished .deck bundles, standalone HTML exports, and Preview
 
 Create polished browser presentations through a controlled content-first workflow. This skill is the creative collaboration protocol; `aideck` performs deterministic scaffolding, structural edits, validation, preview, and export.
 
+## Workspace Boundary (read before any edit)
+
+```text
+engine/**                          READ-ONLY. Replaced wholesale on upgrade. Never write.
+templates/{name}.template/**       template work goes here, and only here
+decks/{slug}.deck/
+├── content.md, assets/            agent-owned — deck work happens here
+└── deck.json, template/, .build/  CLI-owned — change through `aideck` commands
+```
+
+`engine/` is the toolkit itself. In an installed project it is gitignored and `aideck upgrade` replaces the whole tree, so an edit there is invisible while it exists and gone without warning afterwards. Read it freely; never write into it.
+
+If a task appears to need an engine change — a missing font, a new slide-type catalog, a runtime capability — **stop, report exactly what is missing, and escalate to the kit's own repository.** Finish the rest of the task around the gap; do not work around the boundary. This rule does not apply inside the kit's own repository, where editing the engine is the work.
+
+Details, including how to tell the two workspaces apart: `references/workspace-boundary.md`.
+
 ## Scope
 
 This skill handles deck content normalization, React deck source, standalone HTML export, flattened PDF export, and visual QA. It does not author template sets or slide-type catalogs; use `presentation-template-creation` for that.
@@ -30,7 +46,7 @@ This skill handles deck content normalization, React deck source, standalone HTM
    - Slide-ready or manually structured: `aideck new <slug> --template <set>`.
    - Approved outline: `aideck gen scaffold <slug> --template <set> --outline <approved-outline.md>`.
 4. Author or refine only `decks/<slug>.deck/content.md`: visible copy, intent, visual direction, speaker notes, design notes, review questions, and valid structured blocks. Use `aideck slide add|remove|move`, `aideck anim toggle`, and `aideck transition set` for structure or motion metadata.
-5. Validate the canonical bundle with `aideck validate <slug>`. Resolve every manifest/content mismatch before preview or export.
+5. Validate the canonical bundle with `aideck validate <slug>`. Resolve every manifest/content mismatch before preview or export. When you finish an editing pass, run `aideck verify` for the workspace as a whole — it catches edits that landed outside the deck, including a template edited inside the deck's frozen copy.
 6. Review through the shared runtime with `aideck serve --deck <slug>`. The command prints the deck path and the resolved template before Vite starts — read it back and confirm it is the deck and template you intended.
 7. When the deck is renderable, export with `aideck export html <slug>` or `aideck export pdf <slug>`, then perform the HTML/PDF visual checks in `references/export-workflow.md`.
 
@@ -86,6 +102,7 @@ decks/{presentation-slug}.deck/
 
 ## References
 
+- `references/workspace-boundary.md` - What the agent may write, what is engine-owned, and how to escalate.
 - `references/content-normalization-workflow.md` - Convert raw material into slide-ready content.
 - `references/outline-first-generation.md` - Prompt/document to approved outline, scaffold, then content-fill workflow.
 - `references/canonical-slide-content-schema.md` - Required Markdown schema for each deck.
