@@ -1,5 +1,6 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { createHash } from "node:crypto";
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join, relative, resolve, sep } from "node:path";
 
 export function readJson<T>(file: string): T {
   try {
@@ -29,6 +30,32 @@ export function copyTree(source: string, destination: string, excluded = new Set
       return !excluded.has(name) && name !== "node_modules";
     },
   });
+}
+
+/**
+ * One sha256 per file, keyed by path relative to `root` with "/" separators. Comparing two of these
+ * says whether one tree was copied from the other and left alone — how a deck's frozen template
+ * snapshot and an installed engine are both checked for edits.
+ */
+export function hashTree(root: string, options: { excludedNames?: Set<string>; excludedPaths?: Set<string> } = {}): Record<string, string> {
+  const excludedNames = options.excludedNames ?? new Set([".build", "storybook-static", "node_modules", ".DS_Store"]);
+  const excludedPaths = options.excludedPaths ?? new Set<string>();
+  const files: Record<string, string> = {};
+  if (existsSync(root)) collectHashes(root, root, excludedNames, excludedPaths, files);
+  return files;
+}
+
+function collectHashes(root: string, directory: string, excludedNames: Set<string>, excludedPaths: Set<string>, files: Record<string, string>): void {
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    if (excludedNames.has(entry.name)) continue;
+    const path = join(directory, entry.name);
+    const key = relative(root, path).split(sep).join("/");
+    if (excludedPaths.has(key)) continue;
+    // Symlinks are neither file nor directory here, so they are skipped: agent homes link INTO these
+    // trees, never the other way round, and a link's target is hashed on its own.
+    if (entry.isDirectory()) collectHashes(root, path, excludedNames, excludedPaths, files);
+    else if (entry.isFile()) files[key] = createHash("sha256").update(readFileSync(path)).digest("hex");
+  }
 }
 
 export function removeTree(target: string): void {

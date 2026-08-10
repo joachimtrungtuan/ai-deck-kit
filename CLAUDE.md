@@ -46,6 +46,7 @@ Activate the `presentation-crafting` skill for deck work (content → slides) an
 6. **Animations:** gentle, attention-holding, from the approved preset vocabulary only.
 7. **One shared preview runtime** (`engine/preview-app/`) — never scaffold per-template or per-deck apps.
 8. **Validate before handoff:** decks with `presentation-crafting/scripts/validate-slide-content.mjs`; templates with `presentation-template-creation/scripts/validate-template-manifest.mjs`.
+9. **The engine is off limits in installed projects — but not here.** In a project that installed the kit, `engine/**` is read-only: upgrade replaces it whole. Everything a design needs lives in its bundle (layouts, CSS, icon policy, `preview-props.json`, manifest `fonts`); everything a presentation needs lives in its `.deck`. This repository is where the engine is authored, so edits here are the work — but when adding a capability, ask where a *consumer* would put it, and if the honest answer is "in the engine", the design is wrong. See `docs/system-architecture.md` → "Write boundary".
 
 ## Karpathy Coding Guidelines
 

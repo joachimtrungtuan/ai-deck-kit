@@ -2,11 +2,13 @@ import { existsSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import { copyTree, readJson } from "../lib/fs.ts";
 import { installEngineDependencies } from "../lib/engine-dependencies.ts";
+import { writeEngineIntegrityManifest } from "../lib/engine-integrity.ts";
 import { engineRoot } from "../lib/engine-root.ts";
 import { ensureWorkspaceDirs, writePointer } from "../lib/workspace.ts";
 import { checkPrerequisites, formatPrerequisiteReport, hasFailures } from "../lib/prerequisites.ts";
 import { writeProjectWrapper } from "../lib/command-registration.ts";
 import { ensureProjectGitignore } from "../lib/project-gitignore.ts";
+import { offerProjectAgentRules } from "../lib/project-agent-rules.ts";
 import { isInteractive, promptChoice } from "../lib/prompt.ts";
 import { offerRegistration } from "./link.ts";
 import { wireSkillsInteractively } from "./wire-skills.ts";
@@ -42,6 +44,9 @@ export function initCommand(args: string[]): void {
   writePointer(projectRoot, pointer);
   ensureWorkspaceDirs(workspace);
   installEngineDependencies(targetEngine);
+  // Record what was installed so `doctor` can name any later edit to the engine before an upgrade
+  // silently replaces it. Written only by the installer, so the kit's own repository has none.
+  writeEngineIntegrityManifest(targetEngine);
 
   console.log("");
   console.log(`Set up AI Deck Kit in: ${projectRoot}`);
@@ -60,6 +65,7 @@ export function initCommand(args: string[]): void {
     console.log("Your decks and ai-deck-kit.json are not ignored — commit them as usual.");
   }
 
+  offerProjectAgentRules(projectRoot, relative(projectRoot, targetEngine), true);
   writeProjectWrapper(projectRoot, targetEngine);
   wireSkillsInteractively(projectRoot, targetEngine);
   registerIfWanted();

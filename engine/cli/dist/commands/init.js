@@ -2,11 +2,13 @@ import { existsSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import { copyTree, readJson } from "../lib/fs.js";
 import { installEngineDependencies } from "../lib/engine-dependencies.js";
+import { writeEngineIntegrityManifest } from "../lib/engine-integrity.js";
 import { engineRoot } from "../lib/engine-root.js";
 import { ensureWorkspaceDirs, writePointer } from "../lib/workspace.js";
 import { checkPrerequisites, formatPrerequisiteReport, hasFailures } from "../lib/prerequisites.js";
 import { writeProjectWrapper } from "../lib/command-registration.js";
 import { ensureProjectGitignore } from "../lib/project-gitignore.js";
+import { offerProjectAgentRules } from "../lib/project-agent-rules.js";
 import { isInteractive, promptChoice } from "../lib/prompt.js";
 import { offerRegistration } from "./link.js";
 import { wireSkillsInteractively } from "./wire-skills.js";
@@ -40,6 +42,9 @@ export function initCommand(args) {
     writePointer(projectRoot, pointer);
     ensureWorkspaceDirs(workspace);
     installEngineDependencies(targetEngine);
+    // Record what was installed so `doctor` can name any later edit to the engine before an upgrade
+    // silently replaces it. Written only by the installer, so the kit's own repository has none.
+    writeEngineIntegrityManifest(targetEngine);
     console.log("");
     console.log(`Set up AI Deck Kit in: ${projectRoot}`);
     const planted = [
@@ -55,6 +60,7 @@ export function initCommand(args) {
         console.log(`${gitignore === "created" ? "Created" : "Updated"} .gitignore so the installed engine stays out of your repository.`);
         console.log("Your decks and ai-deck-kit.json are not ignored — commit them as usual.");
     }
+    offerProjectAgentRules(projectRoot, relative(projectRoot, targetEngine), true);
     writeProjectWrapper(projectRoot, targetEngine);
     wireSkillsInteractively(projectRoot, targetEngine);
     registerIfWanted();
