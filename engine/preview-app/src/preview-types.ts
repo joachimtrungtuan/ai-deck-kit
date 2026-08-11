@@ -6,6 +6,9 @@ export type PreviewSlide = {
   Component: ComponentType<any>;
   props: Record<string, unknown>;
   morphAnchors?: string[];
+  // Surfaced on the slide wrapper as data-layout-variant so an annotation's DOM path names the
+  // layout the reviewer is looking at, not just the slide type.
+  layoutVariant?: string;
 };
 
 export type PreviewSource = {

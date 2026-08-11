@@ -42,6 +42,7 @@ export function createManifestDeckSource(
       type: slide.type,
       Component,
       morphAnchors: section.anchors,
+      layoutVariant,
       props: {
         animation: slide.animation ?? "gentle-rise",
         kicker: textMeta(section.metadata, "kicker"),

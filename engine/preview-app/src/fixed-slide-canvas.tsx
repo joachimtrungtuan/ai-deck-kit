@@ -8,15 +8,31 @@ const SLIDE_HEIGHT = 900;
 
 type DocumentRef = { current: Document | null };
 
+// Agentation's annotation schema carries no slide identity, but its forensic output prints the
+// element's full DOM path from <body>, ancestor ids included. Naming the slide wrapper is therefore
+// what makes a pasted annotation say which of 25 slides it belongs to. Mirrors the sidebar label
+// ("07" + slide type) so the address a reviewer pastes matches the one they clicked.
+function slideDomId(slide: PreviewSlide, slideIndex?: number): string {
+  // Deliberately the slide type, not its id: the sidebar labels slides by type, and a manifest-built
+  // deck's ids are bare ordinals ("slide-01") that would say nothing an index doesn't already say.
+  const name = slide.type.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  if (slideIndex === undefined) return `slide-${name}`;
+  const ordinal = String(slideIndex + 1).padStart(2, "0");
+  // Slide ids frequently already open with their own number (`01-mo-dau`); don't repeat it.
+  return name.startsWith(`${ordinal}-`) ? `slide-${name}` : `slide-${ordinal}-${name}`;
+}
+
 export function FixedSlideCanvas({
   documentRef,
   mountAgentation,
   slide,
+  slideIndex,
   source,
 }: {
   documentRef?: DocumentRef;
   mountAgentation?: boolean;
   slide: PreviewSlide;
+  slideIndex?: number;
   source: PreviewSource;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -49,6 +65,9 @@ export function FixedSlideCanvas({
     doc.body.style.margin = "0";
     doc.body.style.background = "#000";
     if (mountAgentation && !doc.querySelector("script[data-agentation-entry]")) {
+      // The frame has no src, so Agentation slugs every deck's storage bucket to the same
+      // "blank" key. Hand the entry script a deck slug to scope those keys with.
+      (doc.defaultView as unknown as { __aideckDeckSlug?: string }).__aideckDeckSlug = source.id;
       const script = doc.createElement("script");
       script.type = "module";
       script.src = new URL("/src/iframe-agentation-entry.tsx", window.location.origin).href;
@@ -76,6 +95,11 @@ export function FixedSlideCanvas({
         createPortal(
           <div
             className={source.deckClass}
+            data-layout-variant={mountAgentation ? slide.layoutVariant : undefined}
+            data-slide-index={mountAgentation && slideIndex !== undefined ? String(slideIndex + 1).padStart(2, "0") : undefined}
+            data-slide-type={mountAgentation ? slide.type : undefined}
+            data-template={mountAgentation ? source.id : undefined}
+            id={mountAgentation ? slideDomId(slide, slideIndex) : undefined}
             key={slide.id ?? slide.type}
             style={{ viewTransitionName: slide.morphAnchors?.[0] }}
           >

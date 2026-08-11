@@ -35,6 +35,20 @@ Reuses existing in-content annotation approach (Speaker Notes, Design Notes, Rev
   structured output to paste into an AI agent. This is dev-preview-only: the export entry point
   (`export-main.tsx` → `DeckExport`) is a separate Vite build that never imports `main.tsx` or
   `iframe-agentation-entry.tsx`, so `aideck export html/pdf` output never contains the toolbar.
+- **Slide addressing:** Agentation's annotation schema has no field for slide identity, but its
+  forensic output prints the element's full DOM path from `<body>`, ancestor ids included. So when
+  `mountAgentation` is set, `FixedSlideCanvas` names the slide wrapper — `id` mirroring the sidebar
+  label (`slide-03-muc-tieu-kinh-doanh`), plus `data-slide-index`, `data-slide-type`,
+  `data-layout-variant`, `data-template` — and a pasted annotation names the slide it came from.
+  **This requires the toolbar's Forensic output mode**; Standard and Detailed print a short element
+  path that never reaches an ancestor id. The attributes are gated on `mountAgentation`, so export
+  markup is unchanged. Nothing here touches the `.deck`/`.template` format: the wrapper is
+  engine-created from manifest fields that already exist, so installed projects gain it on upgrade.
+- **Annotation storage:** the slide iframe has no `src`, so Agentation slugs every deck's
+  `localStorage` bucket to the same `feedback-annotations-blank` key and decks previewed on one
+  origin would share notes. `iframe-agentation-entry.tsx` patches `Storage.prototype` inside the
+  frame's realm to suffix `feedback-annotations*` keys with the deck slug. Toolbar preference keys
+  stay unscoped so a chosen output mode survives switching decks.
 
 ## 4. Inputs & Outputs
 - **Inputs:** `content.md` (annotation sections: Speaker Notes, Design Notes, Review Questions).
@@ -64,6 +78,11 @@ Reuses existing in-content annotation approach (Speaker Notes, Design Notes, Rev
 ## 8. Risks & Mitigations
 - **Over-enforcement:** annotation policy rules configurable per deck or project. Mitigation: config flag in deck.json or ai-deck-kit.json.
 - **Annotation loss on sync:** presentations module preserves annotation sections. Mitigation: careful sync logic in presentation module.
+- **Annotations shared across slides of one deck:** Agentation mounts once per deck and only the
+  portal children swap on slide navigation, so one deck's notes render on every slide of it and
+  markers sit at raw `x`/`y` over the wrong layout. Not mitigated; per-slide scoping would require
+  remounting Agentation on each slide change. The slide address in the copied output distinguishes
+  the notes in the meantime.
 
 ## 9. Open Questions
 - None blocking.

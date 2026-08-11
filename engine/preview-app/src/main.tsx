@@ -25,7 +25,8 @@ function PreviewApp({ galleryHref, source }: { galleryHref?: string; source: Pre
   const [activeIndex, setActiveIndex] = useState(0);
 
   const slides = source.slides;
-  const activeSlide = slides[Math.min(activeIndex, slides.length - 1)];
+  const activeSlideIndex = Math.min(activeIndex, slides.length - 1);
+  const activeSlide = slides[activeSlideIndex];
   const frameDocumentRef = useRef<Document | null>(null);
   const go = useCallback((next: number) => {
     const index = Math.max(0, Math.min(slides.length - 1, next));
@@ -77,7 +78,7 @@ function PreviewApp({ galleryHref, source }: { galleryHref?: string; source: Pre
         </nav>
       </aside>
       <section className="preview-stage" aria-label={activeSlide.type}>
-        <FixedSlideCanvas documentRef={frameDocumentRef} mountAgentation slide={activeSlide} source={source} />
+        <FixedSlideCanvas documentRef={frameDocumentRef} mountAgentation slide={activeSlide} slideIndex={activeSlideIndex} source={source} />
       </section>
     </main>
   );
