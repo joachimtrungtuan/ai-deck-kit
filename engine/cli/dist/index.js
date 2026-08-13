@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { runCatalog, catalogHelp } from "./commands/catalog.js";
 import { coreHelp, runCore } from "./commands/core.js";
 import { deckHelp, runDeck } from "./commands/deck-maintenance.js";
@@ -9,7 +12,11 @@ import { outputHelp, runOutput } from "./commands/output.js";
 import { presentationHelp, runPresentation } from "./commands/presentation.js";
 import { runSkills, skillsHelp } from "./commands/wire-skills.js";
 import { runTemplates, templateHelp } from "./commands/templates.js";
-export const VERSION = "0.1.0";
+// Read from package.json at runtime (not a TS import) because this file compiles to
+// cli/dist/index.js, one directory below the engine root where package.json lives —
+// a build-time JSON import would require it inside tsconfig's rootDir.
+const packageJsonPath = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "package.json");
+export const VERSION = JSON.parse(readFileSync(packageJsonPath, "utf8")).version;
 const help = `AI Deck Kit (${VERSION}) — deterministic presentation toolkit
 
 Usage: aideck <command> [options]
