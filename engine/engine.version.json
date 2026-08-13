@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.2.1",
+  "engineVersion": "0.3.0",
   "contentSchemaVersion": "1.0.0",
   "supportedSlideTypeCatalogs": ["v1", "v2"],
   "shippedTemplates": ["linear-dark", "swiss-modern"],
