@@ -1,6 +1,5 @@
 import { StrictMode, useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { flushSync } from "react-dom";
 // The shell's own typefaces, named literally in preview-shell.css and template-gallery.css.
 // A template's typefaces are not here: they come from its manifest through virtual:aideck-deck.
 import "@fontsource/inter/300.css";
@@ -12,7 +11,8 @@ import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/500.css";
 import "./preview-shell.css";
 import "../../primitives/blocks/primitives.css";
-import { resolveMorphPairs } from "../../primitives/motion/morph-anchor-resolver";
+import "./slide-transitions.css";
+import { goToSlide } from "./slide-transition-runtime";
 import { FixedSlideCanvas } from "./fixed-slide-canvas";
 // Template styles and the gallery both come from the virtual module, which the CLI populates with
 // the templates this project can actually resolve. Nothing about a template is hardcoded here.
@@ -30,16 +30,15 @@ function PreviewApp({ galleryHref, source }: { galleryHref?: string; source: Pre
   const frameDocumentRef = useRef<Document | null>(null);
   const go = useCallback((next: number) => {
     const index = Math.max(0, Math.min(slides.length - 1, next));
-    const previousAnchors = slides[activeIndex].morphAnchors?.map((anchor) => ({ id: anchor, morph: anchor })) ?? [];
-    const nextAnchors = slides[index].morphAnchors?.map((anchor) => ({ id: anchor, morph: anchor })) ?? [];
-    const hasMorph = resolveMorphPairs(previousAnchors, nextAnchors).length > 0;
-    const documentWithTransition = frameDocumentRef.current as (Document & { startViewTransition?: (update: () => void) => unknown }) | null;
-    if (hasMorph && documentWithTransition?.startViewTransition) {
-      documentWithTransition.startViewTransition(() => flushSync(() => setActiveIndex(index)));
-      return;
-    }
-    setActiveIndex(index);
-  }, [activeIndex, frameDocumentRef, slides]);
+    goToSlide({
+      frameDocument: frameDocumentRef.current,
+      from: slides[activeIndex],
+      to: slides[index],
+      direction: index >= activeIndex ? "forward" : "backward",
+      source,
+      commit: () => setActiveIndex(index),
+    });
+  }, [activeIndex, frameDocumentRef, slides, source]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {

@@ -1,0 +1,170 @@
+/*
+ * Slide-to-slide transitions, driven by the browser View Transitions API. main.tsx / export-main.tsx
+ * clone this file's rules into each slide's iframe (see fixed-slide-canvas.tsx's initFrame). The
+ * runtime (slide-transition-runtime.ts) sets data-slide-transition / data-slide-direction on the
+ * transitioning document's <html> element right before calling startViewTransition; the rules below
+ * key off those attributes to animate the ::view-transition-old(root) / ::view-transition-new(root)
+ * pseudo-elements the API captures. Self-contained tokens, independent of any template's design
+ * system, so behavior does not depend on which template a deck uses.
+ */
+
+:root {
+  --slide-transition-duration: 550ms;
+  --slide-transition-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--slide-transition-duration);
+  animation-timing-function: var(--slide-transition-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-slide-transition] ::view-transition-group(root),
+  :root[data-slide-transition] ::view-transition-old(root),
+  :root[data-slide-transition] ::view-transition-new(root) {
+    animation-duration: 1ms !important;
+  }
+}
+
+/* crossfade: the browser's default root cross-fade IS a true simultaneous cross-dissolve — the old
+   frame fades opacity 1→0 while the new frame fades 0→1, over the same window. No override needed
+   beyond the shared duration/easing above. */
+
+/* blur-crossfade: crossfade with a soft focus pull. */
+:root[data-slide-transition="blur-crossfade"]::view-transition-old(root) {
+  animation-name: slide-blur-out;
+}
+:root[data-slide-transition="blur-crossfade"]::view-transition-new(root) {
+  animation-name: slide-blur-in;
+}
+@keyframes slide-blur-out {
+  from { opacity: 1; filter: blur(0); }
+  to { opacity: 0; filter: blur(24px); }
+}
+@keyframes slide-blur-in {
+  from { opacity: 0; filter: blur(24px); }
+  to { opacity: 1; filter: blur(0); }
+}
+
+/* push: old and new slide past each other along the navigation direction. */
+:root[data-slide-transition="push"]::view-transition-old(root),
+:root[data-slide-transition="push"]::view-transition-new(root) {
+  mix-blend-mode: normal;
+}
+:root[data-slide-transition="push"][data-slide-direction="forward"]::view-transition-old(root) {
+  animation-name: slide-push-out-forward;
+}
+:root[data-slide-transition="push"][data-slide-direction="forward"]::view-transition-new(root) {
+  animation-name: slide-push-in-forward;
+}
+:root[data-slide-transition="push"][data-slide-direction="backward"]::view-transition-old(root) {
+  animation-name: slide-push-out-backward;
+}
+:root[data-slide-transition="push"][data-slide-direction="backward"]::view-transition-new(root) {
+  animation-name: slide-push-in-backward;
+}
+@keyframes slide-push-out-forward { to { transform: translateX(-100%); } }
+@keyframes slide-push-in-forward { from { transform: translateX(100%); } }
+@keyframes slide-push-out-backward { to { transform: translateX(100%); } }
+@keyframes slide-push-in-backward { from { transform: translateX(-100%); } }
+
+/* zoom: old recedes, new grows into place. */
+:root[data-slide-transition="zoom"]::view-transition-old(root) {
+  animation-name: slide-zoom-out;
+}
+:root[data-slide-transition="zoom"]::view-transition-new(root) {
+  animation-name: slide-zoom-in;
+}
+@keyframes slide-zoom-out {
+  to { transform: scale(1.15); opacity: 0; }
+}
+@keyframes slide-zoom-in {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* wipe: new slide reveals over the old one, edge to edge, along the navigation direction. */
+:root[data-slide-transition="wipe"]::view-transition-old(root) {
+  animation: none;
+}
+:root[data-slide-transition="wipe"]::view-transition-new(root) {
+  mix-blend-mode: normal;
+}
+:root[data-slide-transition="wipe"][data-slide-direction="forward"]::view-transition-new(root) {
+  animation-name: slide-wipe-in-forward;
+}
+:root[data-slide-transition="wipe"][data-slide-direction="backward"]::view-transition-new(root) {
+  animation-name: slide-wipe-in-backward;
+}
+@keyframes slide-wipe-in-forward {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@keyframes slide-wipe-in-backward {
+  from { clip-path: inset(0 0 0 100%); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+/* iris: new slide reveals from a growing circle centered on the frame. */
+:root[data-slide-transition="iris"]::view-transition-old(root) {
+  animation: none;
+}
+:root[data-slide-transition="iris"]::view-transition-new(root) {
+  animation-name: slide-iris-in;
+  mix-blend-mode: normal;
+}
+@keyframes slide-iris-in {
+  from { clip-path: circle(0% at 50% 50%); }
+  to { clip-path: circle(150% at 50% 50%); }
+}
+
+/* flip: old and new rotate through the vertical central axis, like a card flipping over. */
+:root[data-slide-transition="flip"]::view-transition-group(root) {
+  perspective: 2400px;
+}
+:root[data-slide-transition="flip"]::view-transition-old(root),
+:root[data-slide-transition="flip"]::view-transition-new(root) {
+  backface-visibility: hidden;
+}
+:root[data-slide-transition="flip"][data-slide-direction="forward"]::view-transition-old(root) {
+  animation-name: slide-flip-out-forward;
+}
+:root[data-slide-transition="flip"][data-slide-direction="forward"]::view-transition-new(root) {
+  animation-name: slide-flip-in-forward;
+}
+:root[data-slide-transition="flip"][data-slide-direction="backward"]::view-transition-old(root) {
+  animation-name: slide-flip-out-backward;
+}
+:root[data-slide-transition="flip"][data-slide-direction="backward"]::view-transition-new(root) {
+  animation-name: slide-flip-in-backward;
+}
+@keyframes slide-flip-out-forward { to { transform: rotateY(-90deg); opacity: 0.4; } }
+@keyframes slide-flip-in-forward { from { transform: rotateY(90deg); opacity: 0.4; } to { transform: rotateY(0deg); opacity: 1; } }
+@keyframes slide-flip-out-backward { to { transform: rotateY(90deg); opacity: 0.4; } }
+@keyframes slide-flip-in-backward { from { transform: rotateY(-90deg); opacity: 0.4; } to { transform: rotateY(0deg); opacity: 1; } }
+
+/* page-turn: old lifts away from an edge like a turned page, revealing the new slide static beneath. */
+:root[data-slide-transition="page-turn"]::view-transition-group(root) {
+  perspective: 2400px;
+}
+:root[data-slide-transition="page-turn"]::view-transition-old(root) {
+  z-index: 2;
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.35);
+}
+:root[data-slide-transition="page-turn"]::view-transition-new(root) {
+  z-index: 1;
+  animation-name: slide-page-turn-in;
+}
+:root[data-slide-transition="page-turn"][data-slide-direction="forward"]::view-transition-old(root) {
+  transform-origin: left center;
+  animation-name: slide-page-turn-out-forward;
+}
+:root[data-slide-transition="page-turn"][data-slide-direction="backward"]::view-transition-old(root) {
+  transform-origin: right center;
+  animation-name: slide-page-turn-out-backward;
+}
+@keyframes slide-page-turn-out-forward { to { transform: rotateY(-140deg); opacity: 0; } }
+@keyframes slide-page-turn-out-backward { to { transform: rotateY(140deg); opacity: 0; } }
+@keyframes slide-page-turn-in { from { opacity: 0.6; } to { opacity: 1; } }

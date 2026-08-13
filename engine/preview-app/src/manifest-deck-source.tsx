@@ -5,7 +5,8 @@ type Manifest = {
   title: string;
   slug: string;
   template: { set: string };
-  slides: { id: string; type: string; animation?: string }[];
+  defaults?: { animation?: string; transition?: string };
+  slides: { id: string; type: string; animation?: string; transition?: string }[];
 };
 
 type ParsedSection = {
@@ -43,6 +44,7 @@ export function createManifestDeckSource(
       Component,
       morphAnchors: section.anchors,
       layoutVariant,
+      transition: slide.transition as PreviewSlide["transition"],
       props: {
         animation: slide.animation ?? "gentle-rise",
         kicker: textMeta(section.metadata, "kicker"),
@@ -81,7 +83,13 @@ export function createManifestDeckSource(
       },
     };
   });
-  return { id: manifest.slug, label: manifest.title, deckClass, slides };
+  return {
+    id: manifest.slug,
+    label: manifest.title,
+    deckClass,
+    slides,
+    defaultTransition: manifest.defaults?.transition as PreviewSource["defaultTransition"],
+  };
 }
 
 function parseSections(content: string): Map<string, ParsedSection> {

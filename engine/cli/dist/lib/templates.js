@@ -167,6 +167,7 @@ export function createTemplate(workspace, name) {
         runtime: ["react", "static-html"],
         iconFamily: "phosphor-react",
         defaultAnimation: "gentle-rise",
+        defaultTransition: "none",
         fonts: ["inter", "jetbrains-mono"],
         supportedSlideTypes: ["title", "section-divider", "closing", "text-statement"],
     };

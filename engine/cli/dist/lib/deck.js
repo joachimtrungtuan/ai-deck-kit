@@ -39,7 +39,8 @@ export function createDeck(workspace, slug, templateName, title = titleFromSlug(
     const firstType = template.manifest.supportedSlideTypes.includes("title") ? "title" : template.manifest.supportedSlideTypes[0];
     if (!firstType)
         throw new Error(`Template "${templateName}" declares no supported slide types.`);
-    const firstSlide = { id: "slide-01", type: firstType, file: "content.md#slide-01", animation: template.manifest.defaultAnimation, transition: "none" };
+    const defaultTransition = template.manifest.defaultTransition ?? "none";
+    const firstSlide = { id: "slide-01", type: firstType, file: "content.md#slide-01", animation: template.manifest.defaultAnimation, transition: defaultTransition };
     const manifest = {
         schema: "ai-deck-kit/deck@1.0.0",
         title,
@@ -52,7 +53,7 @@ export function createDeck(workspace, slug, templateName, title = titleFromSlug(
         contentSchemaVersion: "1.0.0",
         outputMode: "react-and-static-html",
         status: "draft",
-        defaults: { animation: template.manifest.defaultAnimation, transition: "none" },
+        defaults: { animation: template.manifest.defaultAnimation, transition: defaultTransition },
         slides: [firstSlide],
     };
     writeDeck(root, manifest, slideContent(firstSlide, title));

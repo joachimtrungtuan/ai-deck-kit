@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { flushSync } from "react-dom";
-import { resolveMorphPairs } from "../../primitives/motion/morph-anchor-resolver";
+import { goToSlide } from "./slide-transition-runtime";
 import { FixedSlideCanvas } from "./fixed-slide-canvas";
 import type { PreviewSource } from "./preview-types";
 
@@ -31,15 +30,14 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
 
   const go = (next: number) => {
     const index = Math.max(0, Math.min(total - 1, next));
-    const previousAnchors = slides[active].morphAnchors?.map((anchor) => ({ id: anchor, morph: anchor })) ?? [];
-    const nextAnchors = slides[index].morphAnchors?.map((anchor) => ({ id: anchor, morph: anchor })) ?? [];
-    const hasMorph = resolveMorphPairs(previousAnchors, nextAnchors).length > 0;
-    const documentWithTransition = frameDocumentRef.current as (Document & { startViewTransition?: (update: () => void) => unknown }) | null;
-    if (hasMorph && documentWithTransition?.startViewTransition) {
-      documentWithTransition.startViewTransition(() => flushSync(() => setActive(index)));
-      return;
-    }
-    setActive(index);
+    goToSlide({
+      frameDocument: frameDocumentRef.current,
+      from: slides[active],
+      to: slides[index],
+      direction: index >= active ? "forward" : "backward",
+      source,
+      commit: () => setActive(index),
+    });
   };
 
   useEffect(() => setJumpValue(String(active + 1)), [active]);

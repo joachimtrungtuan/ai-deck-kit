@@ -22,6 +22,7 @@ export type TemplateManifest = {
   runtime: string[];
   iconFamily: string;
   defaultAnimation: string;
+  defaultTransition?: string;
   fonts?: string[];
   supportedSlideTypes: string[];
   layoutVariants?: Record<string, string[]>;
@@ -178,6 +179,7 @@ export function createTemplate(workspace: Workspace, name: string): string {
     runtime: ["react", "static-html"],
     iconFamily: "phosphor-react",
     defaultAnimation: "gentle-rise",
+    defaultTransition: "none",
     fonts: ["inter", "jetbrains-mono"],
     supportedSlideTypes: ["title", "section-divider", "closing", "text-statement"],
   };

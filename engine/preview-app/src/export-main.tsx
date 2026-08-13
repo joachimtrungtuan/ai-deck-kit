@@ -26,6 +26,7 @@ import "@fontsource/jetbrains-mono/vietnamese-500.css";
 // The deck's own template styles arrive through virtual:aideck-deck, so no template is named here.
 import "../../primitives/blocks/primitives.css";
 import "./export-shell.css";
+import "./slide-transitions.css";
 import { DeckExport } from "./deck-export";
 import { runtimeDeck } from "virtual:aideck-deck";
 

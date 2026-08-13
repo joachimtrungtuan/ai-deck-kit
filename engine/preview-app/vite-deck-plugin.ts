@@ -31,6 +31,7 @@ type TemplateManifest = {
   fonts?: string[];
   layoutVariants?: Record<string, string[]>;
   supportedSlideTypes: string[];
+  defaultTransition?: string;
 };
 type TemplateDefinition = {
   animationPath: string;
@@ -127,6 +128,10 @@ function loadDeckSource(root: string, engineRoot: string, watchedFiles: Set<stri
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
   const templateRoot = deckTemplateRoot(root, engineRoot, manifest.template?.set);
   const definition = loadTemplateDefinition(templateRoot, watchedFiles);
+  // Three-tier resolution, done once here so every downstream consumer (generated source, the
+  // manifest-driven branch) sees an already-resolved value: per-slide transitions still override in
+  // the runtime, but the deck-level default itself falls back through the template before "none".
+  const defaultTransition = manifest.defaults?.transition ?? definition.manifest.defaultTransition ?? "none";
   const source = generatedSource(root, manifest.slug);
   const sourceExport = source && readFileSync(source, "utf8").match(/export const (\w+Slides)\s*:/)?.[1];
   if (source && sourceExport) {
@@ -135,18 +140,19 @@ function loadDeckSource(root: string, engineRoot: string, watchedFiles: Set<stri
 ${renderFontImports(definition).join("\n")}
 import ${JSON.stringify(definition.designSystemPath)};
 import ${JSON.stringify(definition.animationPath)};
-export const runtimeDeck = { id: ${JSON.stringify(manifest.slug)}, label: ${JSON.stringify(manifest.title)}, deckClass: ${JSON.stringify(definition.deckClass)}, slides: ${sourceExport} };
+export const runtimeDeck = { id: ${JSON.stringify(manifest.slug)}, label: ${JSON.stringify(manifest.title)}, deckClass: ${JSON.stringify(definition.deckClass)}, slides: ${sourceExport}, defaultTransition: ${JSON.stringify(defaultTransition)} };
 export const runtimeTemplate = null;`;
   }
   const componentImports = renderComponentImports(definition.imports);
   const componentMap = Object.entries(definition.layouts).map(([type, entry]) => `${JSON.stringify(type)}: ${entry.component}`);
+  const resolvedManifest = { ...manifest, defaults: { ...manifest.defaults, transition: defaultTransition } };
   return `${componentImports.join("\n")}
 ${renderFontImports(definition).join("\n")}
 import ${JSON.stringify(definition.designSystemPath)};
 import ${JSON.stringify(definition.animationPath)};
 import { createManifestDeckSource } from ${JSON.stringify(join(process.cwd(), "preview-app/src/manifest-deck-source.tsx"))};
 const components = { ${componentMap.join(", ")} };
-export const runtimeDeck = createManifestDeckSource(${JSON.stringify(manifest)}, ${JSON.stringify(readFileSync(contentPath, "utf8"))}, ${JSON.stringify(definition.deckClass)}, components);
+export const runtimeDeck = createManifestDeckSource(${JSON.stringify(resolvedManifest)}, ${JSON.stringify(readFileSync(contentPath, "utf8"))}, ${JSON.stringify(definition.deckClass)}, components);
 export const runtimeTemplate = null;`;
 }
 
@@ -200,7 +206,7 @@ function loadGallerySource(gallery: GalleryEntry[], watchedFiles: Set<string>): 
     // never leak into another's preview.
     const propsBinding = `g${index}_previewProps`;
     declarations.push(`const ${propsBinding} = ${JSON.stringify(definition.previewProps)};`);
-    entries.push(`{ id: ${JSON.stringify(definition.manifest.name)}, label: ${JSON.stringify(definition.manifest.displayName)}, origin: ${JSON.stringify(entry.origin)}, deckClass: ${JSON.stringify(definition.deckClass)}, slides: [${templateSlideEntries(definition, alias, propsBinding).join(",\n")}] }`);
+    entries.push(`{ id: ${JSON.stringify(definition.manifest.name)}, label: ${JSON.stringify(definition.manifest.displayName)}, origin: ${JSON.stringify(entry.origin)}, deckClass: ${JSON.stringify(definition.deckClass)}, slides: [${templateSlideEntries(definition, alias, propsBinding).join(",\n")}], defaultTransition: ${JSON.stringify(definition.manifest.defaultTransition ?? "none")} }`);
   });
   return `${imports.join("\n")}
 ${declarations.join("\n")}
@@ -224,6 +230,7 @@ export const runtimeTemplate = {
   label: ${JSON.stringify(manifest.displayName)},
   deckClass: ${JSON.stringify(definition.deckClass)},
   slides: [${slides.join(",\n")}],
+  defaultTransition: ${JSON.stringify(manifest.defaultTransition ?? "none")},
 };`;
 }
 

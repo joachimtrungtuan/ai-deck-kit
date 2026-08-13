@@ -47,6 +47,7 @@ One place: the project's `templates/{name}.template/`. `engine/templates/` holds
   "runtime": ["react", "static-html"],
   "iconFamily": "phosphor-react",
   "defaultAnimation": "gentle-rise",
+  "defaultTransition": "none",
   "designTokens": {
     "color": true,
     "typography": true,

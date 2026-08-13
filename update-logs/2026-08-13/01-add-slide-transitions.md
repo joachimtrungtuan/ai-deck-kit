@@ -1,0 +1,22 @@
+# Add slide-to-slide transitions to the shared preview/export engine
+
+**What changed:**
+- New CSS-View-Transitions-driven slide transition system in the shared preview/export runtime. Catalog of 9 values: `none` (hard cut, default everywhere) + `crossfade`, `blur-crossfade`, `push`, `zoom`, `wipe`, `iris`, `flip`, `page-turn` — all direction-aware where applicable (forward vs backward navigation).
+- `engine/preview-app/src/slide-transitions.css` (new) implements the catalog via `::view-transition-old(root)` / `::view-transition-new(root)`, keyed off `data-slide-transition` / `data-slide-direction` on the transitioning document's `<html>`. Respects `prefers-reduced-motion` (collapses to 1ms).
+- `engine/preview-app/src/slide-transition-runtime.ts` (`goToSlide()`) is the shared navigation core used identically by `ScreenDeck.go()` (export) and `PreviewApp.go()` (live preview). Resolves transition per-slide → `deck.json` `defaults.transition` → `template-manifest.json` `defaultTransition` → `none`. A resolvable morph-anchor pair always wins over a plain transition (unchanged prior behavior).
+- Config surface: `template-manifest.json` gets an optional `defaultTransition` field (both shipped templates set it to `"none"` — zero behavior change unless a deck/template opts in). `deck.json` can override per-deck; `aideck transition set <slide-id> <type> --deck <slug>` (pre-existing CLI command, already shipped) sets the per-slide override.
+- New governance doc: `engine/primitives/motion/slide-transition-catalog-v1.md` (catalog table, priority rule, 3-tier config resolution, implementation pointers). Referenced from `presentation-template-creation` skill's `template-system-and-versioning.md` and `template-authoring-workflow.md`.
+- Version bumps: `engine/engine.version.json` and `ai-deck-kit.json` `engineVersion` 0.2.1 → 0.3.0 (new engine-level primitive). Both shipped templates' `templateVersion` 1.1.0 → 1.1.1 (manifest field addition).
+- Fix: `goToSlide()` didn't attach a rejection handler to the `ViewTransition.ready` promise — whenever the browser skips a transition (hidden document, reduced-motion edge cases, etc.), this surfaced as an uncaught console error even though the DOM commit itself (`.finished`) always succeeds. Added a no-op `.catch()` on `.ready` for both the morph and plain-transition call sites.
+
+**Why:** existing engine only supported a hard cut between slides; user wanted a true simultaneous cross-dissolve (not sequential fade) plus a captivating catalog (push, zoom, page-turn, etc.), configurable per-template with per-deck/per-slide override, without breaking any existing deck.
+
+**Verification:**
+- `npm run typecheck` (preview-app) and `npm run build` (CLI) both clean.
+- Live-tested in the dev server (`vivimoon-website.deck`): navigating between slides with a configured transition (`push`) commits the DOM correctly and the console is clean (no `InvalidStateError` noise) after the `.ready` catch fix.
+- Could not visually confirm the animation itself plays in this session's automated browser tooling — that tab's `document.visibilityState` is always `"hidden"` (never the OS-focused window), and the View Transitions spec mandates skipping the animation when the document is hidden. This is an environment limitation of the automation harness, not an app bug; functional correctness (data attributes set, DOM swap, CSS present) was confirmed by other means.
+- Set up a click-through test lane: `decks/vivimoon-website.deck` slides 2–9 each carry one of the 8 named transition types (crossfade, blur-crossfade, push, zoom, wipe, iris, flip, page-turn in order) so the user can open `http://127.0.0.1:5183` in their own regular browser and click through to visually confirm each one plays and looks right.
+
+**Follow-ups:**
+- User to visually confirm all 8 transitions in their own browser via the test lane on slides 2–9 of `vivimoon-website.deck`, then decide whether to keep those assignments as a working example or revert to no transition configured (gitignored user data either way, low risk).
+- No morph-anchor slides exist in the current test deck, so morph-vs-transition priority (morph always wins) hasn't been visually re-confirmed post-change — logic is unchanged from before this feature and was covered structurally in `slide-transition-runtime.ts`, but a real morph slide would be the strongest confirmation if one becomes available.

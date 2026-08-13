@@ -25,6 +25,7 @@ All keys required (see `template-system-and-versioning.md` for shape):
 - `runtime`: `["react", "static-html"]`
 - `iconFamily`: `"phosphor-react"`
 - `defaultAnimation` (one of the shared preset names)
+- `defaultTransition` (optional, one of the [slide transition catalog](../../../primitives/motion/slide-transition-catalog-v1.md) names; omit or `"none"` for a hard cut)
 - `designTokens`: flags for color, typography, spacing, grid, radii, stroke, shadow
 - `supportedSlideTypes`: COMPLETE list matching the declared catalog — no omissions
 - `layoutSource`: `{ "react": "layouts/react", "specs": "layouts/specs" }`
