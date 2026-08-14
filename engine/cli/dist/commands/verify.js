@@ -112,8 +112,9 @@ function checkDeck(workspace, bundle, version, errors, notes) {
             errors.push(`${bundle}: content.md missing.`);
         if (version.contentSchemaVersion && manifest.contentSchemaVersion !== version.contentSchemaVersion)
             errors.push(`${bundle}: unsupported content schema ${manifest.contentSchemaVersion ?? "missing"}.`);
-        if (version.supportedSlideTypeCatalogs && manifest.slideTypeCatalog && !version.supportedSlideTypeCatalogs.includes(manifest.slideTypeCatalog))
+        if (version.supportedSlideTypeCatalogs && manifest.slideTypeCatalog && !isSupportedSlideTypeCatalog(manifest.slideTypeCatalog, version.supportedSlideTypeCatalogs, manifest.template?.set)) {
             errors.push(`${bundle}: unsupported slide-type catalog ${manifest.slideTypeCatalog}.`);
+        }
         if (manifest.template?.set)
             checkDeckTemplate(workspace, bundle, errors, notes);
         checkDeckContent(workspace, deckRoot, bundle, errors);
@@ -121,6 +122,18 @@ function checkDeck(workspace, bundle, version, errors, notes) {
     catch (error) {
         errors.push(`${bundle}: ${message(error)}`);
     }
+}
+/**
+ * A deck's catalog is either a general engine catalog (v1/v2) or a named, versioned profile scoped to
+ * its own template — the documented pattern (template-system.md) for a template whose use case is
+ * narrower than the general catalog. `template.set` is always the name of the template that produced
+ * the deck (deck-template-sync copies it verbatim), so this can only ever match a profile that exact
+ * template declared for itself, never an arbitrary string.
+ */
+function isSupportedSlideTypeCatalog(catalog, supported, templateName) {
+    if (supported.includes(catalog))
+        return true;
+    return !!templateName && new RegExp(`^${templateName}-v\\d+$`).test(catalog);
 }
 function checkDeckTemplate(workspace, bundle, errors, notes) {
     // A deck renders from its own frozen snapshot, so trailing the source template is news, not damage.
