@@ -10,7 +10,7 @@ import { buildServeViteArgs, parseServeArgs } from "../commands/output.ts";
 import { createTemplate, listTemplates, migrateLegacyRegisteredTemplates, resolveTemplate, validateTemplateManifest, type TemplateManifest } from "../lib/templates.ts";
 import type { Workspace } from "../lib/types.ts";
 import { resolveFontImports } from "../lib/font-catalog.ts";
-import { resolveGeneratedTemplateImport, templatePreviewSlideId } from "../../preview-app/vite-deck-plugin.ts";
+import { inlineDeckAssets, resolveGeneratedTemplateImport, templatePreviewSlideId } from "../../preview-app/vite-deck-plugin.ts";
 
 const projectRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const cli = join(projectRoot, "engine", "cli", "index.mjs");
@@ -64,6 +64,37 @@ test("generated deck sources resolve legacy unsuffixed installed template import
       workspace.engineRoot,
     ),
     installed,
+  );
+});
+
+test("inlineDeckAssets rewrites assets/ references in content.md to base64 data URIs", () => {
+  const root = mkdtempSync(join(tmpdir(), "aideck-inline-assets-test-"));
+  mkdirSync(join(root, "assets"), { recursive: true });
+  writeFileSync(join(root, "assets", "diagram.png"), Buffer.from("fake-png-bytes"));
+  const watched = new Set<string>();
+
+  const output = inlineDeckAssets(`imageSrc: "assets/diagram.png"\n`, root, watched);
+
+  const expected = Buffer.from("fake-png-bytes").toString("base64");
+  assert.equal(output, `imageSrc: "data:image/png;base64,${expected}"\n`);
+  assert.ok(watched.has(join(root, "assets", "diagram.png")));
+});
+
+test("inlineDeckAssets rejects asset paths that escape the deck's assets/ folder", () => {
+  const root = mkdtempSync(join(tmpdir(), "aideck-inline-assets-test-"));
+  mkdirSync(join(root, "assets"), { recursive: true });
+  assert.throws(
+    () => inlineDeckAssets(`imageSrc: "assets/../../../etc/passwd"\n`, root, new Set()),
+    /escapes deck assets\//,
+  );
+});
+
+test("inlineDeckAssets reports a clear error for a missing referenced asset", () => {
+  const root = mkdtempSync(join(tmpdir(), "aideck-inline-assets-test-"));
+  mkdirSync(join(root, "assets"), { recursive: true });
+  assert.throws(
+    () => inlineDeckAssets(`imageSrc: "assets/missing.png"\n`, root, new Set()),
+    /Referenced asset not found: assets\/missing\.png/,
   );
 });
 

@@ -146,14 +146,47 @@ export const runtimeTemplate = null;`;
   const componentImports = renderComponentImports(definition.imports);
   const componentMap = Object.entries(definition.layouts).map(([type, entry]) => `${JSON.stringify(type)}: ${entry.component}`);
   const resolvedManifest = { ...manifest, defaults: { ...manifest.defaults, transition: defaultTransition } };
+  const content = inlineDeckAssets(readFileSync(contentPath, "utf8"), root, watchedFiles);
   return `${componentImports.join("\n")}
 ${renderFontImports(definition).join("\n")}
 import ${JSON.stringify(definition.designSystemPath)};
 import ${JSON.stringify(definition.animationPath)};
 import { createManifestDeckSource } from ${JSON.stringify(join(process.cwd(), "preview-app/src/manifest-deck-source.tsx"))};
 const components = { ${componentMap.join(", ")} };
-export const runtimeDeck = createManifestDeckSource(${JSON.stringify(resolvedManifest)}, ${JSON.stringify(readFileSync(contentPath, "utf8"))}, ${JSON.stringify(definition.deckClass)}, components);
+export const runtimeDeck = createManifestDeckSource(${JSON.stringify(resolvedManifest)}, ${JSON.stringify(content)}, ${JSON.stringify(definition.deckClass)}, components);
 export const runtimeTemplate = null;`;
+}
+
+const assetMimeTypes: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  svg: "image/svg+xml",
+  webp: "image/webp",
+  avif: "image/avif",
+};
+
+/**
+ * `content.md` references images as deck-relative `assets/<file>` paths (per the deck-format spec)
+ * so they travel with the portable `.deck` bundle. Neither the dev server nor the export build has
+ * a route or asset pipeline that resolves that path, so — same as the manual workaround decks
+ * already use for generated art — inline each referenced file as a base64 data URI at load time.
+ * This runs identically for `aideck serve` and `aideck export`, since both share this plugin.
+ */
+export function inlineDeckAssets(content: string, deckRoot: string, watchedFiles: Set<string>): string {
+  const assetsRoot = resolve(deckRoot, "assets");
+  return content.replace(/(["'])assets\/([^"']+)\1/g, (match, quote: string, relPath: string) => {
+    const filePath = resolve(assetsRoot, relPath);
+    if (!isWithin(assetsRoot, filePath)) throw new Error(`Asset path escapes deck assets/: ${relPath}`);
+    if (!existsSync(filePath)) throw new Error(`Referenced asset not found: assets/${relPath} (deck: ${deckRoot})`);
+    watchedFiles.add(filePath);
+    const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
+    const mime = assetMimeTypes[ext];
+    if (!mime) throw new Error(`Unsupported asset type ".${ext}" for assets/${relPath}`);
+    const data = readFileSync(filePath).toString("base64");
+    return `${quote}data:${mime};base64,${data}${quote}`;
+  });
 }
 
 /**
