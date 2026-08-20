@@ -71,7 +71,10 @@ before React attaches the handler — that race shows up as a blank deck).
 
 The standalone deck ships with: arrow / space / PageUp-Down / Home / End keyboard nav, and a
 bottom-right cluster — prev, a type-a-number jump box, a slide dropdown, and next. Each navigation
-remounts the slide (`key={index}`) so its entrance animation replays, matching the source.
+remounts the slide (`key={index}`) so its entrance animation replays, matching the source. The
+cluster starts visible; press **Shift+I** or right-click the deck canvas to hide/show it during a
+screen recording. Keyboard navigation remains active while the cluster is hidden, and the export
+view suppresses the native context menu for that right-click toggle.
 
 ## PDF
 

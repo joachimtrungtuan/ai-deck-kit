@@ -60,6 +60,8 @@ export function createManifestDeckSource(
         code: section.code,
         language: section.language ?? textMeta(section.metadata, "language"),
         highlightLines: arrayMeta<number>(section.metadata, "highlightLines"),
+        icon: textMeta(section.metadata, "icon"),
+        icons: arrayMeta<string>(section.metadata, "icons"),
         layoutVariant,
         backgroundVariant: textMeta(section.metadata, "backgroundVariant"),
         highlightPhrase: textMeta(section.metadata, "highlightPhrase"),

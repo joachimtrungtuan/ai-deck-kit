@@ -26,6 +26,7 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
   const [active, setActive] = useState(0);
   const activeSlide = slides[active];
   const [jumpValue, setJumpValue] = useState("1");
+  const [controlsVisible, setControlsVisible] = useState(true);
   const frameDocumentRef = useRef<Document | null>(null);
 
   const go = (next: number) => {
@@ -46,6 +47,11 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
       if (target && (target.tagName === "INPUT" || target.tagName === "SELECT")) return;
+      if (event.shiftKey && event.code === "KeyI") {
+        event.preventDefault();
+        setControlsVisible((visible) => !visible);
+        return;
+      }
       switch (event.key) {
         case "ArrowRight":
         case "ArrowDown":
@@ -81,10 +87,13 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
   }
 
   return (
-    <div className="deck-export">
+    <div className="deck-export" onContextMenu={(event) => {
+      event.preventDefault();
+      setControlsVisible((visible) => !visible);
+    }}>
       <FixedSlideCanvas documentRef={frameDocumentRef} slide={activeSlide} source={source} />
 
-      <nav className="deck-controls" aria-label="Slide navigation">
+      <nav className={`deck-controls${controlsVisible ? "" : " is-hidden"}`} aria-label="Slide navigation">
         <button type="button" aria-label="Previous slide" onClick={() => go(active - 1)} disabled={active === 0}>
           ‹
         </button>

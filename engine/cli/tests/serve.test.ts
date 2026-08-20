@@ -232,6 +232,23 @@ test("manifest deck rendering resolves components from the active template witho
   assert.doesNotMatch(source, /manifest\.template\?\.set\s*===/);
 });
 
+test("manifest deck sources forward icon metadata into generated slide props", () => {
+  const source = readFileSync(join(projectRoot, "engine", "preview-app", "src", "manifest-deck-source.tsx"), "utf8");
+  assert.match(source, /icon: textMeta\(section\.metadata, "icon"\)/);
+  assert.match(source, /icons: arrayMeta<string>\(section\.metadata, "icons"\)/);
+});
+
+test("export viewer exposes the toolbar visibility toggle without changing live preview", () => {
+  const exportSource = readFileSync(join(projectRoot, "engine", "preview-app", "src", "deck-export.tsx"), "utf8");
+  const exportStyles = readFileSync(join(projectRoot, "engine", "preview-app", "src", "export-shell.css"), "utf8");
+  const previewSource = readFileSync(join(projectRoot, "engine", "preview-app", "src", "main.tsx"), "utf8");
+  assert.match(exportSource, /event\.shiftKey && event\.code === "KeyI"/);
+  assert.match(exportSource, /onContextMenu=\{\(event\) =>/);
+  assert.match(exportSource, /deck-controls\$\{controlsVisible \? "" : " is-hidden"\}/);
+  assert.match(exportStyles, /\.deck-controls\.is-hidden\s*\{[\s\S]*?opacity:\s*0;[\s\S]*?pointer-events:\s*none;/);
+  assert.doesNotMatch(previewSource, /controlsVisible|onContextMenu/);
+});
+
 test("deck validation prefers its portable embedded template snapshot, then the project template, then the shipped default", () => {
   const source = readFileSync(join(projectRoot, "engine", "skills", "presentation-crafting", "scripts", "validate-slide-content.mjs"), "utf8");
   const candidates = source.match(/const candidates = \[[\s\S]*?\];/);

@@ -37,7 +37,9 @@ template's styling. All template CSS arrives through the virtual module.
 3. No template is named in runtime source — imports come from `virtual:aideck-deck`.
 4. Screen mode renders one active slide in a fixed 1600×900 iframe.
 5. The browser viewport scales the iframe; slide layout must not reflow.
-6. Controls are standardized: keyboard, previous/next, number jump, slide dropdown.
+6. Controls are standardized: keyboard, previous/next, number jump, and slide dropdown. The
+   on-screen cluster starts visible; `Shift+I` or a deck-canvas right-click toggles it without
+   disabling keyboard navigation, and screen mode suppresses the native context menu for that toggle.
 7. `?print` mode renders every slide as a 1600×900 `.deck-page`.
 8. PDF export depends on `.deck-page`; do not rename or remove it.
 9. Standalone HTML is produced by bundling this source runtime into one inlined `index.html`.
