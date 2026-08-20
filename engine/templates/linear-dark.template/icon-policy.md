@@ -28,10 +28,9 @@ Slide components expose icons through two props (see `layouts/react/shared.tsx`)
 - `icon?: string` — a single icon for single-slot slides (`metric-highlight`).
 - `icons?: string[]` — icons parallel to `items`, one per slot (`icon-grid`, `process-flow`, `case-study`, `timeline`, `architecture-overview`).
 
-Values are **names from the curated `ICON_MAP`**, not raw component names. Current names:
+Values are real exports from the full `@phosphor-icons/react` namespace, written in kebab-case (`chart-line`, `shield-check`, `arrow-elbow-down-left`). PascalCase export names are also accepted for generated or legacy content. There is no legacy alias shim: short names resolve only when they are themselves real Phosphor exports.
 
-`target`, `stack`, `lightning`, `shield`, `database`, `cloud`, `branch`, `code`, `terminal`, `plugs`, `users`, `chart`, `rocket`, `lock`, `sync`, `cpu`, `globe`.
-
-- To add an icon name, extend `ICON_MAP` in `shared.tsx` (import the Phosphor glyph, add the key). Keep names short and semantic.
-- **Unset / unknown names render a dashed placeholder tile** (`.ld-icon-tile-empty`, `SquaresFour` glyph). This is intentional: it signals to authors that an icon belongs in that slot and should be filled before handoff.
+- Use any real Phosphor icon name; do not extend a local map in `shared.tsx`.
+- **Unset names render a dashed placeholder tile** (`.ld-icon-tile-empty`, `SquaresFour` glyph).
+- **Unknown names render a red error tile** with the unresolved value and are rejected by `validate-slide-content.mjs` before handoff.
 - Slots that take icons: `icon-grid` (required), `process-flow`, `case-study`, `timeline`, `architecture-overview`, `metric-highlight` (optional but recommended).

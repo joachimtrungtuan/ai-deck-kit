@@ -2,6 +2,7 @@
 // Validate a .deck bundle: deck.json manifest + content.md, per docs/deck-format-spec.md section 6.
 import fs from "node:fs";
 import path from "node:path";
+import * as PhosphorIcons from "@phosphor-icons/react";
 
 const deckDir = process.argv[2];
 
@@ -18,6 +19,7 @@ const errors = [];
 let templateManifest;
 const blockCatalogV1 = new Set(["text", "title-description", "image", "chart", "table", "icon-text-card", "quote", "stat", "list", "code"]);
 const motionCatalogV1 = new Set(["none", "fade", "gentle-rise", "morph"]);
+const REACT_FORWARD_REF = Symbol.for("react.forward_ref");
 
 for (const field of [
   "schema",
@@ -115,6 +117,11 @@ slideMatches.forEach((match, index) => {
 
   const id = extractYamlField(metadata, "id");
   const type = extractYamlField(metadata, "type");
+  for (const { field, value } of extractIconFields(metadata)) {
+    if (!resolvePhosphorIcon(value)) {
+      errors.push(`${label}: ${field} value "${value}" is not a real Phosphor icon name. Use a kebab-case or PascalCase export from @phosphor-icons/react.`);
+    }
+  }
   if (id) {
     contentIds.add(id);
     if (!manifestIds.has(id)) {
@@ -271,6 +278,48 @@ function requiredBlockFields(blockType) {
     list: ["items"],
     code: ["code"],
   }[blockType] ?? [];
+}
+
+function extractIconFields(yaml) {
+  const fields = [];
+  for (const line of yaml.split("\n")) {
+    const match = line.match(/^\s*(icons?|icon)\s*:\s*(.*?)\s*$/);
+    if (!match) continue;
+    const field = match[1];
+    const values = field === "icons" ? parseInlineArray(match[2]) : [parseScalar(match[2])];
+    values.filter(Boolean).forEach((value) => fields.push({ field, value }));
+  }
+  return fields;
+}
+
+function parseInlineArray(raw) {
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((value) => typeof value === "string") : [];
+  } catch {
+    return [...raw.matchAll(/["']([^"']+)["']/g)].map((match) => match[1]);
+  }
+}
+
+function parseScalar(raw) {
+  const value = raw.trim();
+  if (!value || value === "null" || value === "~") return "";
+  return value.replace(/^(?:"([\s\S]*)"|'([\s\S]*)')$/, (_, doubleQuoted, singleQuoted) => doubleQuoted ?? singleQuoted);
+}
+
+function resolvePhosphorIcon(name) {
+  const value = typeof name === "string" ? name.trim() : "";
+  if (!value) return null;
+  const exportName = value
+    .split("-")
+    .filter(Boolean)
+    .map((part) => `${part[0].toUpperCase()}${part.slice(1)}`)
+    .join("");
+  if (!exportName || exportName === "IconBase") return null;
+  const icon = PhosphorIcons[exportName];
+  if (typeof icon === "function") return icon;
+  if (typeof icon !== "object" || icon === null) return null;
+  return icon.$$typeof === REACT_FORWARD_REF && typeof icon.render === "function" ? icon : null;
 }
 
 function hasBlockField(blockYaml, field) {

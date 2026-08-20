@@ -294,6 +294,69 @@ None.
   assert.match(result.stderr, /template set mismatch, deck=expected-template, embedded=sample/);
 });
 
+test("deck validation resolves full Phosphor names and rejects unresolved icon values", () => {
+  const root = mkdtempSync(join(tmpdir(), "aideck-icon-validation-test-"));
+  try {
+    const deckRoot = join(root, "decks", "icons.deck");
+    const templateRoot = join(deckRoot, "template");
+    mkdirSync(templateRoot, { recursive: true });
+    const templateManifest = JSON.parse(readFileSync(join(projectRoot, "engine", "templates", "linear-dark.template", "template-manifest.json"), "utf8"));
+    writeFileSync(join(templateRoot, "template-manifest.json"), `${JSON.stringify(templateManifest, null, 2)}\n`);
+    writeFileSync(join(deckRoot, "deck.json"), `${JSON.stringify({
+      schema: "ai-deck-kit/deck@1.0.0",
+      title: "Icon validation",
+      slug: "icons",
+      audience: "",
+      goal: "",
+      template: { set: "linear-dark", version: templateManifest.templateVersion },
+      slideTypeCatalog: "v2",
+      blockCatalog: "v1",
+      contentSchemaVersion: "1.0.0",
+      outputMode: "react-and-static-html",
+      status: "draft",
+      defaults: { animation: "none", transition: "none" },
+      slides: [{ id: "slide-01", type: "title" }],
+    }, null, 2)}\n`);
+    const validator = join(projectRoot, "engine", "skills", "presentation-crafting", "scripts", "validate-slide-content.mjs");
+    const content = (icon: string) => [
+      "## Slide 01: Icon validation",
+      "",
+      "```yaml",
+      'id: "slide-01"',
+      'type: "title"',
+      'status: "draft"',
+      'intent: "Validate icon resolution."',
+      'animation: "none"',
+      `icons: ["${icon}"]`,
+      "```",
+      "",
+      "### On-Slide Text",
+      "",
+      "- Icon",
+      "",
+      "### Visual Direction",
+      "",
+      "Icon.",
+      "",
+      "### Speaker Notes",
+      "",
+      "None.",
+      "",
+    ].join("\n");
+
+    writeFileSync(join(deckRoot, "content.md"), content("alarm"));
+    const valid = spawnSync(process.execPath, [validator, deckRoot], { cwd: projectRoot, encoding: "utf8" });
+    assert.equal(valid.status, 0, valid.stderr);
+
+    writeFileSync(join(deckRoot, "content.md"), content("not-a-real-phosphor-icon"));
+    const invalid = spawnSync(process.execPath, [validator, deckRoot], { cwd: projectRoot, encoding: "utf8" });
+    assert.equal(invalid.status, 1);
+    assert.match(invalid.stderr, /Slide 01: icons value "not-a-real-phosphor-icon" is not a real Phosphor icon name/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("a declared serif contributes both its roman and its italic styles", () => {
   // Italics were once missing because a single stylesheet was imported by hand. The catalog now
   // answers for a family as a whole, so the omission cannot come back one template at a time.

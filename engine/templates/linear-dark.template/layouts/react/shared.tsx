@@ -1,25 +1,6 @@
 import type { ComponentType, ReactNode } from "react";
 import { ImageBlock, TitleDescriptionBlock } from "../../../../primitives/blocks";
-import {
-  ArrowsClockwise,
-  ChartLine,
-  CloudArrowUp,
-  Code,
-  Cpu,
-  Database,
-  GitBranch,
-  Globe,
-  Lightning,
-  Lock,
-  Plugs,
-  Rocket,
-  ShieldCheck,
-  SquaresFour,
-  Stack,
-  Target,
-  Terminal,
-  Users,
-} from "@phosphor-icons/react";
+import * as PhosphorIcons from "@phosphor-icons/react";
 
 // LinearSlideProps is a SUPERSET of SwissSlideProps: every inherited field keeps its
 // exact name and type; technical fields (catalog v2) are appended, all optional.
@@ -68,41 +49,56 @@ export type LinearSlideProps = {
   dataFlowSecondaryTextStyle?: React.CSSProperties;
 };
 
-// Curated Phosphor set. Authoring agents pass these names via `icon` / `icons`.
-// Unknown or missing names fall back to the SquaresFour placeholder so the slot stays visible.
+// Resolve against the complete Phosphor namespace so content authors can use any shipped icon.
 type IconComponent = ComponentType<{ size?: number; weight?: "regular" }>;
+const MISSING_ICON = PhosphorIcons.SquaresFour as IconComponent;
+const REACT_FORWARD_REF = Symbol.for("react.forward_ref");
 
-const ICON_MAP: Record<string, IconComponent> = {
-  target: Target,
-  stack: Stack,
-  lightning: Lightning,
-  shield: ShieldCheck,
-  database: Database,
-  cloud: CloudArrowUp,
-  branch: GitBranch,
-  code: Code,
-  terminal: Terminal,
-  plugs: Plugs,
-  users: Users,
-  chart: ChartLine,
-  rocket: Rocket,
-  lock: Lock,
-  sync: ArrowsClockwise,
-  cpu: Cpu,
-  globe: Globe,
-};
-
-export function resolveIcon(name?: string): IconComponent {
-  return (name && ICON_MAP[name]) || SquaresFour;
+function toPhosphorExportName(name: string): string {
+  return name
+    .split("-")
+    .filter(Boolean)
+    .map((part) => `${part[0].toUpperCase()}${part.slice(1)}`)
+    .join("");
 }
 
-// Icon placeholder tile. Renders the named icon, or a neutral placeholder glyph
-// signalling "an icon belongs here" when no name is supplied.
+function isIconComponent(value: unknown): value is IconComponent {
+  if (typeof value === "function") return true;
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as { $$typeof?: symbol; render?: unknown };
+  return candidate.$$typeof === REACT_FORWARD_REF && typeof candidate.render === "function";
+}
+
+export function resolveIcon(name?: string): IconComponent | null {
+  const value = name?.trim();
+  if (!value) return null;
+  const exportName = toPhosphorExportName(value);
+  if (exportName === "IconBase") return null;
+  const icon = PhosphorIcons[exportName as keyof typeof PhosphorIcons];
+  return isIconComponent(icon) ? icon : null;
+}
+
+// Missing names keep the neutral placeholder; invalid names stay visible and actionable.
 export function LinearIconTile({ name, size = 32, compact = false }: { name?: string; size?: number; compact?: boolean }) {
-  const Icon = resolveIcon(name);
+  const value = name?.trim();
+  const Icon = resolveIcon(value);
+  const RenderedIcon = Icon ?? MISSING_ICON;
+  const className = `ld-icon-tile${compact ? " ld-icon-tile-compact" : ""}${value ? "" : " ld-icon-tile-empty"}`;
+  if (value && !Icon) {
+    return (
+      <span
+        className={`${className} ld-icon-tile-error`}
+        role="img"
+        aria-label={`Unresolved Phosphor icon: ${value}`}
+        title={`Unresolved Phosphor icon: ${value}`}
+      >
+        {value}
+      </span>
+    );
+  }
   return (
-    <span className={`ld-icon-tile${compact ? " ld-icon-tile-compact" : ""}${name ? "" : " ld-icon-tile-empty"}`} aria-hidden>
-      <Icon size={size} weight="regular" />
+    <span className={className} aria-hidden>
+      <RenderedIcon size={size} weight="regular" />
     </span>
   );
 }

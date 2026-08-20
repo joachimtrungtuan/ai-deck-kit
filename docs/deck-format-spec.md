@@ -170,6 +170,7 @@ Invariant: order + type live in `deck.json`; prose + intent live in `content.md`
 - every `type` exists in the declared `slideTypeCatalog`;
 - required per-slide fields present (`id`, `type`, `status`, `intent`, `animation`);
 - `override.reason` present when any `override.*` ≠ `none`;
+- every `icon` or `icons[]` value resolves to a real export from `@phosphor-icons/react` (kebab-case or PascalCase); unknown values fail validation with the slide and value named;
 - every `blocks[].type` exists in the declared `blockCatalog`; data blocks carry required structured fields;
 - `morph` anchors resolve to a matching anchor on an adjacent slide;
 - an embedded template snapshot, when present, has the same name, version, and

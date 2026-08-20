@@ -1,7 +1,7 @@
 # AI Deck Kit — Codebase Summary
 
-**Generated:** 2026-07-25
-**Source:** `repomix-output.xml` (Repomix v1.17.0)
+**Generated:** 2026-08-20
+**Source:** `repomix-output.xml` (Repomix v1.18.0)
 
 ## Current Shape
 
@@ -48,5 +48,6 @@ The local registry-backed clean-install check was not completed because npm DNS 
 
 - Keep `engine/` behavior and the root installer contract synchronized.
 - Treat `ai-deck-kit.json`, `engine.version.json`, deck schema/catalog versions, and template manifests as compatibility boundaries.
+- Template icon names resolve against the full Phosphor React namespace; invalid values are rejected by the canonical deck validator with slide/value context, while template-specific icon usage remains owned by each bundle's `icon-policy.md`.
 - Update module PRDs when a CLI surface or ownership boundary changes.
 - Keep release and clean-install claims tied to observed workflow runs, not workflow definitions alone.

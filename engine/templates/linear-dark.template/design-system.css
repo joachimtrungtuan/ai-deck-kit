@@ -506,6 +506,17 @@
   color: var(--ld-soft);
 }
 
+/* Invalid authoring value — keep the slide renderable but make the mistake unmistakable. */
+.ld-icon-tile-error {
+  border-color: #ff7a7a;
+  color: #ff7a7a;
+  font-size: 10px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+  padding: 4px;
+  text-align: center;
+}
+
 /* Window chrome bar (code / terminal / ui-showcase) */
 .ld-chrome {
   display: flex;

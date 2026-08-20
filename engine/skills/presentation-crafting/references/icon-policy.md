@@ -25,6 +25,8 @@ Tradeoffs:
 - Pick one weight per deck, usually `light` or `regular`.
 - Use icons as semantic support, not decoration filler.
 - Every icon in the content file should have a purpose or label.
+- For Phosphor React templates, use any real export from `@phosphor-icons/react` in kebab-case (`chart-line`) or PascalCase (`ChartLine`). The template resolver converts kebab-case to the export name; it does not maintain a legacy alias shim.
+- Unknown icon names must fail `validate-slide-content.mjs` with the slide and value named. Preview rendering shows an inline error tile instead of silently substituting a generic icon.
 
 ## Material Symbols Exception
 
