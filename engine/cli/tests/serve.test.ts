@@ -249,6 +249,20 @@ test("export viewer exposes the toolbar visibility toggle without changing live 
   assert.doesNotMatch(previewSource, /controlsVisible|onContextMenu/);
 });
 
+test("live preview keyboard navigation mirrors export and listens inside the slide iframe", () => {
+  const previewSource = readFileSync(join(projectRoot, "engine", "preview-app", "src", "main.tsx"), "utf8");
+  assert.match(previewSource, /const target = event\.target as HTMLElement \| null/);
+  assert.match(previewSource, /target\.tagName === "INPUT" \|\| target\.tagName === "SELECT"/);
+  assert.match(previewSource, /target\.closest\?\.\("\[data-agentation-root\]"\)/);
+  for (const key of ["ArrowRight", "ArrowDown", "PageDown", " ", "ArrowLeft", "ArrowUp", "PageUp", "Home", "End"]) {
+    assert.match(previewSource, new RegExp(`case "${key}":`));
+  }
+  assert.match(previewSource, /const frameWindow = frameDocumentRef\.current\?\.defaultView \?\? null/);
+  assert.match(previewSource, /window\.addEventListener\("keydown", onKeyDown\)/);
+  assert.match(previewSource, /frameWindow\?\.addEventListener\("keydown", onKeyDown\)/);
+  assert.match(previewSource, /frameWindow\?\.removeEventListener\("keydown", onKeyDown\)/);
+});
+
 test("deck validation prefers its portable embedded template snapshot, then the project template, then the shipped default", () => {
   const source = readFileSync(join(projectRoot, "engine", "skills", "presentation-crafting", "scripts", "validate-slide-content.mjs"), "utf8");
   const candidates = source.match(/const candidates = \[[\s\S]*?\];/);

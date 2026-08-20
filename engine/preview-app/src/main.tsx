@@ -42,16 +42,43 @@ function PreviewApp({ galleryHref, source }: { galleryHref?: string; source: Pre
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "ArrowRight") {
-        go(activeIndex + 1);
-      }
-      if (event.key === "ArrowLeft") {
-        go(activeIndex - 1);
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" || target.tagName === "SELECT" || target.closest?.("[data-agentation-root]"))
+      ) return;
+      switch (event.key) {
+        case "ArrowRight":
+        case "ArrowDown":
+        case "PageDown":
+        case " ":
+          event.preventDefault();
+          go(activeIndex + 1);
+          break;
+        case "ArrowLeft":
+        case "ArrowUp":
+        case "PageUp":
+          event.preventDefault();
+          go(activeIndex - 1);
+          break;
+        case "Home":
+          event.preventDefault();
+          go(0);
+          break;
+        case "End":
+          event.preventDefault();
+          go(slides.length - 1);
+          break;
       }
     }
 
+    const frameWindow = frameDocumentRef.current?.defaultView ?? null;
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    frameWindow?.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      frameWindow?.removeEventListener("keydown", onKeyDown);
+    };
   }, [activeIndex, go]);
 
   return (

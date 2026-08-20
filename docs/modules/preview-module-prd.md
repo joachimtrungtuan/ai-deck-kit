@@ -18,7 +18,7 @@ Serves one shared React preview app for the installed-template gallery, a select
 ## 3. Surfaces
 - **CLI:** `aideck serve [<deck-slug> | deck <slug> | template <name> | --deck <slug> | --template <name>] [--port <port>] [--no-open]`.
 - **Skill:** —
-- **Runtime:** React app (Vite dev server), reads deck.json + content.md + template on load, renders slides with morph animation on transitions.
+- **Runtime:** React app (Vite dev server), reads deck.json + content.md + template on load, renders slides with morph animation on transitions, and attaches the same keyboard-navigation handler to the outer window and the slide iframe window. Advance keys are Right, Down, PageDown, and Space; reverse keys are Left, Up, and PageUp; Home jumps to the first slide; End jumps to the last slide. INPUT, SELECT, and `[data-agentation-root]` targets keep native behavior.
 
 ## 4. Inputs & Outputs
 - **Inputs:** ai-deck-kit.json (workspace), `decks/{slug}.deck/deck.json`, `decks/{slug}.deck/content.md`, `templates/{name}.template/` user drafts, installed `engine/templates/{name}.template/`, template snapshots, and assets/.
@@ -47,6 +47,7 @@ Serves one shared React preview app for the installed-template gallery, a select
 - [x] The browser opens by default; `--no-open` supports automation.
 - [x] Bare serve presents a dedicated template-gallery page; selecting a card opens the template viewer.
 - [x] Deck and template review share the same fixed-canvas viewer, with a viewport-height stage and independently scrolling slide list.
+- [x] Live preview keyboard navigation works from both the shell and the slide iframe, matching export navigation keys while preserving native INPUT, SELECT, and Agentation interactions.
 - [ ] Preview loads deck.json + content.md + embedded template without network calls.
 - [ ] Slides render correctly with blocks, text, images, speaker notes visible.
 - [ ] Morph transitions (same anchor id on consecutive slides) animate smoothly.
