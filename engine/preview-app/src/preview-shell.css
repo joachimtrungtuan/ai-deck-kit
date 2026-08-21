@@ -14,8 +14,9 @@ button {
 }
 
 .preview-shell {
+  --sidebar-width: 280px;
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-columns: var(--sidebar-width) 8px minmax(0, 1fr);
   height: 100dvh;
   overflow: hidden;
 }
@@ -28,6 +29,14 @@ button {
   border-right: 1px solid #3d3d38;
   overflow: hidden;
   padding: 24px;
+}
+
+.preview-sidebar-header {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 12px;
+  flex: none;
 }
 
 .preview-sidebar h1 {
@@ -72,15 +81,87 @@ button {
   text-align: left;
 }
 
+.preview-sidebar-toggle {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #5a5a54;
+  border-radius: 2px;
+  background: transparent;
+  color: #d7d7ce;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.preview-sidebar-toggle:hover,
+.preview-sidebar-toggle:focus-visible {
+  border-color: #f7f7f2;
+  color: #ffffff;
+}
+
 .preview-sidebar nav button:hover,
 .preview-sidebar nav button.is-active {
   border-color: #f7f7f2;
   color: #ffffff;
 }
 
-.preview-sidebar nav span {
+.preview-sidebar nav .preview-slide-index {
   color: #a7a79f;
   font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.preview-sidebar-resizer {
+  position: relative;
+  cursor: col-resize;
+}
+
+.preview-sidebar-resizer::after {
+  position: absolute;
+  inset: 0 3px;
+  background: #3d3d38;
+  content: "";
+  transition: background 120ms ease;
+}
+
+.preview-sidebar-resizer:hover::after {
+  background: #a7a79f;
+}
+
+.preview-sidebar-resizer.is-disabled {
+  cursor: default;
+}
+
+.preview-sidebar-resizer.is-disabled::after {
+  background: transparent;
+}
+
+.preview-sidebar.is-collapsed {
+  align-items: stretch;
+  padding: 12px 6px;
+}
+
+.preview-sidebar.is-collapsed .preview-sidebar-header {
+  justify-content: center;
+}
+
+.preview-sidebar.is-collapsed .preview-slide-header {
+  display: none;
+}
+
+.preview-sidebar.is-collapsed nav {
+  padding-right: 0;
+}
+
+.preview-sidebar.is-collapsed nav button {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: 0;
+  padding: 8px 4px;
+}
+
+.preview-sidebar.is-collapsed .preview-slide-type {
+  display: none;
 }
 
 .preview-stage {

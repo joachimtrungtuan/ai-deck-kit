@@ -9,7 +9,7 @@ depends_on: ["design-primitives"]
 # Module PRD: Preview
 
 ## 1. Purpose
-Serves one shared React preview app for the installed-template gallery, a selected .deck, or a selected template. No per-template or per-deck apps. Review is read-only in the browser; source edits remain agent-owned.
+Serves one shared React preview app for the installed-template gallery, a selected .deck, or a selected template. No per-template or per-deck apps. Review is read-only in the browser; source edits remain agent-owned. The preview may persist local UI preferences, such as sidebar width and collapsed state, in browser `localStorage`.
 
 ## 2. Responsibilities
 - **In scope:** `aideck serve`, positional and flag-based deck/template targets, browser auto-open with `--no-open` opt-out, workspace target resolution, template structural validation, live reload, read-only UI, and morph transitions at runtime.
@@ -26,7 +26,7 @@ Serves one shared React preview app for the installed-template gallery, a select
 
 ## 5. Files & Data Touched
 - **Reads:** `ai-deck-kit.json`, `decks/{slug}.deck/*`, `templates/{name}.template/*`, `engine/templates/{name}.template/*`, and `engine/primitives/blocks/`.
-- **Writes:** none (read-only).
+- **Writes:** browser-local UI preferences only (`localStorage`); no deck source or project files are written by the preview.
 
 ## 6. Dependencies
 - `design-primitives` (block types, motion vocabulary, morph anchors).

@@ -263,6 +263,30 @@ test("live preview keyboard navigation mirrors export and listens inside the sli
   assert.match(previewSource, /frameWindow\?\.removeEventListener\("keydown", onKeyDown\)/);
 });
 
+test("live preview sidebar supports persisted resize and collapse without changing export", () => {
+  const previewSource = readFileSync(join(projectRoot, "engine", "preview-app", "src", "main.tsx"), "utf8");
+  const previewStyles = readFileSync(join(projectRoot, "engine", "preview-app", "src", "preview-shell.css"), "utf8");
+  const exportSource = readFileSync(join(projectRoot, "engine", "preview-app", "src", "deck-export.tsx"), "utf8");
+  const exportStyles = readFileSync(join(projectRoot, "engine", "preview-app", "src", "export-shell.css"), "utf8");
+
+  assert.match(previewSource, /aideck\.preview\.sidebarWidth/);
+  assert.match(previewSource, /aideck\.preview\.sidebarCollapsed/);
+  assert.match(previewSource, /clampSidebarWidth/);
+  assert.match(previewSource, /onPointerDown=\{startSidebarResize\}/);
+  assert.match(previewSource, /event\.key === " " \|\| event\.key === "Enter"/);
+  assert.match(previewSource, /window\.addEventListener\("pointercancel", cleanup\)/);
+  assert.match(previewSource, /resizeHandle\.setPointerCapture\(pointerId\)/);
+  assert.match(previewSource, /resizeHandle\.releasePointerCapture\(pointerId\)/);
+  assert.match(previewSource, /aria-valuenow=\{sidebarCollapsed \? undefined : sidebarWidth\}/);
+  assert.match(previewSource, /aria-valuemin=\{MIN_SIDEBAR_WIDTH\}/);
+  assert.match(previewSource, /preview-sidebar-toggle/);
+  assert.match(previewSource, /preview-slide-type/);
+  assert.match(previewStyles, /grid-template-columns: var\(--sidebar-width\) 8px minmax\(0, 1fr\)/);
+  assert.match(previewStyles, /\.preview-sidebar\.is-collapsed \.preview-slide-type/);
+  assert.doesNotMatch(exportSource, /preview-sidebar|sidebarWidth|sidebarCollapsed/);
+  assert.doesNotMatch(exportStyles, /preview-sidebar|sidebarWidth|sidebarCollapsed/);
+});
+
 test("deck validation prefers its portable embedded template snapshot, then the project template, then the shipped default", () => {
   const source = readFileSync(join(projectRoot, "engine", "skills", "presentation-crafting", "scripts", "validate-slide-content.mjs"), "utf8");
   const candidates = source.match(/const candidates = \[[\s\S]*?\];/);
