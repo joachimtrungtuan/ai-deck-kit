@@ -16,7 +16,7 @@
 
 .primitive-title-description h2 { font-size: clamp(2rem, 4vw, 4.5rem); line-height: 0.95; }
 .primitive-title-description p, .primitive-text-block p, .primitive-icon-text-card p { color: var(--deck-color-muted); font-size: 1rem; line-height: 1.45; }
-.primitive-title-description p { margin-top: var(--deck-space-2); max-width: 60ch; }
+.primitive-title-description p { margin-top: var(--deck-space-2); max-width: 30rem; }
 .primitive-label { color: var(--deck-color-muted); font-family: var(--deck-font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; }
 
 .primitive-image-block { margin: 0; overflow: hidden; border-radius: var(--deck-radius); background: var(--deck-color-panel); }
