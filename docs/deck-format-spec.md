@@ -208,11 +208,13 @@ Invariant: order + type live in `deck.json`; prose + intent live in `content.md`
 
 ## 6. Validation
 
-The following is the target validation contract for this schema redesign. Phase
-03 updates `aideck validate <deck>` and the canonical
-`validate-slide-content.mjs` implementation to enforce it. Until that phase
-and the deck migrations land, the current validator remains an old-format
-gate and must not be treated as proof that a new-schema deck is valid.
+The following is the target validation contract for this schema redesign. The
+canonical `validate-slide-content.mjs` implementation (and `aideck validate`,
+which wraps it) now dispatches on the major of the deck's
+`contentSchemaVersion`: a `1.x` deck is judged by its frozen legacy rule set
+and must pass exactly as it always has; a `2.x` deck is judged by the rules
+below. No deck migration exists or is planned — existing decks stay on v1
+indefinitely.
 
 Once Phase 03 lands, `aideck validate <deck>` (wrapping the canonical
 `validate-slide-content.mjs` logic) enforces:
