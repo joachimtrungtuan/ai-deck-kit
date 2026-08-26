@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { goToSlide } from "./slide-transition-runtime";
 import { FixedSlideCanvas } from "./fixed-slide-canvas";
 import type { PreviewSource } from "./preview-types";
+import { SlideOverrideLayer } from "./slide-override-layer";
 
 // The templates size type/layout with viewport units (e.g. clamp(48px, 6vw, 96px)) and a
 // max-width media query. A CSS transform does NOT change what `vw` resolves to, so a scaled
@@ -142,8 +143,9 @@ function PrintDeck({ source }: { source: PreviewSource }) {
     <div className="print-deck print-deck-capture">
       {source.slides.map((slide) => (
         <div className="deck-page" key={slide.id ?? slide.type}>
-          <div className={source.deckClass}>
+          <div className={source.deckClass} data-slide-id={slide.id}>
             <slide.Component {...slide.props} />
+            <SlideOverrideLayer override={slide.override} />
           </div>
         </div>
       ))}

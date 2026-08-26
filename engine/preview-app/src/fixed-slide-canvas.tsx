@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { PreviewSlide, PreviewSource } from "./preview-types";
+import { SlideOverrideLayer } from "./slide-override-layer";
 import "./fixed-slide-canvas.css";
 
 const SLIDE_WIDTH = 1600;
@@ -95,6 +96,7 @@ export function FixedSlideCanvas({
         createPortal(
           <div
             className={source.deckClass}
+            data-slide-id={slide.id}
             data-layout-variant={mountAgentation ? slide.layoutVariant : undefined}
             data-slide-index={mountAgentation && slideIndex !== undefined ? String(slideIndex + 1).padStart(2, "0") : undefined}
             data-slide-type={mountAgentation ? slide.type : undefined}
@@ -104,6 +106,7 @@ export function FixedSlideCanvas({
             style={{ viewTransitionName: slide.morphAnchors?.[0] }}
           >
             <slide.Component {...slide.props} />
+            <SlideOverrideLayer override={slide.override} />
           </div>,
           frameBody,
         )}

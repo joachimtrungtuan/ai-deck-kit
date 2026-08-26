@@ -4,9 +4,9 @@ title: "content.md Schema Redesign"
 
 # content.md Schema Redesign
 
-**Status:** Phases 1–3 and 2b implementation complete (2026-08-26). Scope
+**Status:** Phases 1–4 and 2b implementation complete (2026-08-26). Scope
 revised 2026-08-26 (revision 2, see below): dual-schema instead of hard
-cutover. Phase 1 docs follow-up and Phases 4–7 remain pending.
+cutover. Phase 1 docs follow-up and Phases 5–7 remain pending.
 
 ## Origin
 
@@ -170,7 +170,7 @@ here — see phase-01, which is where they become the actual doc content.
 | 2 | [Engine parser & CLI](phase-02-engine-parser-and-cli.md) | done, **needs amendment** | v2 parse/emit path; `createDeck` must stamp the **template's own declared** `contentSchemaVersion` (revision 2b), not a constant |
 | 2b | [v1 compatibility & dispatch](phase-02b-v1-compatibility-dispatch.md) | done | v1 parser restored verbatim; `manifest-deck-source.tsx` dispatches on `contentSchemaVersion`; schema-aware CLI scaffolds; `verify.ts` accepts both |
 | 3 | [Validator updates](phase-03-validator-updates.md) | done (2026-08-26) | `validate-slide-content.mjs` dispatches: v1 rules unchanged, v2 rules added |
-| 4 | [Override rendering](phase-04-override-rendering-and-template-tweak.md) | pending, **scope cut** | Engine-side CSS/HTML override wrapper only. The concept-diagram `items[].icon` edit moved out — it touches the downstream v1 template |
+| 4 | [Override rendering](phase-04-override-rendering-and-template-tweak.md) | done (2026-08-26) | Engine-side CSS/HTML override wrapper only. The concept-diagram `items[].icon` edit moved out — it touches the downstream v1 template |
 | 5 | [Migrate linear-dark & swiss-modern templates](phase-05-migrate-linear-dark-and-swiss-modern-templates.md) | pending, **scope grew** | Both templates consume unified `items[]`, bump to `contentSchemaVersion: "2.0.0"`; `deck retemplate` refuses v1-deck-onto-v2-template |
 | 6 | [v1 freeze verification](phase-06-v1-freeze-verification.md) | pending, **rewritten** | No deck migrated. Proves all seven v1 decks still parse, validate, and render unchanged |
 | 7 | [Release cutover](phase-07-release-cutover.md) | **new** | Engine version bump that is the v1/v2 boundary, plus the upgrade note explaining it |
