@@ -1,6 +1,6 @@
 # `.deck` Bundle Format Specification
 
-**Status:** Draft spec v0.1 (2026-07-22). `content_schema_version` starts at `1.0.0`.
+**Status:** Draft spec v0.1 (2026-08-26). `content_schema_version` starts at `1.0.0`.
 Companion specs: `system-architecture.md`, `project-overview-pdr.md`.
 
 ## 1. What a `.deck` is
@@ -53,67 +53,47 @@ Promotes the current `.slides.md` frontmatter to a structured, validated file. T
 
 ## 4. `content.md`
 
-Unchanged in spirit from today's canonical schema — Markdown + YAML, one section per slide — so existing decks migrate mechanically. Section id must match a `deck.json` `slides[].id`.
+`content.md` is Markdown with one YAML metadata fence per slide. The slide
+heading is a structural boundary only: it carries no title or other semantic
+data. `id`, `type`, and `title` come from the YAML fence, and the section id
+must match a `deck.json` `slides[].id`.
 
 ````markdown
-## Slide 01: Short Slide Title
+## Slide 05 (slide-05)
 
 ```yaml
-id: "slide-01"
-type: "title"
+id: "slide-05"
+type: "content-text"
+layoutVariant: "two-column"
 status: "draft"
-intent: "Open with the core promise."
+intent: "One-line authoring intent, not shown on slide"
 animation: "gentle-rise"
 transition: "none"
-icons: []
-assets: []
+
+title: "How the idea plays out in practice"
+description: "Optional supporting line."
+kicker: "Concept vs. application"
+leftTitle: "Concept"
+rightTitle: "Application"
+items:
+  - column: "left"
+    title: "Prompt structure"
+    description: "..."
+    icon: "target"
+  - column: "right"
+    title: "Campaign brief"
+    description: "..."
+    icon: "folder-open"
+
 override:
   layout: "none"
   animation: "none"
+  css: ""
+  html: ""
   reason: ""
+
+assets: []
 ```
-
-Templates may also declare optional presentation fields in the slide metadata:
-
-```yaml
-layoutVariant: "editorial-left"
-backgroundVariant: "white"
-highlightPhrase: "one clear idea"
-courseName: "AI Foundations"
-lessonName: "Lesson 01"
-sectionName: "Core concepts"
-```
-
-These fields remain template-owned and absent-safe. If present, `layoutVariant`
-and `backgroundVariant` must exist in the selected template manifest. The
-runtime supplies current/total page position.
-
-Use flow-style, JSON-compatible metadata only when a selected layout needs
-structured presentation data. These advanced props stay optional and are
-ignored safely by layouts that do not use them:
-
-```yaml
-imageSrc: "assets/diagram.png"
-imageAlt: "Three-stage retrieval flow"
-caption: "A compact retrieval loop"
-tableColumns: ["Step", "Purpose"]
-tableRows: [["Retrieve", "Find evidence"], ["Reflect", "Test the claim"]]
-language: "ts"
-highlightLines: [2, 3]
-metric: "84%"
-metricLabel: "Learners completing the practice"
-chartData: [{"label":"Read","value":42}, {"label":"Apply","value":76}]
-```
-
-`imageSrc`/`imageAlt`/`caption` support media layouts; `tableColumns` and
-`tableRows` support table layouts; `language` and `highlightLines` support code
-layouts; `metric`/`metricLabel` and `chartData` support metric or chart layouts.
-
-### On-Slide Text
-- Primary visible text.
-
-### Visual Direction
-Describe image, icon, chart, diagram, or type-only treatment.
 
 ### Speaker Notes
 What the presenter says; not on the slide.
@@ -125,9 +105,73 @@ Layout / hierarchy / spacing constraints.
 - Unresolved question for this slide.
 ````
 
+`title:` in YAML is the sole title source. There is no fallback to text after
+the heading. `description:` is the authoring key for the existing `body`
+render prop. List/card data always uses `items[]` entries with this shape:
+
+```yaml
+items:
+  - title: "Required visible label"
+    description: "Optional supporting copy"
+    icon: "optional-phosphor-name"
+    column: "left" # optional; only "left" or "right"
+```
+
+`items[].icon` replaces a flat positional `icons[]` array. Two-column layouts
+filter the one canonical array by `column`; the parser does not create
+`leftItems` or `rightItems`. Layouts that only need labels/icons may accept an
+item description and ignore it; the per-type table below calls out those cases.
+
+Templates may also declare optional presentation fields in the slide metadata:
+`layoutVariant`, `backgroundVariant`, `highlightPhrase`, `courseName`,
+`lessonName`, and `sectionName`. These remain template-owned and absent-safe.
+If present, `layoutVariant` and `backgroundVariant` must exist in the selected
+template manifest. The runtime supplies current/total page position.
+
+Structured fields stay explicit rather than being folded into `items[]`:
+`images[]`, `stats[]`, `chartData[]`, `regionSeries[]`, `tableColumns`, and
+`tableRows`. Code slides keep `language` as documentation metadata even though
+the current tokenizer does not branch on it. `blocks[]` and `morph` remain the
+separate design-primitives mechanism described below.
+
+### Field reference by slide type
+
+The following table is the authoring reference for the clarity-courseware
+slide catalog. Every row lists fields beyond the always-present `title`.
+
+| Type | Variants | Fields beyond `title` | Notes |
+|---|---|---|---|
+| `title` | image-statement | `imageSrc`, `imageAlt`, `courseName`, `lessonName`, `highlightPhrase` | No `description`/`items`. |
+| `section-divider` | number-led | `index`, `description` | |
+| `content-text` | statement(-orange) | `kicker`, `description`, `source`, `caption` | |
+| `content-text` | statement-plain(-orange) | `caption` | `kicker`/`description` are ignored; omit them when authoring. |
+| `content-text` | list-vertical, list-horizontal | `kicker`, `description`, `items[]` (title/description/icon) | 3–5 items. |
+| `content-text` | two-column | `kicker`, `description`, `leftTitle`, `rightTitle`, `items[]` with `column` | Up to 3 items per side. |
+| `content-media` | figure-left/right | `kicker`, `description`, `imageSrc`, `imageAlt` | `description` supports literal `\n`. |
+| `content-media` | image-grid-left/right | `kicker`, `description`, `images[]` (src/alt/caption) | 2–5 images. |
+| `full-bleed-image` | editorial-overlay(-white), caption-strip(-black) | `kicker`, `description`, `imageSrc`, `imageAlt` | |
+| `table` | reference-table | `kicker`, `tableColumns`, `tableRows` | Maximum 5×6. |
+| `table` | comparison-table | plus `recommendedColumn` (0-indexed) | |
+| `code` | explain-and-code | `kicker`, `description`, `code`, `language`, `highlightLines` | `language` is documentation-only today. |
+| `code` | focus-lines | `code`, `highlightLines` | No `kicker`/`description`/intro title. |
+| `data-visual` | metric-highlight | `kicker`, `metric`, `metricLabel`, `imageSrc`, `items[]` | `metric`/`metricLabel` fall back to `title`/`description` if omitted. |
+| `data-visual` | stat-cards(-orange) | `description`, `stats[]` (value/label) | |
+| `data-visual` | comparison-chart, pie-chart | `kicker`, `description`, `chartData[]` (label/value) | |
+| `data-visual` | region-chart | `description`, `regionSeries[]` (name + data[]) | |
+| `data-visual` | concept-diagram | `kicker`, `description`, `items[]` (title, optional icon) | Maximum 4 nodes. `items[].icon` overrides the auto-guess; item `description` is accepted but unused. |
+| `quote` | centered-quote(-black) | `attribution` | `title` is the quote text. |
+| `quote` | pull-quote(-black) | `attribution`, `kicker`, `description` | `kicker` defaults to “Context”. |
+| `closing` | next-steps | `kicker`, `description`, `items[]` (title, optional icon) | Maximum 4. Item `description` is accepted but unused. |
+| `closing` | final-statement | `kicker`, `description` | |
+
+The engine's shipped linear-dark template also supports its technical slide
+catalog. Its additional structured fields remain template-owned; they follow
+the same rule of one YAML source field per rendered value and are not encoded
+as heading prose.
+
 ### Annotation policy (reused)
 
-Speaker Notes / Design Notes / Review Questions carry forward the existing in-content annotation approach (`presentation-crafting/references/annotation-policy.md`). This is the "annotation" module — no new mechanism invented.
+Speaker Notes / Design Notes / Review Questions carry forward the existing in-content annotation approach (`engine/skills/presentation-crafting/references/annotation-policy.md`). This is the "annotation" module — no new mechanism invented.
 
 ### Blocks & morph (design-primitives layer)
 
@@ -156,7 +200,7 @@ blocks:
 | Field / area | Owner | Edited via |
 |---|---|---|
 | `deck.json` structure, slide order/type | CLI | `aideck new`, `slide add/remove/move`, `anim/transition` |
-| Visible copy, notes, visual direction, annotations | Agent/human | `content.md` |
+| `title`, `description`, `items`, table/image/chart fields, notes, and annotations | Agent/human | `content.md` |
 | `assets/` | Agent/human/CLI | file ops / generators |
 | `.build/` | CLI | `serve`, `export` |
 
@@ -164,13 +208,23 @@ Invariant: order + type live in `deck.json`; prose + intent live in `content.md`
 
 ## 6. Validation
 
-`aideck validate <deck>` (wraps existing `validate-slide-content.mjs` logic) enforces:
+The following is the target validation contract for this schema redesign. Phase
+03 updates `aideck validate <deck>` and the canonical
+`validate-slide-content.mjs` implementation to enforce it. Until that phase
+and the deck migrations land, the current validator remains an old-format
+gate and must not be treated as proof that a new-schema deck is valid.
+
+Once Phase 03 lands, `aideck validate <deck>` (wrapping the canonical
+`validate-slide-content.mjs` logic) enforces:
 
 - every `deck.json` slide has a matching `content.md` section and vice-versa;
 - every `type` exists in the declared `slideTypeCatalog`;
 - required per-slide fields present (`id`, `type`, `status`, `intent`, `animation`);
-- `override.reason` present when any `override.*` ≠ `none`;
-- every `icon` or `icons[]` value resolves to a real export from `@phosphor-icons/react` (kebab-case or PascalCase); unknown values fail validation with the slide and value named;
+- every `items[]` entry has a non-empty `title`;
+- every `items[].column`, when present, is `left` or `right`;
+- `override.reason` is non-empty when any of `override.layout`, `override.animation`, `override.css`, or `override.html` is set;
+- `override.css` must not contain an unescaped `</style>` and `override.html` must not contain `<script`;
+- every `items[].icon` value resolves to a real export from `@phosphor-icons/react` (kebab-case or PascalCase); unknown values fail validation with the slide and value named;
 - every `blocks[].type` exists in the declared `blockCatalog`; data blocks carry required structured fields;
 - `morph` anchors resolve to a matching anchor on an adjacent slide;
 - an embedded template snapshot, when present, has the same name, version, and
@@ -203,4 +257,12 @@ Template sets are their own folder-bundle artifact — **`*.template`** — kept
 
 ## Decisions (locked)
 
+- Slide headings are structural only; YAML `title:` is the sole title source, including quote text.
+- Card/list data uses one object-array `items[]` shape with optional `description`, `icon`, and `column`.
+- `description` maps to the existing `body` render prop; no `body` authoring key is read.
+- `css` and `html` extend the existing `override:` object beside `layout`, `animation`, and `reason`.
+- `### On-Slide Text` and `### Visual Direction` are removed; explicit fields are the source of visible data and design intent.
+- `stats[]`, `images[]`, `chartData[]`, `regionSeries[]`, `tableColumns`, and `tableRows` retain distinct shapes.
+- `data-visual` concept diagrams accept `items[].icon` before their semantic-icon guess.
+- `language` remains documentation-only metadata for code slides.
 - `.build/` lives inside the bundle, git-ignored. No remaining open questions.
