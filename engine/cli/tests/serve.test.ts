@@ -232,10 +232,19 @@ test("manifest deck rendering resolves components from the active template witho
   assert.doesNotMatch(source, /manifest\.template\?\.set\s*===/);
 });
 
-test("manifest deck sources forward icon metadata into generated slide props", () => {
+test("manifest deck sources use unified item metadata and expose overrides", () => {
   const source = readFileSync(join(projectRoot, "engine", "preview-app", "src", "manifest-deck-source.tsx"), "utf8");
-  assert.match(source, /icon: textMeta\(section\.metadata, "icon"\)/);
-  assert.match(source, /icons: arrayMeta<string>\(section\.metadata, "icons"\)/);
+  assert.match(source, /const items = arrayMeta<SlideItem>\(metadata, "items"\)/);
+  assert.match(source, /title: textMeta\(metadata, "title"\)/);
+  assert.match(source, /body: textMeta\(metadata, "description"\)/);
+  assert.match(source, /override: objectMeta<SlideOverride>\(metadata, "override"\)/);
+  assert.match(source, /stats: arrayMeta\(metadata, "stats"\)/);
+  assert.match(source, /regionSeries: arrayMeta\(metadata, "regionSeries"\)/);
+  assert.match(source, /index: numberMeta\(metadata, "index"\)/);
+  assert.match(source, /collectMorphAnchors\(metadata\)/);
+  assert.match(source, /parseYaml\(yamlText\)/);
+  assert.doesNotMatch(source, /section\.title|On-Slide Text/);
+  assert.doesNotMatch(source, /leftItems:|rightItems:|icon: textMeta|icons: arrayMeta/);
 });
 
 test("export viewer exposes the toolbar visibility toggle without changing live preview", () => {

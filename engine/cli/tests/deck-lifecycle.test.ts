@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { createDeck } from "../lib/deck.ts";
+import { createDeck, parseSections, slideContent } from "../lib/deck.ts";
 import { deckDrift, retemplateDeck } from "../lib/deck-template-sync.ts";
 import { resolveTemplate, type TemplateManifest } from "../lib/templates.ts";
 import type { DeckManifest, Workspace } from "../lib/types.ts";
@@ -18,6 +18,13 @@ test("a new deck records which source its frozen snapshot came from", () => {
   assert.equal(manifest.template.origin, "project");
   assert.equal(manifest.template.version, "1.0.0");
   assert.ok(existsSync(join(root, "template", "template-manifest.json")));
+  const content = readFileSync(join(root, "content.md"), "utf8");
+  assert.match(content, /^## Slide 01 \(slide-01\)$/m);
+  assert.match(content, /^title: "Talk"$/m);
+  assert.doesNotMatch(content, /On-Slide Text|Visual Direction|^icons:/m);
+  assert.equal(parseSections(content).sections.length, 1);
+  const escaped = slideContent({ id: "slide-02", type: "title", file: "content.md#slide-02" }, 'A "quoted" title\nwith a new line');
+  assert.match(escaped, /title: "A \\"quoted\\" title\\nwith a new line"/);
   assert.equal(deckDrift(workspace, "talk.deck").state, "current");
 });
 
