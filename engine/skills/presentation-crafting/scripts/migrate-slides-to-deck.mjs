@@ -123,6 +123,7 @@ const manifest = {
   template: { set: fields.template_set, version: fields.template_version },
   slideTypeCatalog: fields.slide_type_catalog,
   blockCatalog: "v1",
+  // Legacy slide-folder migration emits v1-shaped content by construction; keep it on v1.
   contentSchemaVersion: "1.0.0",
   outputMode: fields.output_mode,
   status: fields.status,

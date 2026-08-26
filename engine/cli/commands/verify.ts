@@ -16,7 +16,12 @@ import type { Workspace } from "../lib/types.ts";
 
 export type VerifyReport = { errors: string[]; notes: string[]; decks: number; templates: number };
 
-type EngineVersion = { engineVersion?: string; contentSchemaVersion?: string; supportedSlideTypeCatalogs?: string[] };
+type EngineVersion = {
+  engineVersion?: string;
+  contentSchemaVersion?: string;
+  supportedContentSchemaMajors?: number[];
+  supportedSlideTypeCatalogs?: string[];
+};
 
 /** How many changed files to name before summarising; keeps a bulk edit from flooding the caller. */
 const MAX_LISTED = 20;
@@ -117,7 +122,14 @@ function checkDeck(workspace: Workspace, bundle: string, version: EngineVersion,
     const manifest = readJson<{ slug: string; template?: { set?: string; version?: string }; contentSchemaVersion?: string; slideTypeCatalog?: string }>(join(deckRoot, "deck.json"));
     if (!manifest.slug || !manifest.template?.set || !manifest.template.version) errors.push(`${bundle}: incomplete deck manifest.`);
     if (!existsSync(join(deckRoot, "content.md"))) errors.push(`${bundle}: content.md missing.`);
-    if (version.contentSchemaVersion && manifest.contentSchemaVersion !== version.contentSchemaVersion) errors.push(`${bundle}: unsupported content schema ${manifest.contentSchemaVersion ?? "missing"}.`);
+    const contentSchemaVersion = manifest.contentSchemaVersion ?? "1.0.0";
+    const versionMatch = /^(\d+)\.\d+\.\d+$/.exec(contentSchemaVersion);
+    const contentSchemaMajor = versionMatch ? Number(versionMatch[1]) : Number.NaN;
+    if (version.supportedContentSchemaMajors && (!Number.isInteger(contentSchemaMajor) || !version.supportedContentSchemaMajors.includes(contentSchemaMajor))) {
+      errors.push(`${bundle}: unsupported content schema ${manifest.contentSchemaVersion ?? "missing"}.`);
+    } else if (!version.supportedContentSchemaMajors && version.contentSchemaVersion && manifest.contentSchemaVersion !== version.contentSchemaVersion) {
+      errors.push(`${bundle}: unsupported content schema ${manifest.contentSchemaVersion ?? "missing"}.`);
+    }
     if (version.supportedSlideTypeCatalogs && manifest.slideTypeCatalog && !isSupportedSlideTypeCatalog(manifest.slideTypeCatalog, version.supportedSlideTypeCatalogs, manifest.template?.set)) {
       errors.push(`${bundle}: unsupported slide-type catalog ${manifest.slideTypeCatalog}.`);
     }

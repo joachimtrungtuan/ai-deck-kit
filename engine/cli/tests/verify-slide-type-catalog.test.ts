@@ -2,7 +2,7 @@
 // documented named, versioned profile a template may declare for its own narrower use case
 // (template-system.md, "Rules" item 3) must both pass; anything else must still be rejected.
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -32,13 +32,26 @@ test("a catalog name that does not match the deck's own template is still reject
   assert.ok(report.errors.some((error) => /unsupported slide-type catalog someone-elses-v1/.test(error)));
 });
 
+test("content schema verification rejects malformed versions", () => {
+  const workspace = fixtureWorkspace();
+  writeTemplate(join(workspace.root, "templates", "sample.template"), "sample", "v1");
+  const deckRoot = createDeck(workspace, "talk", "sample");
+  const manifestPath = join(deckRoot, "deck.json");
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as Record<string, unknown>;
+  manifest.contentSchemaVersion = "1abc.0.0";
+  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+
+  const report = verifyWorkspace(workspace);
+  assert.ok(report.errors.some((error) => /talk\.deck: unsupported content schema 1abc\.0\.0/.test(error)));
+});
+
 function fixtureWorkspace(): Workspace {
   const root = mkdtempSync(join(tmpdir(), "aideck-verify-catalog-test-"));
   const engineRoot = join(root, "engine");
   mkdirSync(engineRoot, { recursive: true });
   writeFileSync(
     join(engineRoot, "engine.version.json"),
-    `${JSON.stringify({ engineVersion: "0.1.0", shippedTemplates: [], supportedSlideTypeCatalogs: ["v1", "v2"] })}\n`,
+    `${JSON.stringify({ engineVersion: "0.1.0", shippedTemplates: [], supportedContentSchemaMajors: [1, 2], supportedSlideTypeCatalogs: ["v1", "v2"] })}\n`,
   );
   return {
     root,

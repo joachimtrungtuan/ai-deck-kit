@@ -110,8 +110,15 @@ function checkDeck(workspace, bundle, version, errors, notes) {
             errors.push(`${bundle}: incomplete deck manifest.`);
         if (!existsSync(join(deckRoot, "content.md")))
             errors.push(`${bundle}: content.md missing.`);
-        if (version.contentSchemaVersion && manifest.contentSchemaVersion !== version.contentSchemaVersion)
+        const contentSchemaVersion = manifest.contentSchemaVersion ?? "1.0.0";
+        const versionMatch = /^(\d+)\.\d+\.\d+$/.exec(contentSchemaVersion);
+        const contentSchemaMajor = versionMatch ? Number(versionMatch[1]) : Number.NaN;
+        if (version.supportedContentSchemaMajors && (!Number.isInteger(contentSchemaMajor) || !version.supportedContentSchemaMajors.includes(contentSchemaMajor))) {
             errors.push(`${bundle}: unsupported content schema ${manifest.contentSchemaVersion ?? "missing"}.`);
+        }
+        else if (!version.supportedContentSchemaMajors && version.contentSchemaVersion && manifest.contentSchemaVersion !== version.contentSchemaVersion) {
+            errors.push(`${bundle}: unsupported content schema ${manifest.contentSchemaVersion ?? "missing"}.`);
+        }
         if (version.supportedSlideTypeCatalogs && manifest.slideTypeCatalog && !isSupportedSlideTypeCatalog(manifest.slideTypeCatalog, version.supportedSlideTypeCatalogs, manifest.template?.set)) {
             errors.push(`${bundle}: unsupported slide-type catalog ${manifest.slideTypeCatalog}.`);
         }

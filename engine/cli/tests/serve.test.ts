@@ -233,7 +233,14 @@ test("manifest deck rendering resolves components from the active template witho
 });
 
 test("manifest deck sources use unified item metadata and expose overrides", () => {
-  const source = readFileSync(join(projectRoot, "engine", "preview-app", "src", "manifest-deck-source.tsx"), "utf8");
+  const dispatcher = readFileSync(join(projectRoot, "engine", "preview-app", "src", "manifest-deck-source.tsx"), "utf8");
+  const source = readFileSync(join(projectRoot, "engine", "preview-app", "src", "content-schema-v2.tsx"), "utf8");
+  const v1Source = readFileSync(join(projectRoot, "engine", "preview-app", "src", "content-schema-v1.tsx"), "utf8");
+  assert.match(dispatcher, /contentSchemaVersion/);
+  assert.match(dispatcher, /createManifestDeckSourceV1/);
+  assert.match(dispatcher, /createManifestDeckSourceV2/);
+  assert.match(dispatcher, /Supported schema majors/);
+  assert.match(v1Source, /FROZEN v1 parser/);
   assert.match(source, /const items = arrayMeta<SlideItem>\(metadata, "items"\)/);
   assert.match(source, /title: textMeta\(metadata, "title"\)/);
   assert.match(source, /body: textMeta\(metadata, "description"\)/);
@@ -245,6 +252,13 @@ test("manifest deck sources use unified item metadata and expose overrides", () 
   assert.match(source, /parseYaml\(yamlText\)/);
   assert.doesNotMatch(source, /section\.title|On-Slide Text/);
   assert.doesNotMatch(source, /leftItems:|rightItems:|icon: textMeta|icons: arrayMeta/);
+});
+
+test("outline generation preserves the deck content schema when rewriting headings", () => {
+  const source = readFileSync(join(projectRoot, "engine", "cli", "commands", "generation.ts"), "utf8");
+  assert.match(source, /loaded\.manifest\.contentSchemaVersion/);
+  assert.match(source, /legacySchema \? `## Slide 01: \$\{loaded\.manifest\.title\}`/);
+  assert.match(source, /if \(!legacySchema\) sections\.sections\[0\] = setYamlField/);
 });
 
 test("export viewer exposes the toolbar visibility toggle without changing live preview", () => {

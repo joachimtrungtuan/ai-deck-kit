@@ -50,13 +50,13 @@ export function createDeck(workspace, slug, templateName, title = titleFromSlug(
         template: { set: template.manifest.name, version: template.manifest.templateVersion, origin: template.origin },
         slideTypeCatalog: template.manifest.slideTypeCatalog,
         blockCatalog: template.manifest.blockCatalog ?? "v1",
-        contentSchemaVersion: "1.0.0",
+        contentSchemaVersion: template.manifest.contentSchemaVersion,
         outputMode: "react-and-static-html",
         status: "draft",
         defaults: { animation: template.manifest.defaultAnimation, transition: defaultTransition },
         slides: [firstSlide],
     };
-    writeDeck(root, manifest, slideContent(firstSlide, title));
+    writeDeck(root, manifest, slideContent(firstSlide, title, template.manifest.contentSchemaVersion));
     return root;
 }
 export function titleFromSlug(slug) {
@@ -81,6 +81,21 @@ export function setYamlField(section, field, value) {
     const pattern = new RegExp(`^${field}:.*$`, "m");
     return pattern.test(section) ? section.replace(pattern, line) : section.replace(/^```ya?ml\n/, (opening) => `${opening}${line}\n`);
 }
-export function slideContent(slide, title) {
+export function slideContent(slide, title, contentSchemaVersion = "2.0.0") {
+    const major = parseContentSchemaMajor(contentSchemaVersion);
+    if (major === 1)
+        return legacySlideContent(slide, title);
+    if (major === 2)
+        return canonicalSlideContent(slide, title);
+    throw new Error(`Unsupported content schema version "${contentSchemaVersion}". Supported schema majors: 1, 2.`);
+}
+function parseContentSchemaMajor(version) {
+    const match = /^(\d+)\.\d+\.\d+$/.exec(version);
+    return match ? Number(match[1]) : undefined;
+}
+function legacySlideContent(slide, title) {
+    return `## Slide 01: ${title}\n\n\`\`\`yaml\nid: "${slide.id}"\ntype: "${slide.type}"\nstatus: "draft"\nintent: "Describe the purpose of this slide."\nanimation: "${slide.animation ?? "gentle-rise"}"\ntransition: "${slide.transition ?? "none"}"\nicons: []\nassets: []\noverride:\n  layout: "none"\n  animation: "none"\n  reason: ""\n\`\`\`\n\n### On-Slide Text\n\n- Add visible slide copy.\n\n### Visual Direction\n\nDescribe the visual treatment.\n\n### Speaker Notes\n\nAdd presenter notes.\n\n### Design Notes\n\nAdd layout constraints.\n\n### Review Questions\n\n- None.\n`;
+}
+function canonicalSlideContent(slide, title) {
     return `## Slide 01 (${slide.id})\n\n\`\`\`yaml\nid: "${slide.id}"\ntype: "${slide.type}"\nstatus: "draft"\nintent: "Describe the purpose of this slide."\nanimation: "${slide.animation ?? "gentle-rise"}"\ntransition: "${slide.transition ?? "none"}"\n\ntitle: ${JSON.stringify(title)}\ndescription: ""\nitems: []\n\noverride:\n  layout: "none"\n  animation: "none"\n  css: ""\n  html: ""\n  reason: ""\n\nassets: []\n\`\`\`\n\n### Speaker Notes\n\nAdd presenter notes.\n\n### Design Notes\n\nAdd layout constraints.\n\n### Review Questions\n\n- None.\n`;
 }

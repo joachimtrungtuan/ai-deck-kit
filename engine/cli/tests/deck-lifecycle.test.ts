@@ -19,13 +19,30 @@ test("a new deck records which source its frozen snapshot came from", () => {
   assert.equal(manifest.template.version, "1.0.0");
   assert.ok(existsSync(join(root, "template", "template-manifest.json")));
   const content = readFileSync(join(root, "content.md"), "utf8");
-  assert.match(content, /^## Slide 01 \(slide-01\)$/m);
-  assert.match(content, /^title: "Talk"$/m);
-  assert.doesNotMatch(content, /On-Slide Text|Visual Direction|^icons:/m);
+  assert.match(content, /^## Slide 01: Talk$/m);
+  assert.match(content, /^icons: \[\]$/m);
+  assert.match(content, /### On-Slide Text/);
   assert.equal(parseSections(content).sections.length, 1);
-  const escaped = slideContent({ id: "slide-02", type: "title", file: "content.md#slide-02" }, 'A "quoted" title\nwith a new line');
+  const escaped = slideContent({ id: "slide-02", type: "title", file: "content.md#slide-02" }, 'A "quoted" title\nwith a new line', "2.0.0");
   assert.match(escaped, /title: "A \\"quoted\\" title\\nwith a new line"/);
   assert.equal(deckDrift(workspace, "talk.deck").state, "current");
+});
+
+test("a new deck inherits the template content schema version", () => {
+  const workspace = fixtureWorkspace();
+  const templateRoot = join(workspace.root, "templates", "v2-template.template");
+  writeTemplate(templateRoot, "V2 template", "v2-template");
+  const manifestPath = join(templateRoot, "template-manifest.json");
+  const templateManifest = JSON.parse(readFileSync(manifestPath, "utf8")) as TemplateManifest;
+  templateManifest.contentSchemaVersion = "2.0.0";
+  writeFileSync(manifestPath, `${JSON.stringify(templateManifest, null, 2)}\n`);
+
+  const deckRoot = createDeck(workspace, "talk", "v2-template");
+  assert.equal(readManifest(deckRoot).contentSchemaVersion, "2.0.0");
+  const content = readFileSync(join(deckRoot, "content.md"), "utf8");
+  assert.match(content, /^## Slide 01 \(slide-01\)$/m);
+  assert.match(content, /^title: "Talk"$/m);
+  assert.doesNotMatch(content, /### On-Slide Text|^icons:/m);
 });
 
 test("editing the source template puts the deck behind, without touching the deck", () => {
