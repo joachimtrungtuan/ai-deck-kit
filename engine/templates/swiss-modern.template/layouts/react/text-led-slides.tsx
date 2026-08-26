@@ -27,6 +27,8 @@ export function SwissTextListSlide(props: SwissSlideProps) {
 }
 
 export function SwissTwoColumnTextSlide(props: SwissSlideProps) {
+  const left = (props.items ?? []).filter((item) => item.column === "left");
+  const right = (props.items ?? []).filter((item) => item.column !== "left");
   return (
     <SwissFrame animation={props.animation}>
       <header style={{ gridColumn: "1 / 13", gridRow: "1 / 3" }}>
@@ -37,11 +39,11 @@ export function SwissTwoColumnTextSlide(props: SwissSlideProps) {
       </header>
       <section className="swiss-panel" style={{ gridColumn: "1 / 7", gridRow: "4 / 8", padding: "32px" }}>
         <SwissSmallLabel>{props.leftTitle ?? "Left"}</SwissSmallLabel>
-        <SwissList items={props.leftItems} />
+        <SwissList items={left} />
       </section>
       <section className="swiss-panel" style={{ gridColumn: "7 / 13", gridRow: "4 / 8", padding: "32px" }}>
         <SwissSmallLabel>{props.rightTitle ?? "Right"}</SwissSmallLabel>
-        <SwissList items={props.rightItems} />
+        <SwissList items={right} />
       </section>
     </SwissFrame>
   );

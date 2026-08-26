@@ -81,6 +81,10 @@ export type RetemplateResult = {
  * Replace a deck's frozen template snapshot with the current source bundle. Refuses when the target
  * cannot render a slide type the deck already uses — the only structural guarantee the CLI can make.
  * Everything below that (layout fit, renamed tokens, overflow) is the agent's to verify afterwards.
+ *
+ * Also refuses when the source template consumes a newer content schema than the deck's content was
+ * authored for (e.g. a v1 deck onto a v2-migrated template): the re-synced components would be fed
+ * props shaped for the other schema and silently render broken content.
  */
 export function retemplateDeck(deckRoot: string, template: ResolvedTemplate): RetemplateResult {
   const manifestPath = join(deckRoot, "deck.json");
@@ -93,6 +97,18 @@ export function retemplateDeck(deckRoot: string, template: ResolvedTemplate): Re
         `Template "${template.manifest.name}" does not support every slide type this deck uses:`,
         ...unsupported.map((slide) => `- ${slide.id} (${slide.type})`),
         `Change those slides first, or choose a template that declares these types.`,
+      ].join("\n"),
+    );
+  }
+
+  const deckSchema = manifest.contentSchemaVersion ?? "1.0.0";
+  const templateSchema = template.manifest.contentSchemaVersion ?? "1.0.0";
+  if (Number(majorPart(deckSchema)) < Number(majorPart(templateSchema))) {
+    throw new Error(
+      [
+        `Refusing: deck "${manifest.slug ?? deckRoot}" is on content schema ${deckSchema}, but template "${template.manifest.name}" ${template.manifest.templateVersion} consumes ${templateSchema}.`,
+        `Retemplating would replace the deck's frozen snapshot with components expecting ${templateSchema} props while its content is still ${deckSchema}-shaped.`,
+        `Migrate the deck's content to the new schema first, then retemplate.`,
       ].join("\n"),
     );
   }

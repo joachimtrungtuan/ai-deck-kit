@@ -55,11 +55,11 @@ export function SwissCaseStudySlide(props: SwissSlideProps) {
       {(props.items ?? []).slice(0, 3).map((item, itemIndex) => (
         <section
           className="swiss-panel"
-          key={item}
+          key={`${itemIndex}-${item.title}`}
           style={{ gridColumn: `${1 + itemIndex * 4} / ${5 + itemIndex * 4}`, gridRow: "4 / 8", padding: "32px" }}
         >
-          <SwissSmallLabel>{["Context", "Action", "Result"][itemIndex]}</SwissSmallLabel>
-          <p className="swiss-body">{item}</p>
+          <SwissSmallLabel>{item.title}</SwissSmallLabel>
+          {item.description ? <p className="swiss-body">{item.description}</p> : null}
         </section>
       ))}
     </SwissFrame>

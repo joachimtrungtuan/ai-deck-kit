@@ -31,6 +31,8 @@ export function LinearTextListSlide(props: LinearSlideProps) {
 }
 
 export function LinearTwoColumnTextSlide(props: LinearSlideProps) {
+  const left = (props.items ?? []).filter((item) => item.column === "left");
+  const right = (props.items ?? []).filter((item) => item.column !== "left");
   return (
     <LinearFrame animation={props.animation}>
       <header style={{ gridColumn: "1 / 13", gridRow: "1 / 3" }}>
@@ -41,11 +43,11 @@ export function LinearTwoColumnTextSlide(props: LinearSlideProps) {
       </header>
       <section className="ld-panel" style={{ gridColumn: "1 / 7", gridRow: "4 / 8", padding: "32px" }}>
         <LinearSmallLabel>{props.leftTitle ?? "Left"}</LinearSmallLabel>
-        <LinearList items={props.leftItems} />
+        <LinearList items={left} />
       </section>
       <section className="ld-panel" style={{ gridColumn: "7 / 13", gridRow: "4 / 8", padding: "32px" }}>
         <LinearSmallLabel>{props.rightTitle ?? "Right"}</LinearSmallLabel>
-        <LinearList items={props.rightItems} />
+        <LinearList items={right} />
       </section>
     </LinearFrame>
   );

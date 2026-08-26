@@ -28,7 +28,7 @@ layouts/react/
 - It MUST be a superset of the existing shared prop shape (see `SwissSlideProps` in `swiss-modern.template/layouts/react/shared.tsx`): keep every inherited field with identical name and type.
 - New slide types add OPTIONAL fields only. Never rename or repurpose an inherited field — the canonical content schema and preview runtime depend on field stability.
 - `children` remains the slot for custom markup (diagrams, charts).
-- When fields are added, bump the template's `contentSchemaVersion` minor version.
+- When fields are added within a content-schema major, bump the template's `contentSchemaVersion` minor version. A change in which content schema the components consume (e.g. v1 flat props → v2 `items[]`) is a major bump, and decks created from the template inherit its schema version.
 
 ## Shared Helpers
 

@@ -10,9 +10,9 @@ export function SwissProcessFlowSlide(props: SwissSlideProps) {
       </header>
       <div style={{ gridColumn: "1 / 13", gridRow: "5 / 8", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px" }}>
         {(props.items ?? []).slice(0, 4).map((item, itemIndex) => (
-          <section className="swiss-panel" key={item} style={{ padding: "24px" }}>
+          <section className="swiss-panel" key={`${itemIndex}-${item.title}`} style={{ padding: "24px" }}>
             <SwissSmallLabel>{String(itemIndex + 1).padStart(2, "0")}</SwissSmallLabel>
-            <p className="swiss-body">{item}</p>
+            <p className="swiss-body">{item.title}</p>
           </section>
         ))}
       </div>
@@ -21,6 +21,8 @@ export function SwissProcessFlowSlide(props: SwissSlideProps) {
 }
 
 export function SwissBeforeAfterSlide(props: SwissSlideProps) {
+  const before = (props.items ?? []).filter((item) => item.column === "left");
+  const after = (props.items ?? []).filter((item) => item.column !== "left");
   return (
     <SwissFrame animation={props.animation}>
       <header className="swiss-rule-top" style={{ gridColumn: "1 / 7", gridRow: "1 / 4" }}>
@@ -29,14 +31,14 @@ export function SwissBeforeAfterSlide(props: SwissSlideProps) {
       </header>
       <section className="swiss-panel" style={{ gridColumn: "1 / 6", gridRow: "4 / 9", padding: "32px" }}>
         <SwissSmallLabel>{props.leftTitle ?? "Before"}</SwissSmallLabel>
-        <SwissList items={props.leftItems} />
+        <SwissList items={before} />
       </section>
       <div style={{ gridColumn: "6 / 8", gridRow: "5 / 7", alignSelf: "center" }}>
         <p className="swiss-number" style={{ fontSize: "clamp(64px, 7vw, 112px)" }}>&rarr;</p>
       </div>
       <section className="swiss-panel" style={{ gridColumn: "8 / 13", gridRow: "4 / 9", padding: "32px" }}>
         <SwissSmallLabel>{props.rightTitle ?? "After"}</SwissSmallLabel>
-        <SwissList items={props.rightItems} />
+        <SwissList items={after} />
       </section>
     </SwissFrame>
   );

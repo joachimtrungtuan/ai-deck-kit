@@ -39,8 +39,8 @@ export function LinearImageGridSlide(props: LinearSlideProps) {
         <h1 className="ld-section-title">{props.title}</h1>
       </header>
       <div style={{ gridColumn: "6 / 13", gridRow: "1 / 9", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "24px" }}>
-        {(props.items ?? []).slice(0, 6).map((item) => (
-          <LinearMedia key={item} caption={item} />
+        {(props.items ?? []).slice(0, 6).map((item, itemIndex) => (
+          <LinearMedia key={`${itemIndex}-${item.title}`} caption={item.title} />
         ))}
       </div>
     </LinearFrame>
@@ -61,9 +61,9 @@ export function LinearIconGridSlide(props: LinearSlideProps) {
         style={{ gridColumn: "7 / 13", gridRow: "1 / 9", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "24px", alignContent: "center" }}
       >
         {items.map((item, i) => (
-          <div className="ld-panel" key={item} style={{ padding: "24px", display: "grid", gap: "16px" }}>
-            <LinearIconTile name={props.icons?.[i]} />
-            <p className="ld-body" style={{ color: "var(--ld-ink)", fontWeight: 500 }}>{item}</p>
+          <div className="ld-panel" key={`${i}-${item.title}`} style={{ padding: "24px", display: "grid", gap: "16px" }}>
+            <LinearIconTile name={item.icon} />
+            <p className="ld-body" style={{ color: "var(--ld-ink)", fontWeight: 500 }}>{item.title}</p>
           </div>
         ))}
       </div>

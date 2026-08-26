@@ -6,7 +6,7 @@ export function LinearMetricHighlightSlide(props: LinearSlideProps) {
     <LinearFrame animation={props.animation ?? "spotlight"}>
       <div className="ld-rule-top" style={{ gridColumn: "1 / 8", gridRow: "2 / 7" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "var(--ld-space-2)" }}>
-          <LinearIconTile name={props.icon} />
+          <LinearIconTile name={props.items?.[0]?.icon} />
           <LinearSmallLabel>{props.kicker ?? "Metric"}</LinearSmallLabel>
         </div>
         <div className="ld-metric ld-anim-spotlight"><StatBlock className="ld-template-stat-block" block={{ id: "metric", value: props.metric ?? props.title, label: props.metricLabel ?? "" }} /></div>
@@ -58,12 +58,12 @@ export function LinearCaseStudySlide(props: LinearSlideProps) {
       {(props.items ?? []).slice(0, 3).map((item, itemIndex) => (
         <section
           className="ld-panel"
-          key={item}
+          key={`${itemIndex}-${item.title}`}
           style={{ gridColumn: `${1 + itemIndex * 4} / ${5 + itemIndex * 4}`, gridRow: "4 / 8", padding: "32px", display: "grid", gap: "var(--ld-space-2)", alignContent: "start" }}
         >
-          <LinearIconTile name={props.icons?.[itemIndex]} />
-          <LinearSmallLabel>{["Context", "Action", "Result"][itemIndex]}</LinearSmallLabel>
-          <p className="ld-body">{item}</p>
+          <LinearIconTile name={item.icon} />
+          <LinearSmallLabel>{item.title}</LinearSmallLabel>
+          {item.description ? <p className="ld-body">{item.description}</p> : null}
         </section>
       ))}
     </LinearFrame>

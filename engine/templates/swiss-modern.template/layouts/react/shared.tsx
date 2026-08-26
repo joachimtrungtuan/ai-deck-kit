@@ -1,16 +1,24 @@
 import type { ReactNode } from "react";
 import { ImageBlock, TitleDescriptionBlock } from "../../../../primitives/blocks";
 
+// Canonical v2 list/card entry (content-schema-v2). Every layout consumes list
+// data through one `items[]` prop of these; two-column layouts filter on
+// `column` themselves.
+export type SlideItem = {
+  title: string;
+  description?: string;
+  icon?: string;
+  column?: "left" | "right";
+};
+
 export type SwissSlideProps = {
   index?: string;
   kicker?: string;
   title: string;
   body?: string;
-  items?: string[];
+  items?: SlideItem[];
   leftTitle?: string;
   rightTitle?: string;
-  leftItems?: string[];
-  rightItems?: string[];
   attribution?: string;
   imageSrc?: string;
   imageAlt?: string;
@@ -39,13 +47,16 @@ export function SwissTextBlock({ kicker, title, body }: Pick<SwissSlideProps, "k
   );
 }
 
-export function SwissList({ items = [] }: { items?: string[] }) {
+export function SwissList({ items = [] }: { items?: SlideItem[] }) {
   return (
     <ol className="swiss-list swiss-anim-staggered-list">
       {items.map((item, itemIndex) => (
-        <li key={item}>
+        <li key={`${itemIndex}-${item.title}`}>
           <span className="swiss-index">{String(itemIndex + 1).padStart(2, "0")}</span>
-          <span>{item}</span>
+          <span>
+            {item.title}
+            {item.description ? <span className="swiss-body" style={{ display: "block" }}>{item.description}</span> : null}
+          </span>
         </li>
       ))}
     </ol>

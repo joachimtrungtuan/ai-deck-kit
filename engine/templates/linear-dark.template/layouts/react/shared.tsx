@@ -2,6 +2,17 @@ import type { ComponentType, ReactNode } from "react";
 import { ImageBlock, TitleDescriptionBlock } from "../../../../primitives/blocks";
 import * as PhosphorIcons from "@phosphor-icons/react";
 
+// Canonical v2 list/card entry (content-schema-v2). Every layout consumes list
+// data through one `items[]` prop of these; two-column layouts filter on
+// `column` themselves. Icons ride on the entry they decorate (`item.icon`,
+// `flowSteps[].icon`) — there is no flat positional `icons[]`.
+export type SlideItem = {
+  title: string;
+  description?: string;
+  icon?: string;
+  column?: "left" | "right";
+};
+
 // LinearSlideProps is a SUPERSET of SwissSlideProps: every inherited field keeps its
 // exact name and type; technical fields (catalog v2) are appended, all optional.
 export type LinearSlideProps = {
@@ -9,11 +20,9 @@ export type LinearSlideProps = {
   kicker?: string;
   title: string;
   body?: string;
-  items?: string[];
+  items?: SlideItem[];
   leftTitle?: string;
   rightTitle?: string;
-  leftItems?: string[];
-  rightItems?: string[];
   attribution?: string;
   imageSrc?: string;
   imageAlt?: string;
@@ -28,7 +37,7 @@ export type LinearSlideProps = {
   language?: string;
   highlightLines?: number[];
   commands?: { prompt: string; output?: string }[];
-  flowSteps?: { from: string; to: string; label: string }[];
+  flowSteps?: { from: string; to: string; label: string; icon?: string }[];
   method?: string;
   path?: string;
   requestExample?: string;
@@ -39,10 +48,9 @@ export type LinearSlideProps = {
   context?: string;
   decision?: string;
   consequences?: string[];
-  // Icons — Phosphor names (see icon-policy.md). `icon` for single-slot slides,
-  // `icons` parallel to `items` for multi-slot slides. Unset slots render a placeholder.
-  icon?: string;
-  icons?: string[];
+  // Icons — Phosphor names (see icon-policy.md). Icons live on the data entries
+  // they decorate: `items[].icon`, `flowSteps[].icon`, `items[0].icon` for the
+  // single-slot metric tile. Unset slots render a placeholder.
   titleMeta?: { label: string; value: string }[];
   beforeAfterItemTextStyle?: React.CSSProperties;
   dataFlowPrimaryTextStyle?: React.CSSProperties;
@@ -125,16 +133,19 @@ export function LinearList({
   className = "",
   itemTextStyle,
 }: {
-  items?: string[];
+  items?: SlideItem[];
   className?: string;
   itemTextStyle?: React.CSSProperties;
 }) {
   return (
     <ol className={`ld-list ld-anim-staggered-list ${className}`.trim()}>
       {items.map((item, itemIndex) => (
-        <li key={item}>
+        <li key={`${itemIndex}-${item.title}`}>
           <span className="ld-index">{String(itemIndex + 1).padStart(2, "0")}</span>
-          <span style={itemTextStyle}>{item}</span>
+          <span style={itemTextStyle}>
+            {item.title}
+            {item.description ? <span className="ld-body" style={{ display: "block", fontWeight: 400 }}>{item.description}</span> : null}
+          </span>
         </li>
       ))}
     </ol>

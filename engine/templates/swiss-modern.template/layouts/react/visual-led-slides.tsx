@@ -38,8 +38,8 @@ export function SwissImageGridSlide(props: SwissSlideProps) {
         <h1 className="swiss-section-title">{props.title}</h1>
       </header>
       <div style={{ gridColumn: "6 / 13", gridRow: "1 / 9", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "24px" }}>
-        {(props.items ?? []).slice(0, 6).map((item) => (
-          <SwissMedia key={item} caption={item} />
+        {(props.items ?? []).slice(0, 6).map((item, itemIndex) => (
+          <SwissMedia key={`${itemIndex}-${item.title}`} caption={item.title} />
         ))}
       </div>
     </SwissFrame>

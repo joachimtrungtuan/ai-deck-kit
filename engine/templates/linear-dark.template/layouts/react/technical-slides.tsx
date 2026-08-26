@@ -88,13 +88,13 @@ export function LinearArchitectureOverviewSlide(props: LinearSlideProps) {
         {props.children ?? (
           <div style={{ display: "flex", alignItems: "center", gap: "0", width: "100%", justifyContent: "center" }}>
             {(props.items ?? []).slice(0, 5).map((item, i, arr) => (
-              <Fragment key={item}>
+              <Fragment key={`${i}-${item.title}`}>
                 <span
                   className="ld-node ld-anim-gentle-rise"
                   style={{ flexDirection: "column", gap: "10px", padding: "20px", animationDelay: `calc(var(--ld-stagger) * ${i})` }}
                 >
-                  <LinearIconTile name={props.icons?.[i]} />
-                  {item}
+                  <LinearIconTile name={item.icon} />
+                  {item.title}
                 </span>
                 {i < arr.length - 1 ? (
                   <span className="ld-connector ld-anim-gentle-rise" style={{ maxWidth: "72px", animationDelay: `calc(var(--ld-stagger) * ${i} + 40ms)` }} />
@@ -107,9 +107,9 @@ export function LinearArchitectureOverviewSlide(props: LinearSlideProps) {
       {props.items && props.children ? (
         <div className="ld-meta-row" style={{ gridColumn: "1 / 13", gridRow: "8 / 9" }}>
           {props.items.slice(0, 4).map((item, i) => (
-            <div key={item}>
+            <div key={`${i}-${item.title}`}>
               <dt>Component {String(i + 1).padStart(2, "0")}</dt>
-              <dd>{item}</dd>
+              <dd>{item.title}</dd>
             </div>
           ))}
         </div>
@@ -130,7 +130,7 @@ export function LinearDataFlowSlide(props: LinearSlideProps) {
         {steps.map((s, i) => (
           <div className="ld-panel ld-flow-row" key={`${i}-${s.label}`} style={{ padding: "10px 18px", display: "grid", gridTemplateColumns: "28px 44px minmax(0, 0.9fr) auto minmax(0, 1.1fr)", alignItems: "center", columnGap: "18px" }}>
             <span className="ld-index" style={{ color: "var(--ld-accent)" }}>{String(i + 1).padStart(2, "0")}</span>
-            <LinearIconTile name={props.icons?.[i]} size={20} compact />
+            <LinearIconTile name={s.icon} size={20} compact />
             <span
               style={{
                 minWidth: 0,
