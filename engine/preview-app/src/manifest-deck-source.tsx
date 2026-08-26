@@ -1,5 +1,6 @@
+import { parse as parseYaml } from "yaml";
 import type { ComponentType } from "react";
-import type { PreviewSlide, PreviewSource } from "./preview-types";
+import type { PreviewSlide, PreviewSource, SlideOverride } from "./preview-types";
 
 type Manifest = {
   title: string;
@@ -9,14 +10,15 @@ type Manifest = {
   slides: { id: string; type: string; animation?: string; transition?: string }[];
 };
 
-type ParsedSection = {
+type SlideItem = {
   title: string;
-  items: string[];
-  table?: string[][];
-  code?: string;
-  language?: string;
+  description?: string;
+  icon?: string;
+  column?: "left" | "right";
+};
+
+type ParsedSection = {
   anchors: string[];
-  body?: string;
   metadata: Record<string, unknown>;
 };
 
@@ -29,61 +31,59 @@ export function createManifestDeckSource(
   const sections = parseSections(content);
   const total = manifest.slides.length;
   const slides: PreviewSlide[] = manifest.slides.map((slide, index) => {
-    const section = sections.get(slide.id) ?? emptySection(slide.type);
+    const section = sections.get(slide.id) ?? emptySection();
+    const metadata = section.metadata;
     const Component = components[slide.type];
     if (!Component) throw new Error(`Template component missing for slide type "${slide.type}".`);
-    const metadataItems = arrayMeta<string>(section.metadata, "items");
-    const items = metadataItems ?? section.items;
-    const [first, ...rest] = items;
-    const splitAt = Math.ceil(items.length / 2);
-    const layoutVariant = textMeta(section.metadata, "layoutVariant");
-    const listDriven = ["rule-list", "two-column", "next-steps"].includes(layoutVariant ?? "");
-    return {
+    const items = arrayMeta<SlideItem>(metadata, "items") ?? [];
+    const layoutVariant = textMeta(metadata, "layoutVariant");
+    const parsedSlide = {
       id: slide.id,
       type: slide.type,
       Component,
       morphAnchors: section.anchors,
       layoutVariant,
       transition: slide.transition as PreviewSlide["transition"],
+      override: objectMeta<SlideOverride>(metadata, "override"),
       props: {
         animation: slide.animation ?? "gentle-rise",
-        kicker: textMeta(section.metadata, "kicker"),
-        title: section.title,
-        body: textMeta(section.metadata, "body") ?? section.body ?? (listDriven ? undefined : first),
+        kicker: textMeta(metadata, "kicker"),
+        title: textMeta(metadata, "title") ?? "Untitled",
+        body: textMeta(metadata, "description"),
         items,
-        leftTitle: textMeta(section.metadata, "leftTitle"),
-        rightTitle: textMeta(section.metadata, "rightTitle"),
-        leftItems: arrayMeta<string>(section.metadata, "leftItems") ?? items.slice(0, splitAt),
-        rightItems: arrayMeta<string>(section.metadata, "rightItems") ?? items.slice(splitAt),
-        tableColumns: arrayMeta<string>(section.metadata, "tableColumns") ?? section.table?.[0],
-        tableRows: arrayMeta<string[]>(section.metadata, "tableRows") ?? section.table?.slice(1),
-        code: section.code,
-        language: section.language ?? textMeta(section.metadata, "language"),
-        highlightLines: arrayMeta<number>(section.metadata, "highlightLines"),
-        icon: textMeta(section.metadata, "icon"),
-        icons: arrayMeta<string>(section.metadata, "icons"),
+        leftTitle: textMeta(metadata, "leftTitle"),
+        rightTitle: textMeta(metadata, "rightTitle"),
+        tableColumns: arrayMeta<string>(metadata, "tableColumns"),
+        tableRows: arrayMeta<string[]>(metadata, "tableRows"),
+        code: textMeta(metadata, "code"),
+        language: textMeta(metadata, "language"),
+        highlightLines: arrayMeta<number>(metadata, "highlightLines"),
         layoutVariant,
-        backgroundVariant: textMeta(section.metadata, "backgroundVariant"),
-        highlightPhrase: textMeta(section.metadata, "highlightPhrase"),
-        courseName: textMeta(section.metadata, "courseName") ?? manifest.title,
-        lessonName: textMeta(section.metadata, "lessonName"),
-        sectionName: textMeta(section.metadata, "sectionName"),
-        imageSrc: textMeta(section.metadata, "imageSrc"),
-        imageAlt: textMeta(section.metadata, "imageAlt"),
-        imagePosition: textMeta(section.metadata, "imagePosition"),
-        images: arrayMeta(section.metadata, "images"),
-        caption: textMeta(section.metadata, "caption"),
-        source: textMeta(section.metadata, "source"),
-        attribution: textMeta(section.metadata, "attribution"),
-        metric: textMeta(section.metadata, "metric"),
-        metricLabel: textMeta(section.metadata, "metricLabel"),
-        chartData: arrayMeta(section.metadata, "chartData"),
-        recommendedColumn: numberMeta(section.metadata, "recommendedColumn"),
+        backgroundVariant: textMeta(metadata, "backgroundVariant"),
+        highlightPhrase: textMeta(metadata, "highlightPhrase"),
+        courseName: textMeta(metadata, "courseName") ?? manifest.title,
+        lessonName: textMeta(metadata, "lessonName"),
+        sectionName: textMeta(metadata, "sectionName"),
+        imageSrc: textMeta(metadata, "imageSrc"),
+        imageAlt: textMeta(metadata, "imageAlt"),
+        imagePosition: textMeta(metadata, "imagePosition"),
+        images: arrayMeta(metadata, "images"),
+        caption: textMeta(metadata, "caption"),
+        source: textMeta(metadata, "source"),
+        attribution: textMeta(metadata, "attribution"),
+        metric: textMeta(metadata, "metric"),
+        metricLabel: textMeta(metadata, "metricLabel"),
+        chartData: arrayMeta(metadata, "chartData"),
+        stats: arrayMeta(metadata, "stats"),
+        regionSeries: arrayMeta(metadata, "regionSeries"),
+        index: numberMeta(metadata, "index"),
+        recommendedColumn: numberMeta(metadata, "recommendedColumn"),
+        consequences: arrayMeta<string>(metadata, "consequences"),
         pageCurrent: index + 1,
         pageTotal: total,
-        ...(rest.length ? { consequences: rest } : {}),
       },
     };
+    return parsedSlide;
   });
   return {
     id: manifest.slug,
@@ -96,63 +96,39 @@ export function createManifestDeckSource(
 
 function parseSections(content: string): Map<string, ParsedSection> {
   const sections = new Map<string, ParsedSection>();
-  for (const part of content.split(/^## Slide \d+: /m).slice(1)) {
-    const [title = "Untitled", ...sectionLines] = part.split("\n");
-    const text = sectionLines.join("\n");
+  const headers = [...content.matchAll(/^## Slide\s+\d+.*$/gm)];
+  headers.forEach((header, index) => {
+    const start = header.index ?? 0;
+    const end = headers[index + 1]?.index ?? content.length;
+    const text = content.slice(start, end);
     const metadataText = text.match(/```ya?ml\n([\s\S]*?)\n```/)?.[1] ?? "";
     const metadata = parseMetadata(metadataText);
     const id = textMeta(metadata, "id");
-    if (!id) continue;
-    const onSlide = text.match(/### On-Slide Text\n([\s\S]*?)(?=\n### |$)/)?.[1] ?? "";
-    const tableRows = [...onSlide.matchAll(/^\|(.+)\|$/gm)].map((row) => row[1].split("|").map((cell) => cell.trim()));
-    const table = tableRows.filter((row) => !row.every((cell) => /^-+$/.test(cell)));
-    const items = [...onSlide.matchAll(/^[-*]\s+(.+)$/gm)].map((item) => item[1].trim());
-    const codeMatch = onSlide.match(/```([\w-]*)\n([\s\S]*?)\n```/);
-    const body = onSlide
-      .replace(/```[\s\S]*?```/g, "")
-      .split("\n")
-      .map((line) => line.trim())
-      .find((line) => line && !/^[-*]\s+/.test(line) && !/^\|.*\|$/.test(line));
-    const anchors = [...metadataText.matchAll(/^\s*morph:\s*["']?([^"'\n]+)/gm)].map((match) => match[1].trim());
-    sections.set(id, {
-      title: title.trim(),
-      items,
-      table: table.length ? table : undefined,
-      code: codeMatch?.[2],
-      language: codeMatch?.[1] || textMeta(metadata, "language"),
-      anchors,
-      body,
-      metadata,
-    });
-  }
+    if (!id) return;
+    sections.set(id, { anchors: collectMorphAnchors(metadata), metadata });
+  });
   return sections;
 }
 
-function emptySection(title: string): ParsedSection {
-  return { title, items: [], anchors: [], metadata: {} };
+function emptySection(): ParsedSection {
+  return { anchors: [], metadata: {} };
 }
 
-function parseMetadata(yaml: string): Record<string, unknown> {
-  const metadata: Record<string, unknown> = {};
-  for (const match of yaml.matchAll(/^([A-Za-z][\w-]*):\s*(.*?)\s*$/gm)) {
-    const key = match[1];
-    let value = match[2].trim();
-    if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) {
-      value = value.slice(1, -1);
+function parseMetadata(yamlText: string): Record<string, unknown> {
+  if (!yamlText.trim()) return {};
+  const parsed = parseYaml(yamlText);
+  return parsed && typeof parsed === "object" ? parsed as Record<string, unknown> : {};
+}
+
+function collectMorphAnchors(node: unknown, out: string[] = []): string[] {
+  if (Array.isArray(node)) node.forEach((item) => collectMorphAnchors(item, out));
+  else if (node && typeof node === "object") {
+    for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+      if (key === "morph" && typeof value === "string") out.push(value);
+      else collectMorphAnchors(value, out);
     }
-    if (/^[\[{]/.test(value)) {
-      try {
-        metadata[key] = JSON.parse(value);
-        continue;
-      } catch {
-        // Preserve valid YAML flow text that is not strict JSON.
-      }
-    }
-    if (/^-?\d+(?:\.\d+)?$/.test(value)) metadata[key] = Number(value);
-    else if (value === "true" || value === "false") metadata[key] = value === "true";
-    else metadata[key] = value;
   }
-  return metadata;
+  return out;
 }
 
 function textMeta(metadata: Record<string, unknown>, key: string): string | undefined {
@@ -168,4 +144,9 @@ function numberMeta(metadata: Record<string, unknown>, key: string): number | un
 function arrayMeta<T = unknown>(metadata: Record<string, unknown>, key: string): T[] | undefined {
   const value = metadata[key];
   return Array.isArray(value) ? value as T[] : undefined;
+}
+
+function objectMeta<T = Record<string, unknown>>(metadata: Record<string, unknown>, key: string): T | undefined {
+  const value = metadata[key];
+  return value && typeof value === "object" && !Array.isArray(value) ? value as T : undefined;
 }

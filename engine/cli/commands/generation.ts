@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { createDeck, parseSections, readDeck, slideContent, writeDeck } from "../lib/deck.ts";
+import { createDeck, parseSections, readDeck, setYamlField, slideContent, writeDeck } from "../lib/deck.ts";
 import type { DeckSlide } from "../lib/types.ts";
 import { findWorkspace } from "../lib/workspace.ts";
 
@@ -30,13 +30,14 @@ function applyOutline(workspace: ReturnType<typeof findWorkspace>, slug: string,
   const slideHeadings = hasOutlineTitle ? headings.slice(1) : headings;
   if (hasOutlineTitle) {
     loaded.manifest.title = headings[0].title;
-    sections.sections[0] = sections.sections[0].replace(/^## Slide\s+\d+:.+$/m, `## Slide 01: ${loaded.manifest.title}`);
+    sections.sections[0] = sections.sections[0].replace(/^## Slide\s+\d+.*$/m, "## Slide 01 (slide-01)");
+    sections.sections[0] = setYamlField(sections.sections[0], "title", loaded.manifest.title);
   }
   slideHeadings.forEach((heading, index) => {
     const id = `slide-${String(index + 2).padStart(2, "0")}`;
     const slide: DeckSlide = { id, type: "text-statement", file: `content.md#${id}`, animation: loaded.manifest.defaults.animation, transition: loaded.manifest.defaults.transition };
     loaded.manifest.slides.push(slide);
-    sections.sections.push(slideContent(slide, heading.title).replace(/^## Slide\s+\d+:/, `## Slide ${String(index + 2).padStart(2, "0")}:`));
+    sections.sections.push(slideContent(slide, heading.title).replace(/^## Slide\s+\d+/, `## Slide ${String(index + 2).padStart(2, "0")}`));
   });
   loaded.manifest.generation = { source: "outline", params: { headings: slideHeadings.map((heading) => heading.title) } };
   writeDeck(loaded.root, loaded.manifest, `${sections.prefix}${sections.sections.join("\n\n")}\n`);

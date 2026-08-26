@@ -66,7 +66,7 @@ function addSlide(loaded, id, type, after) {
         throw new Error(`Slide not found: ${after}`);
     loaded.manifest.slides.splice(insertAt, 0, slide);
     const { prefix, sections } = parseSections(loaded.content);
-    const section = slideContent(slide, titleFromSlug(id)).replace("## Slide 01:", `## Slide ${String(insertAt + 1).padStart(2, "0")}:`);
+    const section = slideContent(slide, titleFromSlug(id)).replace(/^## Slide\s+\d+/, `## Slide ${String(insertAt + 1).padStart(2, "0")}`);
     sections.splice(insertAt, 0, section.trimEnd());
     writeDeck(loaded.root, renumberSlides(loaded.manifest, sections), `${prefix}${sections.map((item, index) => renumberHeading(item, index)).join("\n\n")}\n`);
     console.log(`Added ${id}.`);
@@ -138,7 +138,7 @@ function renumberSlides(manifest, sections) {
     return manifest;
 }
 function renumberHeading(section, index) {
-    return section.replace(/^## Slide\s+\d+:/, `## Slide ${String(index + 1).padStart(2, "0")}:`);
+    return section.replace(/^## Slide\s+\d+/, `## Slide ${String(index + 1).padStart(2, "0")}`);
 }
 function valueAfter(args, option) {
     const index = args.indexOf(option);

@@ -63,7 +63,7 @@ export function titleFromSlug(slug) {
     return slug.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 export function parseSections(content) {
-    const matches = [...content.matchAll(/^## Slide\s+\d+:\s+.+$/gm)];
+    const matches = [...content.matchAll(/^## Slide\s+\d+.*$/gm)];
     if (!matches.length)
         throw new Error("content.md has no slide sections.");
     const prefix = content.slice(0, matches[0].index);
@@ -77,10 +77,10 @@ export function sectionId(section) {
     return match[1].trim();
 }
 export function setYamlField(section, field, value) {
-    const line = `${field}: "${value}"`;
+    const line = `${field}: ${JSON.stringify(value)}`;
     const pattern = new RegExp(`^${field}:.*$`, "m");
     return pattern.test(section) ? section.replace(pattern, line) : section.replace(/^```ya?ml\n/, (opening) => `${opening}${line}\n`);
 }
 export function slideContent(slide, title) {
-    return `## Slide 01: ${title}\n\n\`\`\`yaml\nid: "${slide.id}"\ntype: "${slide.type}"\nstatus: "draft"\nintent: "Describe the purpose of this slide."\nanimation: "${slide.animation ?? "gentle-rise"}"\ntransition: "${slide.transition ?? "none"}"\nicons: []\nassets: []\noverride:\n  layout: "none"\n  animation: "none"\n  reason: ""\n\`\`\`\n\n### On-Slide Text\n\n- Add visible slide copy.\n\n### Visual Direction\n\nDescribe the visual treatment.\n\n### Speaker Notes\n\nAdd presenter notes.\n\n### Design Notes\n\nAdd layout constraints.\n\n### Review Questions\n\n- None.\n`;
+    return `## Slide 01 (${slide.id})\n\n\`\`\`yaml\nid: "${slide.id}"\ntype: "${slide.type}"\nstatus: "draft"\nintent: "Describe the purpose of this slide."\nanimation: "${slide.animation ?? "gentle-rise"}"\ntransition: "${slide.transition ?? "none"}"\n\ntitle: ${JSON.stringify(title)}\ndescription: ""\nitems: []\n\noverride:\n  layout: "none"\n  animation: "none"\n  css: ""\n  html: ""\n  reason: ""\n\nassets: []\n\`\`\`\n\n### Speaker Notes\n\nAdd presenter notes.\n\n### Design Notes\n\nAdd layout constraints.\n\n### Review Questions\n\n- None.\n`;
 }

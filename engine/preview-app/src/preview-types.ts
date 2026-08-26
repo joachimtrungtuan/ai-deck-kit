@@ -13,6 +13,14 @@ export type SlideTransitionType =
   | "flip"
   | "page-turn";
 
+export type SlideOverride = {
+  layout?: string;
+  animation?: string;
+  css?: string;
+  html?: string;
+  reason?: string;
+};
+
 export type PreviewSlide = {
   id?: string;
   type: string;
@@ -24,6 +32,7 @@ export type PreviewSlide = {
   layoutVariant?: string;
   // Transition to play when navigating INTO this slide. Falls back to source.defaultTransition.
   transition?: SlideTransitionType;
+  override?: SlideOverride;
 };
 
 export type PreviewSource = {
