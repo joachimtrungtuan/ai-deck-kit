@@ -172,7 +172,7 @@ here — see phase-01, which is where they become the actual doc content.
 | 3 | [Validator updates](phase-03-validator-updates.md) | done (2026-08-26) | `validate-slide-content.mjs` dispatches: v1 rules unchanged, v2 rules added |
 | 4 | [Override rendering](phase-04-override-rendering-and-template-tweak.md) | done (2026-08-26) | Engine-side CSS/HTML override wrapper only. The concept-diagram `items[].icon` edit moved out — it touches the downstream v1 template |
 | 5 | [Migrate linear-dark & swiss-modern templates](phase-05-migrate-linear-dark-and-swiss-modern-templates.md) | done (2026-08-26) | Both templates consume unified `items[]`, bump to `contentSchemaVersion: "2.0.0"`; `deck retemplate` refuses v1-deck-onto-v2-template |
-| 6 | [v1 freeze verification](phase-06-v1-freeze-verification.md) | pending, **rewritten** | No deck migrated. Proves all seven v1 decks still parse, validate, and render unchanged |
+| 6 | [v1 freeze verification](phase-06-v1-freeze-verification.md) | done (2026-08-26) | No deck migrated. Proves all seven v1 decks still parse, validate, and render unchanged |
 | 7 | [Release cutover](phase-07-release-cutover.md) | **new** | Engine version bump that is the v1/v2 boundary, plus the upgrade note explaining it |
 
 Dependencies: 2 and 3 depend on 1. **2b depends on 2 and blocks everything
