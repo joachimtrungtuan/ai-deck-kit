@@ -1,6 +1,6 @@
 {
   "name": "ai-deck-kit",
-  "version": "0.3.3",
+  "version": "1.0.0",
   "description": "Portable, agent-native presentation toolkit",
   "type": "module",
   "repository": { "type": "git", "url": "https://github.com/joachimtrungtuan/ai-deck-kit.git" },

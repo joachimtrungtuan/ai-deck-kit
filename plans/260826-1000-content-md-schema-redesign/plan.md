@@ -1,7 +1,7 @@
 ---
 title: "content.md Schema Redesign"
 description: "Dual-schema content.md redesign with frozen v1 compatibility and v2 release cutover."
-status: in-progress
+status: completed
 priority: P1
 effort: "7 phases"
 branch: main
@@ -11,9 +11,11 @@ created: 2026-08-26
 
 # content.md Schema Redesign
 
-**Status:** Phases 1–6 and 2b are complete. Phase 7 is in progress: local
-`1.0.0` release prep is done, but published-version release plus clean-install
-proof remain open. Scope revised 2026-08-26 for dual-schema support and
+**Status:** All phases are closed. Phase 7 closed by explicit user confirmation
+on 2026-08-28 at the local `1.0.0` commit handoff. Publication and published-version
+install/upgrade verification are release follow-ups, not completed checks.
+The user owns the push; no push, tag, or publication was performed.
+Scope revised 2026-08-26 for dual-schema support and
 2026-08-28 for permanent backward compatibility plus opt-in migration.
 
 ## Origin
@@ -190,7 +192,7 @@ here — see phase-01, which is where they become the actual doc content.
 | 4 | [Override rendering](phase-04-override-rendering-and-template-tweak.md) | done (2026-08-26) | Engine-side CSS/HTML override wrapper only. The concept-diagram `items[].icon` edit moved out — it touches the downstream v1 template |
 | 5 | [Migrate linear-dark & swiss-modern templates](phase-05-migrate-linear-dark-and-swiss-modern-templates.md) | done (2026-08-26) | Both templates consume unified `items[]`, bump to `contentSchemaVersion: "2.0.0"`; `deck retemplate` refuses v1-deck-onto-v2-template |
 | 6 | [v1 freeze verification](phase-06-v1-freeze-verification.md) | done (2026-08-26) | No deck migrated. Proves all seven v1 decks still parse, validate, and render unchanged |
-| 7 | [Release cutover](phase-07-release-cutover.md) | in progress | Local `1.0.0` release prep, docs sync, dist rebuild, and package dry-run complete; published-version release + clean-install proof pending |
+| 7 | [Release cutover](phase-07-release-cutover.md) | done (2026-08-28) | Closed by user confirmation at local `1.0.0` commit handoff; publication and published install/upgrade verification retained as release follow-ups |
 
 Dependencies: 2 and 3 depend on 1. **2b depends on 2 and blocks everything
 else** — until it lands, every existing deck is broken on `main`. 4 is

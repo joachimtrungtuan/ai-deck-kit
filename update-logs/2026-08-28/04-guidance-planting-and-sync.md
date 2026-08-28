@@ -23,13 +23,23 @@ only in the engine repository where the implementation history is known.
 
 ## Follow-ups
 
-- Remote publication and registry-backed clean-install proof remain pending.
+- Remote publication and published-version install/upgrade proof remain pending.
 
 ## Major release decision
 
 User requested kit `1.0.0`, superseding unpublished `0.4.0`. Package and engine
 versions, engine lockfile root, upgrade examples and release-plan references
 are aligned. Content schema remains `2.0.0`; templates remain `2.0.1`.
-CLI version, package validation, typecheck and diff checks pass. No commit,
-push, tag or publication performed. The workspace hook prevented repeating
+CLI version, package validation, typecheck and diff checks pass. Local commits:
+`8eee6fd` (implementation), amended `chore(release): bump kit to 1.0.0` (major version and plan closure). No push, tag or publication
+performed. The workspace hook prevented repeating
 the compilation check; the prior compilation and 57 tests passed.
+
+## Plan status reconciliation
+
+Checked every phase status and remaining checklist item. Phases 1–6 and 2b
+are complete. User explicitly confirmed closing phase 7 at local commit handoff
+and amending the latest commit. The plan index and release phase now record
+completion, with publication and published-version install/upgrade verification
+retained as unverified release follow-ups. Removed superseded migration wording.
+The user owns pushing; a branch push alone does not trigger the tag-based release.

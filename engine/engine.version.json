@@ -1,8 +1,8 @@
 {
-  "engineVersion": "0.3.3",
+  "engineVersion": "1.0.0",
   "contentSchemaVersion": "1.0.0",
   "supportedContentSchemaMajors": [1, 2],
   "supportedSlideTypeCatalogs": ["v1", "v2"],
   "shippedTemplates": ["linear-dark", "swiss-modern"],
-  "templateVersionRange": ">=1.0.0 <2.0.0"
+  "templateVersionRange": ">=2.0.0 <3.0.0"
 }
