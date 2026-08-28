@@ -1,6 +1,6 @@
 # AI Deck Kit — Product Definition & Requirements (PDR)
 
-**Status:** Phase 08 implementation complete (distribution, upgrade, template migration, and local QA completed 2026-07-23; remote release and registry-backed clean install remain unverified)
+**Status:** Engine 1.0.0 schema cutover prepared (2026-08-28); local release checks remain available, while remote release publication and registry-backed clean install remain unverified.
 **Supersedes:** the enclosed React-only "AI Presentation" workspace model.
 
 ## 1. Vision
@@ -46,7 +46,7 @@
 ## 6. Product Naming
 
 - Product: **AI Deck Kit**
-- npm package: `ai-deck-kit` (scope TBD)
+- npm package: `ai-deck-kit`
 - CLI binary: `aideck` (confirmed; Phase 04 command surface implemented)
 - Deck artifact: `*.deck` folder bundle
 

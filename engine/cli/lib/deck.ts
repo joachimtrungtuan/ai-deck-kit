@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import { copyTree, readJson, writeJson, writeText } from "./fs.ts";
+import { writeDeckSchemaGuidance } from "./schema-guidance.ts";
 import { resolveTemplate } from "./templates.ts";
 import type { DeckManifest, DeckSlide, Workspace } from "./types.ts";
 
@@ -57,6 +58,7 @@ export function createDeck(workspace: Workspace, slug: string, templateName: str
     slides: [firstSlide],
   };
   writeDeck(root, manifest, slideContent(firstSlide, title, template.manifest.contentSchemaVersion));
+  writeDeckSchemaGuidance(root, manifest);
   return root;
 }
 

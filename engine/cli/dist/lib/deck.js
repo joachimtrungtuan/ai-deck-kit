@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import { copyTree, readJson, writeJson, writeText } from "./fs.js";
+import { writeDeckSchemaGuidance } from "./schema-guidance.js";
 import { resolveTemplate } from "./templates.js";
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export function deckPath(workspace, slugOrPath) {
@@ -57,6 +58,7 @@ export function createDeck(workspace, slug, templateName, title = titleFromSlug(
         slides: [firstSlide],
     };
     writeDeck(root, manifest, slideContent(firstSlide, title, template.manifest.contentSchemaVersion));
+    writeDeckSchemaGuidance(root, manifest);
     return root;
 }
 export function titleFromSlug(slug) {

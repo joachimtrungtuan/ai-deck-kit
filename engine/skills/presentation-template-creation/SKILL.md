@@ -41,7 +41,7 @@ This skill handles template-set authoring and slide-type catalog evolution. It d
 ## Workflow
 
 1. Gather the style brief: aesthetic direction, target presentation domain, typography constraints, accent policy.
-2. Read `engine/templates/template-system.md` and the newest `engine/templates/slide-types-v*.md`; read one existing template set (e.g. `swiss-modern.template/`) as the structural reference.
+2. Read `engine/templates/template-system.md`, `engine/schemas/content-schema-guidance.md`, and the newest `engine/templates/slide-types-v*.md`; read one existing template set (e.g. `swiss-modern.template/`) as the structural reference. When evolving a bundle, also read its local `schema-guidance.md`.
 3. Declare the catalog version: use the newest `slide-types-vN.md` the engine ships. If the domain genuinely needs slide types no catalog offers, stop and follow **Slide-Type Catalogs** below. See `references/template-system-and-versioning.md`.
 4. Scaffold the user-owned template bundle through `aideck template new <name>`. It creates `templates/<name>.template/`; do not hand-create its manifest or base files.
 5. Build its `design-system.css` (tokens + class inventory), `animation-presets.css` (re-skin the approved vocabulary with the same preset names), `icon-policy.md`, layouts, layout index, and layout contracts. Compose `engine/primitives/blocks` where a catalog block fits. Declare typefaces in the manifest's `fonts` array and any preview fixtures in `preview-props.json` — both live in the bundle.
@@ -76,6 +76,7 @@ templates/{template-name}.template/       # the one and only home of a template
 ├── design-system.css
 ├── animation-presets.css
 ├── icon-policy.md
+├── schema-guidance.md                 # local content/prop contract route
 ├── preview-props.json                    # optional preview fixtures for this template
 └── layouts/
     ├── layout-index.json

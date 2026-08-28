@@ -30,11 +30,23 @@ const packageReport = Array.isArray(report) ? report[0] : report["ai-deck-kit"] 
 const packedFiles = new Set(packageReport.files.map((file) => file.path));
 for (const name of shippedTemplates) {
   const manifest = `engine/templates/${name}.template/template-manifest.json`;
-  if (!packedFiles.has(manifest)) {
-    console.error(`Release package is missing shipped template: ${manifest}`);
+  const guidance = `engine/templates/${name}.template/schema-guidance.md`;
+  for (const required of [manifest, guidance]) {
+    if (!packedFiles.has(required)) {
+      console.error(`Release package is missing shipped template file: ${required}`);
+      process.exit(1);
+    }
+  }
+}
+for (const required of [
+  "engine/schemas/content-schema-guidance.md",
+  "engine/skills/content-schema-migration/SKILL.md",
+]) {
+  if (!packedFiles.has(required)) {
+    console.error(`Release package is missing schema authority: ${required}`);
     process.exit(1);
   }
 }
 
 console.log("Template validators passed.");
-console.log(`Release package contains all ${shippedTemplates.length} shipped .template bundles.`);
+console.log(`Release package contains engine guidance, migration skill, and all ${shippedTemplates.length} shipped .template bundles with local guidance.`);

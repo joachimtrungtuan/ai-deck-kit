@@ -312,11 +312,21 @@ reflow a finished presentation.
 aideck deck status                       # how each deck compares to its design
 aideck deck retemplate my-talk           # bring one deck up to the current design
 aideck deck retemplate my-talk --to other-design   # move it to a different design
+aideck guidance status                   # inspect engine/template/deck guidance
+aideck guidance sync                     # backfill or refresh generated local guidance
+aideck guidance sync --deck my-talk      # only this deck's root guidance
+aideck guidance sync --template my-brand # only this project template
+aideck guidance status --deck my-talk    # inspect just this deck + engine authority
 ```
 
 Do this one deck at a time, with your agent, and look at the result afterwards.
 The command swaps the design copy and never touches your words; if the new design
 cannot render a slide type the deck uses, it refuses and leaves the deck alone.
+
+Guidance selectors are mutually exclusive; without a selector all project bundles
+are reconciled. Replaced guidance is retained in numbered `.backup` files.
+Guidance sync does not retemplate decks or modify frozen snapshots. Shipped
+template guidance arrives with the engine, not through project guidance sync.
 
 ---
 
@@ -344,7 +354,7 @@ Packing uses the `zip` command, which macOS and most Linux systems already have.
 
 ```sh
 aideck upgrade              # latest engine
-aideck upgrade --to 0.2.0   # a specific version
+aideck upgrade --to 1.0.0   # a specific version
 ```
 
 Only `engine/` is replaced. Your `decks/` and `templates/` are never copied, moved,

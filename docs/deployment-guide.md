@@ -88,10 +88,10 @@ When the `aideck` binary is installed or linked, run from the project root or an
 
 ```sh
 aideck upgrade
-aideck upgrade --to 0.2.0
+aideck upgrade --to 1.0.0
 ```
 
-An upgrade replaces only the resolved `engineRoot`, reinstalls engine dependencies so the preview runtime works immediately, updates `engineVersion` in `ai-deck-kit.json`, and runs `aideck doctor`. Before the engine tree is replaced, any non-shipped template bundle left inside `engine/templates/` by the old two-location layout is moved into the project's `templates/`, so an upgrade cannot delete a user's template. The `decks/` and project `templates/` roots are never copied, removed, or migrated. `aideck doctor` reports schema, slide-catalog, and template-version mismatches without silently rewriting a deck. Upgrading is a single command — never delete-and-reinstall.
+An upgrade replaces only the resolved `engineRoot`, reinstalls engine dependencies so the preview runtime works immediately, updates `engineVersion` in `ai-deck-kit.json`, and runs `aideck doctor`. Before the engine tree is replaced, any non-shipped template bundle left inside `engine/templates/` by the old two-location layout is moved into the project's `templates/`, so an upgrade cannot delete a user's template. The `decks/` and project `templates/` roots are never copied, removed, or migrated. `aideck doctor` reports schema, slide-catalog, template-version, and missing/stale guidance mismatches without silently rewriting a deck. Run `aideck guidance sync` to reconcile only generated template/deck guidance after reviewing that report. Upgrading is a single command — never delete-and-reinstall.
 
 ## Removal And Repair
 
@@ -108,7 +108,7 @@ Every destructive command prints its full target list before deleting, requires 
 For a local release smoke test, pass an engine directory explicitly:
 
 ```sh
-aideck upgrade --to 0.2.0 --source /path/to/engine
+aideck upgrade --to 1.0.0 --source /path/to/engine
 ```
 
 For remote upgrades, set `AIDECK_GITHUB_REPOSITORY=owner/ai-deck-kit`; otherwise the package name `ai-deck-kit` is used as the package source. `AIDECK_PACKAGE_SPEC` can override either source for CI or a private registry.
@@ -129,3 +129,25 @@ Tags matching `vMAJOR.MINOR.PATCH` run the configured release workflow. The work
 ## Versioning
 
 The package, engine, and root pointer use semver. Deck compatibility is checked separately through `contentSchemaVersion`, `slideTypeCatalog`, `blockCatalog`, and template versions. Upgrade never force-migrates user content.
+
+### 1.0.0 content-schema cutover
+
+The 1.0.0 engine supports both content-schema majors. Existing decks remain
+untouched: decks stamped `contentSchemaVersion: 1.x` continue to use the
+frozen v1 parser and validator. Newly created decks from the shipped
+`linear-dark` and `swiss-modern` templates use v2 (`2.0.0`) because those
+template manifests declare it. A project-local template keeps its own declared
+schema version; upgrading the engine does not migrate that template or any of
+its decks. There is no automatic v1-to-v2 migration, and v1 support is
+permanent.
+
+When a user explicitly requests migration, the installed
+`content-schema-migration` skill operates on one working copy at a time. It
+migrates content and a compatible template together, validates and renders the
+candidate, and requires user approval before canonical replacement. Engine
+upgrade remains non-migrating.
+
+The legacy singular `contentSchemaVersion: "1.0.0"` field in
+`engine.version.json` is retained for older readers. Current compatibility is
+the explicit `supportedContentSchemaMajors: [1, 2]` set; it is what allows the
+engine to validate and render both existing v1 decks and new v2 decks.

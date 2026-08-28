@@ -7,6 +7,7 @@ import { coreHelp, runCore } from "./commands/core.js";
 import { deckHelp, runDeck } from "./commands/deck-maintenance.js";
 import { removalHelp, runRemoval } from "./commands/removal.js";
 import { generationHelp, runGeneration } from "./commands/generation.js";
+import { guidanceHelp, runGuidance } from "./commands/guidance.js";
 import { linkHelp, runLink } from "./commands/link.js";
 import { outputHelp, runOutput } from "./commands/output.js";
 import { presentationHelp, runPresentation } from "./commands/presentation.js";
@@ -26,6 +27,8 @@ ${coreHelp}
 ${linkHelp}
 
 ${skillsHelp}
+
+${guidanceHelp}
 
 ${presentationHelp}
 
@@ -56,6 +59,8 @@ export function main(argv = process.argv.slice(2)) {
         return runLink([command, ...args]);
     if (command === "skills")
         return runSkills(args);
+    if (command === "guidance")
+        return runGuidance(args);
     if (command === "new" || command === "slide" || command === "anim" || command === "transition" || command === "validate")
         return runPresentation([command, ...args]);
     if (command === "deck")

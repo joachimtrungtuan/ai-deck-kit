@@ -4,9 +4,11 @@ import assert from "node:assert/strict";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import test from "node:test";
+import test, { after } from "node:test";
 import { createDeck, parseSections, slideContent } from "../lib/deck.ts";
 import { deckDrift, retemplateDeck } from "../lib/deck-template-sync.ts";
+import { inspectSchemaGuidance, syncSchemaGuidance } from "../lib/schema-guidance.ts";
+import { parseGuidanceSelection } from "../commands/guidance.ts";
 import { resolveTemplate, type TemplateManifest } from "../lib/templates.ts";
 import type { DeckManifest, Workspace } from "../lib/types.ts";
 
@@ -18,6 +20,11 @@ test("a new deck records which source its frozen snapshot came from", () => {
   assert.equal(manifest.template.origin, "project");
   assert.equal(manifest.template.version, "1.0.0");
   assert.ok(existsSync(join(root, "template", "template-manifest.json")));
+  const guidance = readFileSync(join(root, "schema-guidance.md"), "utf8");
+  assert.match(guidance, /content schema `1\.0\.0`/);
+  assert.match(guidance, /Template set: `sample`/);
+  assert.match(guidance, /Schema migration is explicit and user-controlled/);
+  assert.match(guidance, /aideck upgrade.*does not rewrite/s);
   const content = readFileSync(join(root, "content.md"), "utf8");
   assert.match(content, /^## Slide 01: Talk$/m);
   assert.match(content, /^icons: \[\]$/m);
@@ -39,6 +46,7 @@ test("a new deck inherits the template content schema version", () => {
 
   const deckRoot = createDeck(workspace, "talk", "v2-template");
   assert.equal(readManifest(deckRoot).contentSchemaVersion, "2.0.0");
+  assert.match(readFileSync(join(deckRoot, "schema-guidance.md"), "utf8"), /content schema `2\.0\.0`/);
   const content = readFileSync(join(deckRoot, "content.md"), "utf8");
   assert.match(content, /^## Slide 01 \(slide-01\)$/m);
   assert.match(content, /^title: "Talk"$/m);
@@ -93,6 +101,7 @@ test("re-syncing replaces the snapshot and records the new version and origin", 
   assert.equal(manifest.template.version, "2.0.0");
   assert.equal(manifest.template.origin, "project");
   assert.equal(JSON.parse(readFileSync(join(deckRoot, "template", "template-manifest.json"), "utf8")).templateVersion, "2.0.0");
+  assert.match(readFileSync(join(deckRoot, "schema-guidance.md"), "utf8"), /Template version: `2\.0\.0`/);
   // Re-syncing is a template operation; slide content is never rewritten behind the user's back.
   assert.equal(readFileSync(join(deckRoot, "content.md"), "utf8"), contentBefore);
   assert.equal(deckDrift(workspace, "talk.deck").state, "current");
@@ -116,9 +125,69 @@ test("re-syncing refuses a template that cannot render the deck's slide types", 
   assert.equal(JSON.parse(readFileSync(join(deckRoot, "template", "template-manifest.json"), "utf8")).name, "sample");
 });
 
+test("re-syncing refuses a template on an older content-schema major", () => {
+  const workspace = fixtureWorkspace();
+  const v2Root = join(workspace.root, "templates", "v2.template");
+  writeTemplate(v2Root, "V2", "v2");
+  const v2ManifestPath = join(v2Root, "template-manifest.json");
+  const v2Manifest = JSON.parse(readFileSync(v2ManifestPath, "utf8")) as TemplateManifest;
+  v2Manifest.contentSchemaVersion = "2.0.0";
+  writeFileSync(v2ManifestPath, `${JSON.stringify(v2Manifest, null, 2)}\n`);
+  const deckRoot = createDeck(workspace, "talk", "v2");
+
+  const v1Root = join(workspace.root, "templates", "v1.template");
+  writeTemplate(v1Root, "V1", "v1");
+  assert.throws(
+    () => retemplateDeck(deckRoot, resolveTemplate(workspace, "v1")),
+    /same content-schema major|explicit agent-led schema migration/,
+  );
+  assert.equal(readManifest(deckRoot).template.set, "v2");
+  assert.equal(JSON.parse(readFileSync(join(deckRoot, "template", "template-manifest.json"), "utf8")).name, "v2");
+});
+
+test("guidance sync backfills legacy templates and refreshes stale deck guidance idempotently", () => {
+  const workspace = fixtureWorkspace();
+  mkdirSync(join(workspace.engineRoot, "schemas"), { recursive: true });
+  writeFileSync(join(workspace.engineRoot, "schemas", "content-schema-guidance.md"), "# Engine guidance\n");
+  writeTemplate(join(workspace.root, "templates", "sample.template"), "Mine");
+  const deckRoot = createDeck(workspace, "talk", "sample");
+  writeFileSync(join(deckRoot, "schema-guidance.md"), "stale\n");
+
+  const before = inspectSchemaGuidance(workspace);
+  assert.equal(before.find((entry) => entry.level === "template")?.state, "missing");
+  assert.equal(before.find((entry) => entry.level === "deck")?.state, "stale");
+
+  syncSchemaGuidance(workspace);
+  const after = inspectSchemaGuidance(workspace);
+  assert.ok(after.every((entry) => entry.state === "current"));
+  const templateGuidance = readFileSync(join(workspace.root, "templates", "sample.template", "schema-guidance.md"), "utf8");
+  const deckGuidance = readFileSync(join(deckRoot, "schema-guidance.md"), "utf8");
+  syncSchemaGuidance(workspace);
+  assert.equal(readFileSync(join(workspace.root, "templates", "sample.template", "schema-guidance.md"), "utf8"), templateGuidance);
+  assert.equal(readFileSync(join(deckRoot, "schema-guidance.md"), "utf8"), deckGuidance);
+});
+
 function readManifest(deckRoot: string): DeckManifest {
   return JSON.parse(readFileSync(join(deckRoot, "deck.json"), "utf8")) as DeckManifest;
 }
+
+test("targeted guidance sync isolates bundles and preserves previous guidance", () => {
+  const workspace = fixtureWorkspace();
+  writeTemplate(join(workspace.root, "templates", "sample.template"), "Mine");
+  const first = createDeck(workspace, "first", "sample");
+  const second = createDeck(workspace, "second", "sample");
+  writeFileSync(join(first, "schema-guidance.md"), "Custom rules\n");
+  writeFileSync(join(second, "schema-guidance.md"), "Other rules\n");
+  syncSchemaGuidance(workspace, { level: "deck", name: "first" });
+  assert.equal(readFileSync(join(first, "schema-guidance.md.backup"), "utf8"), "Custom rules\n");
+  assert.equal(readFileSync(join(second, "schema-guidance.md"), "utf8"), "Other rules\n");
+  assert.equal(existsSync(join(workspace.root, "templates", "sample.template", "schema-guidance.md")), false);
+  assert.throws(() => syncSchemaGuidance(workspace, { level: "deck", name: "missing" }), /No project deck/);
+  assert.deepEqual(parseGuidanceSelection(["--template", "sample"]), { level: "template", name: "sample" });
+  for (const args of [["--deck"], ["--unknown", "first"], ["--deck", "../first"], ["--deck", "first", "--template", "sample"]]) {
+    assert.throws(() => parseGuidanceSelection(args), /Choose exactly one/);
+  }
+});
 
 function bumpTemplate(root: string, version: string): void {
   const manifestPath = join(root, "template-manifest.json");
@@ -133,6 +202,7 @@ function removeDirectory(target: string): void {
 
 function fixtureWorkspace(): Workspace {
   const root = mkdtempSync(join(tmpdir(), "aideck-lifecycle-test-"));
+  after(() => rmSync(root, { recursive: true, force: true }));
   const engineRoot = join(root, "engine");
   mkdirSync(engineRoot, { recursive: true });
   writeFileSync(join(engineRoot, "engine.version.json"), `${JSON.stringify({ engineVersion: "0.1.0", shippedTemplates: [] })}\n`);

@@ -2,6 +2,7 @@
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { copyTree, hashTree, readJson, removeTree, writeJson } from "./fs.ts";
+import { writeDeckSchemaGuidance } from "./schema-guidance.ts";
 import { findTemplate, type ResolvedTemplate } from "./templates.ts";
 import type { DeckManifest, Workspace } from "./types.ts";
 
@@ -82,9 +83,9 @@ export type RetemplateResult = {
  * cannot render a slide type the deck already uses — the only structural guarantee the CLI can make.
  * Everything below that (layout fit, renamed tokens, overflow) is the agent's to verify afterwards.
  *
- * Also refuses when the source template consumes a newer content schema than the deck's content was
- * authored for (e.g. a v1 deck onto a v2-migrated template): the re-synced components would be fed
- * props shaped for the other schema and silently render broken content.
+ * Also refuses when the source template consumes a different content-schema major than the deck's
+ * content was authored for. In either direction, the re-synced components would be fed props shaped
+ * for another schema and could silently render broken content.
  */
 export function retemplateDeck(deckRoot: string, template: ResolvedTemplate): RetemplateResult {
   const manifestPath = join(deckRoot, "deck.json");
@@ -103,12 +104,12 @@ export function retemplateDeck(deckRoot: string, template: ResolvedTemplate): Re
 
   const deckSchema = manifest.contentSchemaVersion ?? "1.0.0";
   const templateSchema = template.manifest.contentSchemaVersion ?? "1.0.0";
-  if (Number(majorPart(deckSchema)) < Number(majorPart(templateSchema))) {
+  if (majorPart(deckSchema) !== majorPart(templateSchema)) {
     throw new Error(
       [
         `Refusing: deck "${manifest.slug ?? deckRoot}" is on content schema ${deckSchema}, but template "${template.manifest.name}" ${template.manifest.templateVersion} consumes ${templateSchema}.`,
-        `Retemplating would replace the deck's frozen snapshot with components expecting ${templateSchema} props while its content is still ${deckSchema}-shaped.`,
-        `Migrate the deck's content to the new schema first, then retemplate.`,
+        `Retemplating would replace the deck's frozen snapshot with components expecting ${templateSchema} props while its content remains ${deckSchema}-shaped.`,
+        `Use a template on the same content-schema major, or run an explicit agent-led schema migration first.`,
       ].join("\n"),
     );
   }
@@ -135,6 +136,7 @@ export function retemplateDeck(deckRoot: string, template: ResolvedTemplate): Re
   manifest.slideTypeCatalog = template.manifest.slideTypeCatalog;
   manifest.blockCatalog = template.manifest.blockCatalog ?? manifest.blockCatalog;
   writeJson(manifestPath, manifest);
+  writeDeckSchemaGuidance(deckRoot, manifest);
   return { deckRoot, templateName: template.manifest.name, from, to, origin: template.origin, majorChange: majorPart(from) !== majorPart(to) };
 }
 

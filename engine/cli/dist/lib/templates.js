@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readdirSync, renameSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { readJson, writeJson, writeText } from "./fs.js";
 import { fontCatalogNames, unknownFontFamilies } from "./font-catalog.js";
+import { writeTemplateSchemaGuidance } from "./schema-guidance.js";
 /** User-authored templates. The only place a template is ever edited. */
 export function projectTemplatesRoot(workspace) {
     return join(workspace.root, "templates");
@@ -161,7 +162,7 @@ export function createTemplate(workspace, name) {
         displayName: name.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()),
         deckClass: `${name}-deck`,
         templateVersion: "1.0.0",
-        contentSchemaVersion: "1.0.0",
+        contentSchemaVersion: "2.0.0",
         slideTypeCatalog: "v1",
         blockCatalog: "v1",
         runtime: ["react", "static-html"],
@@ -175,6 +176,7 @@ export function createTemplate(workspace, name) {
     writeText(join(target, "design-system.css"), `.${name}-deck {\n  /* Add template design tokens here. */\n}\n`);
     writeText(join(target, "animation-presets.css"), "/* Add approved animation overrides here. */\n");
     writeText(join(target, "icon-policy.md"), "# Icon policy\n\nUse the Phosphor icon family.\n");
+    writeTemplateSchemaGuidance(target, manifest);
     // Fixtures this template's preview slides need beyond the engine defaults. Adding a key here is
     // how a new layout gets preview content — never by editing the engine.
     writeJson(join(target, "preview-props.json"), {});

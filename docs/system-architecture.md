@@ -1,6 +1,6 @@
 # AI Deck Kit — System Architecture
 
-**Status:** Active architecture spec (2026-07-23). Phases 01–08 runtime, distribution, template migration, and QA are implemented.
+**Status:** Active architecture spec (2026-08-28). Phases 01–08 runtime, distribution, template migration, QA, and the 1.0.0 dual-schema cutover are implemented locally.
 Companion specs: `project-overview-pdr.md`, `deck-format-spec.md`, `development-roadmap.md`.
 
 ## 1. Architecture Principles
@@ -98,7 +98,18 @@ This is a **continuous-development / CI-CD** project: the engine ships new capab
 - **Command resolution:** the registered `aideck` is a version-agnostic resolver (`engine/cli/resolver.mjs`) that walks up to the nearest `ai-deck-kit.json` and runs that workspace's engine. Registration is therefore one-time and machine-wide while execution stays project-scoped.
 - **CI (engine repo):** on push/PR → lint, typecheck, run CLI + template validators, install export tools, run nested-workspace HTML/PDF export smoke tests, and verify upgrade hash safety; tagged releases pack the root distribution package.
 - **Upgrade (installed copy):** `aideck upgrade [--to <version>]` pulls a newer engine into the resolved `engineRoot` only; `decks/` and project `templates/` remain untouched. Engine version pinned in `ai-deck-kit.json` + `engine.version.json`.
-- **Compatibility:** engine declares which `content_schema_version`, `slide_type_catalog`, and `template_version` ranges it supports; `aideck doctor` reports mismatches and never force-migrates decks silently.
+- **Compatibility:** engine declares which `contentSchemaVersion`, `slideTypeCatalog`, and `templateVersion` ranges it supports; `aideck doctor` reports mismatches and never force-migrates decks silently.
+- **Schema authority:** `engine/schemas/content-schema-guidance.md` owns the
+  durable version/dispatch invariants. Template and deck `schema-guidance.md`
+  files provide local navigation without replacing executable manifests,
+  parsers, validators, or layout props. New bundles plant these files during
+  creation. `aideck guidance status|sync` detects and reconciles legacy or stale
+  project bundles without making `aideck upgrade` mutate user data; `doctor`
+  reports unresolved guidance state. Retemplate and template-version changes
+  refresh the affected generated guidance immediately.
+- **Migration authority:** content-schema migration is explicit user intent and
+  agent judgment, not an upgrade side effect or bulk rewrite. The
+  `content-schema-migration` skill owns the approval-gated workflow.
 
 ## 4. Modules (CLI commands + skill bundles)
 
@@ -106,7 +117,7 @@ Each module has a deterministic CLI surface and, where creative, a paired skill.
 
 | Module | CLI (deterministic) | Skill (AI-driven) |
 |---|---|---|
-| **Core / orchestration** | `init`, `upgrade`, `verify`, `doctor`, `config`, `list` (deck registry), workspace resolution | workflow routing |
+| **Core / orchestration** | `init`, `upgrade`, `verify`, `doctor`, `config`, `list` (deck registry), `guidance status|sync`, workspace resolution | workflow routing |
 | **Onboarding** | `link`/`unlink` (register the workspace-resolving `aideck` launcher), `skills wire` (link engine skills into `.claude`/`.agents`) | — |
 | **Design primitives** | `blocks list`, `motion list`, `tokens print` (read/scaffold shared blocks + motion + tokens) | choose/compose blocks, tune motion |
 | **Presentation** | `new`, `slide add/remove/move`, `anim toggle`, `transition set` (scaffold + flag flips in `content.md`/manifest) | author & edit slide content |
@@ -169,10 +180,10 @@ Small and curated — not a general animation engine.
 
 ## 6. Versioning (axes carried + extended from current system)
 
-- `template_version` — visual template set version.
-- `slide_type_catalog` — required slide-type list version (v1, v2, …).
-- `block_catalog` — shared block-type vocabulary version (new; from the primitives layer).
-- `content_schema_version` — `.deck` content/manifest schema version.
+- `templateVersion` — visual template set version.
+- `slideTypeCatalog` — required slide-type list version (v1, v2, …).
+- `blockCatalog` — shared block-type vocabulary version (from the primitives layer).
+- `contentSchemaVersion` — `.deck` content/manifest schema version.
 
 Old decks pinned to older catalogs stay valid; upgrades never silently retype slides or blocks.
 

@@ -7,6 +7,7 @@ import { coreHelp, runCore } from "./commands/core.ts";
 import { deckHelp, runDeck } from "./commands/deck-maintenance.ts";
 import { removalHelp, runRemoval } from "./commands/removal.ts";
 import { generationHelp, runGeneration } from "./commands/generation.ts";
+import { guidanceHelp, runGuidance } from "./commands/guidance.ts";
 import { linkHelp, runLink } from "./commands/link.ts";
 import { outputHelp, runOutput } from "./commands/output.ts";
 import { presentationHelp, runPresentation } from "./commands/presentation.ts";
@@ -28,6 +29,8 @@ ${coreHelp}
 ${linkHelp}
 
 ${skillsHelp}
+
+${guidanceHelp}
 
 ${presentationHelp}
 
@@ -56,6 +59,7 @@ export function main(argv = process.argv.slice(2)): void {
   if (command === "init" || command === "upgrade" || command === "doctor" || command === "verify" || command === "config" || command === "list") return runCore([command, ...args]);
   if (command === "link" || command === "unlink") return runLink([command, ...args]);
   if (command === "skills") return runSkills(args);
+  if (command === "guidance") return runGuidance(args);
   if (command === "new" || command === "slide" || command === "anim" || command === "transition" || command === "validate") return runPresentation([command, ...args]);
   if (command === "deck") return runDeck(args);
   if (command === "template") return runTemplates(args);

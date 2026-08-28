@@ -13,6 +13,7 @@ The root pointer resolves the installed engine and user deck roots. Keep authore
 │   └── {presentation-slug}.deck/
 │       ├── deck.json               # CLI-owned structure
 │       ├── content.md              # author/agent-owned content + annotations
+│       ├── schema-guidance.md       # thin local schema/editing guardrails
 │       ├── assets/
 │       ├── template/               # pinned template snapshot
 │       └── .build/                 # generated, disposable source/export
@@ -28,6 +29,8 @@ default of the same name everywhere the CLI resolves one.
 
 - `deck.json` owns slide order, IDs, types, template binding, and defaults. Change it through `aideck` commands.
 - `content.md` is the one canonical authored file: copy, visual direction, speaker notes, design notes, review questions, and explicit override reasons.
+- `schema-guidance.md` records the deck's schema/template boundary for agents;
+  it does not replace `deck.json` or migrate content.
 - `assets/` stores deck-specific images, generated graphics, exported diagrams, and local media.
 - `template/` is the deck's frozen snapshot, taken at creation. It is what preview and export render, so editing the source template never disturbs an existing deck. Replace it only through `aideck deck retemplate`.
 - `.build/` stores regenerated source and exports; never treat it as canonical input.

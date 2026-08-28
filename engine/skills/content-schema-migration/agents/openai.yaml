@@ -1,0 +1,4 @@
+interface:
+  display_name: "Content Schema Migration"
+  short_description: "Migrate one deck from v1 content to v2"
+  default_prompt: "Use $content-schema-migration only when I explicitly request a v1-to-v2 content schema migration for one .deck bundle."

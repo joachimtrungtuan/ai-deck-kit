@@ -7,14 +7,17 @@ Build order and file checklist for a new template set. Mirror an existing set (e
 1. **Catalog decision** — reuse newest `slide-types-vN.md` or create `v(N+1)` (additive copy + new types). Never edit an existing catalog file.
 2. **Scaffold** — run `aideck template new <name>`. It creates `templates/<name>.template/` with the CLI-owned starter manifest and files.
 3. **Manifest** — complete the generated `template-manifest.json`; keep its name, version axes, and supported types synchronized with the selected catalog.
-4. **Design system CSS** — template tokens first, then base primitive aliases, then class inventory.
-5. **Animation presets CSS** — re-skin shared vocabulary, same preset names.
-6. **Icon policy** — template-specific application of the Phosphor-first rules.
-7. **React layouts** — shared helpers, then category files, then `index.ts`.
-8. **Specs** — `layout-contracts.md` (per-category layout rules) + `layout-index.json` (complete type→component map).
-9. **Validate** — run `aideck template validate <name>`. The bundle stays in `templates/<name>.template/`; nothing is copied into the engine and there is no install step.
-10. **Preview + verification** — see `preview-and-verification.md`.
-11. **Version** — bump `templateVersion` via `aideck template version <name> --bump patch|minor|major` to match the scale of the change (SKILL.md → Versioning Discipline). Every edit to an existing template ends here; a new template starts at the scaffolded `1.0.0` and needs no bump.
+4. **Schema guidance** — keep the scaffolded `schema-guidance.md`; point agents
+   to the manifest, layout contracts, matching React props, and engine schema
+   contract. Do not duplicate a mutable field inventory there.
+5. **Design system CSS** — template tokens first, then base primitive aliases, then class inventory.
+6. **Animation presets CSS** — re-skin shared vocabulary, same preset names.
+7. **Icon policy** — template-specific application of the Phosphor-first rules.
+8. **React layouts** — shared helpers, then category files, then `index.ts`.
+9. **Specs** — `layout-contracts.md` (per-category layout rules) + `layout-index.json` (complete type→component map).
+10. **Validate** — run `aideck template validate <name>`. The bundle stays in `templates/<name>.template/`; nothing is copied into the engine and there is no install step.
+11. **Preview + verification** — see `preview-and-verification.md`.
+12. **Version** — bump `templateVersion` via `aideck template version <name> --bump patch|minor|major` to match the scale of the change (SKILL.md → Versioning Discipline). Every edit to an existing template ends here; a new template starts at the scaffolded `1.0.0` and needs no bump.
 
 ## Manifest Checklist
 
@@ -46,6 +49,12 @@ Define as CSS custom properties scoped under the template's deck class (`.{prefi
 Class inventory must cover: deck, slide, frame, kicker, index, title (+ compact variant), section-title, body, number, metric, rule/panel/emphasis-block structure, list, media, meta-row — names prefixed `.{prefix}-`.
 
 ## Style Discipline
+
+For icon-bearing layouts, resolve explicit names against the complete supported
+Phosphor namespace. A curated fallback may be used only when no icon is
+declared; it must never override a valid explicit name. Include a preview
+fixture using an icon outside any local curated list and verify that its actual
+glyph, not a placeholder, renders.
 
 - Declare the template's signature visual moves (e.g. glow, gradient text, hairline panels) in `layout-contracts.md` and apply them consistently — sparingly, never stacked.
 - Accent usage obeys `maxAccentColors`; define WHERE accent may appear.

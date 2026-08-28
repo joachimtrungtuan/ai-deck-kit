@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { bumpVersion, createTemplate, listTemplates, resolveTemplate } from "../lib/templates.ts";
 import { writeJson } from "../lib/fs.ts";
+import { writeTemplateSchemaGuidance } from "../lib/schema-guidance.ts";
 import { findWorkspace } from "../lib/workspace.ts";
 import type { Workspace } from "../lib/types.ts";
 
@@ -48,5 +49,6 @@ function versionTemplate(workspace: Workspace, name: string, args: string[]): vo
   const part = args[bumpIndex + 1];
   template.manifest.templateVersion = bumpVersion(template.manifest.templateVersion, part);
   writeJson(join(template.root, "template-manifest.json"), template.manifest);
+  writeTemplateSchemaGuidance(template.root, template.manifest);
   console.log(`${name}: ${template.manifest.templateVersion}`);
 }

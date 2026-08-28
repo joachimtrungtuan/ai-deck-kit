@@ -1,6 +1,6 @@
 # AI Deck Kit — Development Roadmap
 
-**Status:** Phase 08 implementation complete (2026-07-23); local QA passed, while remote release and registry-backed clean-install verification remain pending. Continuous-development / CI-CD project — this roadmap remains a living document.
+**Status:** Phase 08 implementation plus the 1.0.0 dual-schema cutover prepared (2026-08-28); local QA passed, while remote release and registry-backed clean-install verification remain pending. Continuous-development / CI-CD project — this roadmap remains a living document.
 Companion specs: `project-overview-pdr.md`, `system-architecture.md`, `deck-format-spec.md`.
 Migration plan: `plans/260722-0258-ai-deck-kit-restructure/plan.md`.
 

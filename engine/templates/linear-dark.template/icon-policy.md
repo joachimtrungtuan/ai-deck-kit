@@ -21,16 +21,18 @@ Use Phosphor React icons for this template.
 - Reserve the accent glow for at most one cluster per slide — do not let every icon glow.
 - If static HTML export cannot bundle React icons, use `@phosphor-icons/web` with the same icon names and weight.
 
-## Authoring icons (prop contract)
+## Authoring icons (content contract)
 
-Slide components expose icons through two props (see `layouts/react/shared.tsx`):
-
-- `icon?: string` — a single icon for single-slot slides (`metric-highlight`).
-- `icons?: string[]` — icons parallel to `items`, one per slot (`icon-grid`, `process-flow`, `case-study`, `timeline`, `architecture-overview`).
+Attach icon names to the relevant `items[].icon` entry in `content.md` (see
+`layouts/react/shared.tsx`). Single-slot layouts such as `metric-highlight`
+read the icon from their first item; multi-slot layouts read each item's icon.
+Do not use separate flat `icon` or positional `icons[]` fields.
 
 Values are real exports from the full `@phosphor-icons/react` namespace, written in kebab-case (`chart-line`, `shield-check`, `arrow-elbow-down-left`). PascalCase export names are also accepted for generated or legacy content. There is no legacy alias shim: short names resolve only when they are themselves real Phosphor exports.
 
 - Use any real Phosphor icon name; do not extend a local map in `shared.tsx`.
 - **Unset names render a dashed placeholder tile** (`.ld-icon-tile-empty`, `SquaresFour` glyph).
 - **Unknown names render a red error tile** with the unresolved value and are rejected by `validate-slide-content.mjs` before handoff.
-- Slots that take icons: `icon-grid` (required), `process-flow`, `case-study`, `timeline`, `architecture-overview`, `metric-highlight` (optional but recommended).
+- Layouts that take item icons: `icon-grid` (required), `process-flow`,
+  `case-study`, `timeline`, `architecture-overview`, and `metric-highlight`
+  (optional but recommended).

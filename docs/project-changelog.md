@@ -1,5 +1,16 @@
 # AI Deck Kit — Project Changelog
 
+## 1.0.0 — 2026-08-28
+
+- Added dual-schema `content.md` parsing and validation: existing v1 decks stay
+  unchanged, while new decks from the shipped templates use canonical v2.
+- Migrated shipped Linear Dark and Swiss Modern templates to v2 `items[]`
+  content and retained v1 support for existing decks.
+- Upgrading does not migrate user content or project-local templates.
+- Added deterministic three-level schema guidance planting plus
+  `aideck guidance status|sync`; doctor reports missing/stale legacy guidance,
+  while creation, retemplate, and template-version operations refresh it.
+
 ## 2026-08-08
 
 - Removed the `clarity-courseware` template (bundle, catalog doc, registry entries) from this repo; it now lives as a project template in the target project it serves.

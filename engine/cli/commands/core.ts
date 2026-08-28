@@ -4,6 +4,7 @@ import { readJson, writeJson } from "../lib/fs.ts";
 import { checkPrerequisites, formatPrerequisiteReport, hasFailures } from "../lib/prerequisites.ts";
 import { deckBundles, deckDrift, describeDrift } from "../lib/deck-template-sync.ts";
 import { migrateLegacyRegisteredTemplates } from "../lib/templates.ts";
+import { inspectSchemaGuidance } from "../lib/schema-guidance.ts";
 import { findWorkspace } from "../lib/workspace.ts";
 import { initCommand } from "./init.ts";
 import { upgradeCommand } from "./upgrade.ts";
@@ -45,6 +46,14 @@ function doctorCommand(workspace: Workspace): void {
   const rescued = migrateLegacyRegisteredTemplates(workspace);
   if (rescued.length) console.log(`Moved your templates out of the engine into ./templates: ${rescued.join(", ")}\n`);
   const report = verifyWorkspace(workspace);
+  for (const entry of inspectSchemaGuidance(workspace)) {
+    if (entry.state === "current") continue;
+    report.errors.push(
+      entry.level === "engine"
+        ? `Engine schema guidance is missing. Run "aideck upgrade" or "aideck reinstall".`
+        : `${entry.label}: schema-guidance.md is ${entry.state}. Run "aideck guidance sync".`,
+    );
+  }
   if (hasFailures(prerequisites)) report.errors.unshift("Required software is missing — see the list above.");
   printVerifyReport(report);
   if (report.errors.length) process.exitCode = 1;

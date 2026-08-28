@@ -12,7 +12,7 @@ depends_on: ["design-primitives"]
 Authors and versions template sets (`.template` bundles), and keeps decks in a known relationship to the template they were built from. Templates compose primitives (blocks, motion, tokens) and declare slide-type layouts. One template per deck; templates live in exactly one place — the project's `templates/`.
 
 ## 2. Responsibilities
-- **In scope:** `aideck template new/validate/list/version`, `aideck deck status/retemplate`, .template bundle structure (`template-manifest.json`, design-system.css, layouts/, animation-presets.css, icon-policy.md), token customization, three+one version axes (template_version, slide_type_catalog, block_catalog, content_schema_version).
+- **In scope:** `aideck template new/validate/list/version`, `aideck deck status/retemplate`, .template bundle structure (`template-manifest.json`, design-system.css, layouts/, animation-presets.css, icon-policy.md), token customization, four version axes (`templateVersion`, `slideTypeCatalog`, `blockCatalog`, `contentSchemaVersion`).
 - **Out of scope:** primitive block definitions (owned by design-primitives), deck content authoring (owned by presentation).
 
 ## 3. Surfaces
@@ -37,7 +37,7 @@ Authors and versions template sets (`.template` bundles), and keeps decks in a k
 - [x] `aideck template new` scaffolds .template with required files (`template-manifest.json`, design-system.css, layouts/, icon-policy.md).
 - [x] Template manifest declares required block/motion/slide-type-catalog versions.
 - [x] `aideck new` embeds template snapshot into .deck for portability.
-- [x] Versioning supports three semantic axes independently (template_version != block_catalog version, etc.).
+- [x] Versioning supports four semantic axes independently (`templateVersion` != `blockCatalog` version, etc.).
 - [x] Doctor detects missing/mismatched template sets and reports required version.
 - [x] A project template of the same name always wins over a shipped default, in every resolution path.
 - [x] Resolution failure is an error naming both locations — never a silent fallback to another template.

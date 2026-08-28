@@ -1,13 +1,17 @@
 # AI Deck Kit — Codebase Summary
 
-**Generated:** 2026-08-20
+**Generated:** 2026-08-28
 **Source:** `repomix-output.xml` (Repomix v1.18.0)
 
 ## Current Shape
 
 AI Deck Kit is a single-package, agent-native presentation toolkit. The root package exposes the `ai-deck-kit` installer and `aideck` binary. The `engine/` tree contains the deterministic CLI, preview/export runtime, primitives, skills, and shipped templates. User decks and user-authored templates are separate workspace data roots.
 
-The shipped template set comprises `swiss-modern` and `linear-dark`.
+The shipped template set comprises `swiss-modern` and `linear-dark`; both declare
+`templateVersion: "2.0.1"` and `contentSchemaVersion: "2.0.0"`. The engine supports
+content-schema majors 1 and 2: existing v1 decks remain frozen, while newly created
+decks inherit the selected template's schema. Project-local templates and existing
+decks are not migrated by upgrade.
 
 ```text
 AI Presentation/
@@ -36,7 +40,7 @@ AI Presentation/
 4. The shared preview runtime reads the selected bundle's manifest, layout
    index, components, CSS, and deck class generically, then exports standalone
    HTML or raster PDF.
-5. `aideck upgrade` replaces only the resolved engine tree and verifies deck-tree preservation.
+5. `aideck upgrade` replaces only the resolved engine tree, refreshes engine dependencies, and verifies deck-tree preservation without migrating user decks or project templates.
 
 ## Verification Snapshot
 

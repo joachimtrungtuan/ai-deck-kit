@@ -21,7 +21,7 @@ Manages the lifecycle of decks and their slides. Authors/edits slide content in 
 - **Runtime:** —
 
 ## 4. Inputs & Outputs
-- **Inputs:** template manifest (`template-manifest.json`), content.md (human-authored prose), slide type catalog (slide_type_catalog version).
+- **Inputs:** template manifest (`template-manifest.json`), content.md (human-authored prose), slide type catalog (`slideTypeCatalog` version).
 - **Outputs:** deck.json (updated slide registry + manifest), content.md (preserves prose, syncs slide ids/types/metadata).
 
 ## 5. Files & Data Touched

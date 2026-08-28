@@ -1,12 +1,20 @@
 ---
 title: "content.md Schema Redesign"
+description: "Dual-schema content.md redesign with frozen v1 compatibility and v2 release cutover."
+status: in-progress
+priority: P1
+effort: "7 phases"
+branch: main
+tags: [schema, decks, cli, release]
+created: 2026-08-26
 ---
 
 # content.md Schema Redesign
 
-**Status:** Phases 1–5 and 2b implementation complete (2026-08-26). Scope
-revised 2026-08-26 (revision 2, see below): dual-schema instead of hard
-cutover. Phase 1 docs follow-up and Phases 6–7 remain pending.
+**Status:** Phases 1–6 and 2b are complete. Phase 7 is in progress: local
+`1.0.0` release prep is done, but published-version release plus clean-install
+proof remain open. Scope revised 2026-08-26 for dual-schema support and
+2026-08-28 for permanent backward compatibility plus opt-in migration.
 
 ## Origin
 
@@ -33,6 +41,15 @@ change that buys those decks nothing.
 
 This makes the engine **dual-schema**, dispatched on a field that already
 exists in every `deck.json`: `contentSchemaVersion`.
+
+**Permanent compatibility decision (confirmed by user 2026-08-28).** Backward
+compatibility is a stability invariant of AI Deck Kit, not a temporary release
+bridge. Supported v1 decks and templates must continue to validate and render
+on later engines without forced content, design, asset, icon, or template
+migration. V1-to-v2 migration, when provided, must be explicit, opt-in, and
+verifiable; projects may keep selected decks on v1 indefinitely. Removing or
+weakening this guarantee requires a new explicit product decision and cannot be
+inferred from a future schema or engine release.
 
 - `"1.0.0"` (**v1, legacy, frozen**) — every deck that exists today. Parser,
   validator, and each deck's frozen `template/` snapshot continue to behave
@@ -166,14 +183,14 @@ here — see phase-01, which is where they become the actual doc content.
 
 | # | Phase | Status | Output |
 |---|---|---|---|
-| 1 | [Canonical schema & docs](phase-01-canonical-schema-and-docs.md) | done, **needs amendment** | `docs/deck-format-spec.md` documents v2 as canonical **and** v1 as frozen-but-supported |
-| 2 | [Engine parser & CLI](phase-02-engine-parser-and-cli.md) | done, **needs amendment** | v2 parse/emit path; `createDeck` must stamp the **template's own declared** `contentSchemaVersion` (revision 2b), not a constant |
+| 1 | [Canonical schema & docs](phase-01-canonical-schema-and-docs.md) | done | `docs/deck-format-spec.md` documents v2 as canonical **and** v1 as frozen-but-supported |
+| 2 | [Engine parser & CLI](phase-02-engine-parser-and-cli.md) | done | v2 parse/emit path; revision-2 compatibility/stamping defect closed in phase-02b |
 | 2b | [v1 compatibility & dispatch](phase-02b-v1-compatibility-dispatch.md) | done | v1 parser restored verbatim; `manifest-deck-source.tsx` dispatches on `contentSchemaVersion`; schema-aware CLI scaffolds; `verify.ts` accepts both |
 | 3 | [Validator updates](phase-03-validator-updates.md) | done (2026-08-26) | `validate-slide-content.mjs` dispatches: v1 rules unchanged, v2 rules added |
 | 4 | [Override rendering](phase-04-override-rendering-and-template-tweak.md) | done (2026-08-26) | Engine-side CSS/HTML override wrapper only. The concept-diagram `items[].icon` edit moved out — it touches the downstream v1 template |
 | 5 | [Migrate linear-dark & swiss-modern templates](phase-05-migrate-linear-dark-and-swiss-modern-templates.md) | done (2026-08-26) | Both templates consume unified `items[]`, bump to `contentSchemaVersion: "2.0.0"`; `deck retemplate` refuses v1-deck-onto-v2-template |
 | 6 | [v1 freeze verification](phase-06-v1-freeze-verification.md) | done (2026-08-26) | No deck migrated. Proves all seven v1 decks still parse, validate, and render unchanged |
-| 7 | [Release cutover](phase-07-release-cutover.md) | **new** | Engine version bump that is the v1/v2 boundary, plus the upgrade note explaining it |
+| 7 | [Release cutover](phase-07-release-cutover.md) | in progress | Local `1.0.0` release prep, docs sync, dist rebuild, and package dry-run complete; published-version release + clean-install proof pending |
 
 Dependencies: 2 and 3 depend on 1. **2b depends on 2 and blocks everything
 else** — until it lands, every existing deck is broken on `main`. 4 is
@@ -186,8 +203,11 @@ publish step that makes the cutover real.
 - **No migration of any existing deck.** The seven v1 decks are not converted,
   not partially converted, and not re-authored. If one is ever wanted on v2,
   that is a separate, per-deck, user-initiated decision.
-- **No automated v1→v2 migration tool.** Nothing has asked for one; writing a
-  converter for content nobody intends to convert is speculative work.
+- **No automatic or deterministic v1→v2 content rewrite command.** The user
+  later requested an agent-led `content-schema-migration` skill. It migrates one
+  explicitly selected working copy, traces the real v1 render contract, and
+  requires visual comparison plus user approval before canonical replacement.
+  `aideck upgrade` remains engine-only and never rewrites deck or template data.
 - **No v1 improvements.** v1 is frozen at its `12b01d7` behavior. Bugs found in
   the v1 path are documented, not fixed, unless they are regressions this plan
   itself introduced.

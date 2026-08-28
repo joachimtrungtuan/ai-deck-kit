@@ -40,7 +40,7 @@ This skill handles deck content normalization, React deck source, standalone HTM
 
 ## Workflow
 
-1. Read the available user material and select exactly one template set from `aideck template list`. If no suitable set exists, stop and switch to `presentation-template-creation`; never improvise a deck style.
+1. Read the available user material and select exactly one template set from `aideck template list`. If no suitable set exists, stop and switch to `presentation-template-creation`; never improvise a deck style. Before authoring, read `engine/schemas/content-schema-guidance.md`, the selected template's `schema-guidance.md` when present, and the deck's root `schema-guidance.md` when editing an existing deck. The manifest remains authoritative when a legacy bundle predates these guidance files.
 2. For slide-ready input, preserve the supplied structure. For a prompt, document, notes, or transcript, first create a proposed Markdown outline and obtain approval before scaffolding. Follow `references/outline-first-generation.md`.
 3. Scaffold the bundle through the CLI:
    - Slide-ready or manually structured: `aideck new <slug> --template <set>`.
@@ -94,6 +94,7 @@ The expected deck unit is:
 decks/{presentation-slug}.deck/
 ├── deck.json
 ├── content.md
+├── schema-guidance.md
 ├── assets/
 └── .build/            # regenerable, gitignored
     ├── source/
@@ -117,6 +118,10 @@ decks/{presentation-slug}.deck/
 - `references/quality-gate.md` - Final review checklist before handoff.
 
 Template authoring (manifests, catalogs, versioning, new template sets) lives in the sibling `presentation-template-creation` skill — this skill only consumes templates.
+
+Explicit v1-to-v2 conversion lives in the sibling
+`content-schema-migration` skill. `aideck upgrade` and ordinary deck editing do
+not migrate content or templates.
 
 ## Scripts
 

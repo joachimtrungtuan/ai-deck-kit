@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readdirSync, renameSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { readJson, writeJson, writeText } from "./fs.ts";
 import { fontCatalogNames, unknownFontFamilies } from "./font-catalog.ts";
+import { writeTemplateSchemaGuidance } from "./schema-guidance.ts";
 import type { Workspace } from "./types.ts";
 
 /** Where a template bundle came from. Project templates are the user's and always win. */
@@ -187,6 +188,7 @@ export function createTemplate(workspace: Workspace, name: string): string {
   writeText(join(target, "design-system.css"), `.${name}-deck {\n  /* Add template design tokens here. */\n}\n`);
   writeText(join(target, "animation-presets.css"), "/* Add approved animation overrides here. */\n");
   writeText(join(target, "icon-policy.md"), "# Icon policy\n\nUse the Phosphor icon family.\n");
+  writeTemplateSchemaGuidance(target, manifest);
   // Fixtures this template's preview slides need beyond the engine defaults. Adding a key here is
   // how a new layout gets preview content — never by editing the engine.
   writeJson(join(target, "preview-props.json"), {});

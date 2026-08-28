@@ -4,6 +4,7 @@ import { readJson, writeJson } from "../lib/fs.js";
 import { checkPrerequisites, formatPrerequisiteReport, hasFailures } from "../lib/prerequisites.js";
 import { deckBundles, deckDrift, describeDrift } from "../lib/deck-template-sync.js";
 import { migrateLegacyRegisteredTemplates } from "../lib/templates.js";
+import { inspectSchemaGuidance } from "../lib/schema-guidance.js";
 import { findWorkspace } from "../lib/workspace.js";
 import { initCommand } from "./init.js";
 import { upgradeCommand } from "./upgrade.js";
@@ -48,6 +49,13 @@ function doctorCommand(workspace) {
     if (rescued.length)
         console.log(`Moved your templates out of the engine into ./templates: ${rescued.join(", ")}\n`);
     const report = verifyWorkspace(workspace);
+    for (const entry of inspectSchemaGuidance(workspace)) {
+        if (entry.state === "current")
+            continue;
+        report.errors.push(entry.level === "engine"
+            ? `Engine schema guidance is missing. Run "aideck upgrade" or "aideck reinstall".`
+            : `${entry.label}: schema-guidance.md is ${entry.state}. Run "aideck guidance sync".`);
+    }
     if (hasFailures(prerequisites))
         report.errors.unshift("Required software is missing — see the list above.");
     printVerifyReport(report);

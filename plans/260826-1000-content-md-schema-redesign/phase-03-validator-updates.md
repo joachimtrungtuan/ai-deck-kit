@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Validator Updates"
-status: done (2026-08-26)
+status: completed
 priority: P1
 effort: ""
 dependencies: [1]
@@ -55,7 +55,7 @@ dependencies: [1]
   files (different script) but should reuse phase-02's `yaml`-parsing
   approach rather than inventing a second regex-based reader for the same
   format.
-- Status: not started.
+- Status: completed (2026-08-26).
 - Update `validate-slide-content.mjs` so it enforces the new schema (YAML-only
   title, unified `items[]`, merged `override` object) instead of the old
   header-title/flat-`icons[]`/`### On-Slide Text` format it currently checks.
@@ -206,9 +206,5 @@ YAML, unsupported major `9.9.9`) each fail with a specific message;
   here catch authoring mistakes, not adversarial input.
 
 ## Next Steps
-- Phase-06 runs this updated validator against all seven **unmigrated v1** decks
-  as its freeze gate: `aideck validate` must be green, and green via the v1
-  branch. No deck is migrated, so a deck reaching the v2 branch here is itself
-  the failure.
-- No open items. Depends on phase-02b landing the parser dispatch first, so the
-  two dispatchers agree on every deck's schema.
+- Phase-06 used this validator as the v1 freeze gate and is complete.
+- No open items remain in this phase.

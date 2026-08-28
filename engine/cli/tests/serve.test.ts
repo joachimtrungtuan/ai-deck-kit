@@ -459,6 +459,11 @@ test("new template scaffolds declare and scope their preview deck class", () => 
   const manifest = JSON.parse(readFileSync(join(root, "template-manifest.json"), "utf8"));
   assert.equal(manifest.deckClass, "new-template-deck");
   assert.match(readFileSync(join(root, "design-system.css"), "utf8"), /^\.new-template-deck \{/);
+  const guidance = readFileSync(join(root, "schema-guidance.md"), "utf8");
+  assert.match(guidance, /template-manifest\.json/);
+  assert.match(guidance, /layouts\/specs\/layout-contracts\.md/);
+  assert.match(guidance, /engine\/schemas\/content-schema-guidance\.md/);
+  assert.match(guidance, /never\nchange only a version field/);
 });
 
 test("upgrade rescues templates the old layout left inside the engine", () => {
