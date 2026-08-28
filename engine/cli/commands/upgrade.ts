@@ -88,7 +88,7 @@ function fetchEngine(version?: string, configuredSource?: string): string {
     stdio: ["ignore", "pipe", "inherit"],
     env: { ...process.env, npm_config_allow_git: "all" },
   });
-  if (packed.status !== 0) throw new Error(`Could not fetch engine source from ${spec}.`);
+  if (packed.status !== 0) throw new Error(unfetchableEngineMessage(spec));
   const archive = readdirSync(destination).find((entry) => entry.endsWith(".tgz"));
   if (!archive) throw new Error(`Package source did not produce an archive: ${spec}.`);
   const unpacked = spawnSync("tar", ["-xzf", join(destination, archive), "-C", destination], { stdio: "inherit" });
@@ -96,6 +96,18 @@ function fetchEngine(version?: string, configuredSource?: string): string {
   const fetchedSource = normalizeEngineRoot(join(destination, "package"));
   if (!existsSync(join(fetchedSource, "engine.version.json"))) throw new Error(`Fetched package has no engine directory: ${spec}.`);
   return fetchedSource;
+}
+
+// npm prepares a git-sourced package by spawning a nested, project-scoped `npm install` that
+// inherits the user's ~/.npmrc. Settings npm rejects in that context (allow-scripts, and others
+// as npm tightens them) fail the nested install, which surfaces here only as a non-zero exit.
+// Point the user at the generic escape hatch rather than any one setting name.
+function unfetchableEngineMessage(spec: string): string {
+  return [
+    `Could not fetch engine source from ${spec}.`,
+    "If you have custom npm settings in ~/.npmrc, they can break npm's internal git-dependency install. Retry with:",
+    "  npm_config_userconfig=/dev/null aideck upgrade",
+  ].join("\n");
 }
 
 function normalizeEngineRoot(path: string): string {

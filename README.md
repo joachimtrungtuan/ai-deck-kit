@@ -105,6 +105,19 @@ npm_config_allow_git=all npx github:joachimtrungtuan/ai-deck-kit init --here
 `aideck upgrade` (used later to update an installed kit) already sets this internally, so it is
 unaffected — this workaround is only needed for the initial `npx` install above.
 
+**`aideck upgrade` fails with `Could not fetch engine source from github:...`?**
+Custom settings in your `~/.npmrc` can break the nested install npm runs to prepare a
+git-sourced package. npm 12 rejects some settings there — `allow-scripts` is one — and the
+nested failure surfaces only as the message above. Retry with your personal npm settings
+bypassed for that one command:
+
+```sh
+npm_config_userconfig=/dev/null aideck upgrade
+```
+
+Your `~/.npmrc` is not modified. If you rely on a private registry or auth token stored there,
+comment out the offending setting instead of bypassing the whole file.
+
 ### What you end up with
 
 ```text
