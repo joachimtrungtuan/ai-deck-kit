@@ -60,6 +60,7 @@ Promotes the current `.slides.md` frontmatter to a structured, validated file. T
 ```
 
 - `slides[]` is the ordered slide registry (source of truth for order + type). Reordering = reorder this array (via `aideck slide move`).
+- Slide ids following the numeric convention (`slide-01`, `slide-02`, …) are position-derived: `aideck slide add|move|remove` renames them to match their new 1-based position, and re-syncs `slides[].file`, the section YAML `id`, and the `## Slide NN (slide-NN)` heading label to match. A slide's numeric id is therefore an address, not a durable handle — it can name a different slide after any reorder. Custom, non-numeric ids (`slide-summary`) are never renamed; use one when a slide needs an identity that survives reordering.
 - `template.set` + `template.version` bind the deck to exactly one template set.
 - The four version axes (`template.version`, `slideTypeCatalog`, `blockCatalog`, `contentSchemaVersion`) mirror the current system.
 

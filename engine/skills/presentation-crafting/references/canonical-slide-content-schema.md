@@ -61,6 +61,7 @@ Constraints for layout, hierarchy, spacing, emphasis, or asset treatment.
 ## Rules
 
 - Every slide must have `id`, `type`, `status`, `intent`, `animation`, and `transition`; the `id` and `type` must match the paired `deck.json` slide registry.
+- A numeric slide id (`slide-01`, `slide-02`, ...) is position-derived, not a durable handle: `aideck slide add|remove|move` renames it to match its new 1-based position and re-syncs `deck.json` `slides[].file`, the section `id`, and the `## Slide NN (slide-NN)` heading label. After any reorder, a numeric id may name a different slide than it did before — re-read `deck.json` before addressing a slide by id. Give a slide a custom, non-numeric id (`slide-summary`) when it needs an identity that survives reordering; custom ids are never renamed.
 - `type` must exist in the active slide-type catalog.
 - `override.reason` is required when `override.layout` or `override.animation` is not `none`.
 - `layoutVariant` and `backgroundVariant` are optional template-owned selections.

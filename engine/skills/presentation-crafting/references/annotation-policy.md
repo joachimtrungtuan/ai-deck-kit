@@ -25,6 +25,6 @@ Annotations keep the collaboration trace clear without turning React source into
 When the user requests edits:
 
 1. Update `content.md` first if the change affects copy, intent, speaker notes, asset direction, or override reason.
-2. Use `aideck slide add|remove|move` if the change affects slide order or structure; never manually edit the manifest registry.
+2. Use `aideck slide add|remove|move` if the change affects slide order or structure; never manually edit the manifest registry. A reorder renumbers numeric slide ids, so re-read `deck.json` before referring to a slide by id again.
 3. Re-run `aideck validate <slug>`.
 4. Summarize changed slides by slide number.
