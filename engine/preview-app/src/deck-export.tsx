@@ -77,8 +77,13 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
           break;
       }
     }
+    const frameWindow = frameDocumentRef.current?.defaultView ?? null;
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    frameWindow?.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      frameWindow?.removeEventListener("keydown", onKeyDown);
+    };
   }, [active, total]);
 
   function commitJump() {
@@ -92,7 +97,11 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
       event.preventDefault();
       setControlsVisible((visible) => !visible);
     }}>
-      <FixedSlideCanvas documentRef={frameDocumentRef} slide={activeSlide} source={source} />
+      <FixedSlideCanvas
+        documentRef={frameDocumentRef}
+        slide={activeSlide}
+        source={source}
+      />
 
       <nav className={`deck-controls${controlsVisible ? "" : " is-hidden"}`} aria-label="Slide navigation">
         <button type="button" aria-label="Previous slide" onClick={() => go(active - 1)} disabled={active === 0}>

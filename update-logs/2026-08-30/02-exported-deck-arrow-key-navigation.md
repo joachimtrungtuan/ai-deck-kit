@@ -1,0 +1,16 @@
+# Exported deck: arrow keys didn't navigate when focus was inside the slide
+
+**What changed.** Fixed exported standalone HTML deck (`aideck export html`) not responding to arrow-key/Page/Home/End navigation when keyboard focus was inside the slide canvas (e.g. after clicking slide text) — navigation only worked with focus on the surrounding page chrome ("black zone"). Two independent root causes, both in shared runtime code also used by the dev preview:
+
+1. **`engine/preview-app/src/deck-export.tsx`** — the keydown listener was only attached to the parent `window`. The slide itself renders inside a same-document, no-`src` `<iframe>` (`FixedSlideCanvas`); a real keydown fired while focus is inside that iframe targets the iframe's own `window`, which the parent-only listener never saw. Fixed by also attaching to `frameDocumentRef.current?.defaultView`, mirroring the pattern already used by `main.tsx` (dev preview).
+2. **`engine/preview-app/src/slide-transition-runtime.ts`** — `goToSlide` calls `document.startViewTransition()` on the iframe's document to animate the cross-fade, then commits the actual React state update (`setActive`) inside its update callback via `flushSync`. `startViewTransition` can throw synchronously or reject its `ready` promise with `InvalidStateError` (observed empirically), and there was no guard for that case (only a guard for the API not existing at all) — so the state commit could silently never run. Fixed by wrapping both `startViewTransition` call sites in try/catch, falling back to calling `commit()` directly, matching the existing "best-effort enhancement" philosophy for the no-View-Transitions-API branch.
+
+**Why.** User reported the behavior and asked for confirmation before a fix. Reproduced and confirmed real. Root-caused via direct `KeyboardEvent` dispatch on `iframe.contentWindow` (isolated listener wiring from `goToSlide` behavior) plus targeted debug logging of `startViewTransition`'s `ready` rejection.
+
+**Verification.** Rebuilt the real export (`node engine/cli/index.mjs export html vivimoon-website`) and tested against the actual built `index.html` (not dev server) after each iteration. Confirmed via a genuine `KeyboardEvent` dispatched on both the iframe's `window` (focus-inside-slide case) and the parent `window` (black-zone case) that slide state now advances reliably. Note: this session's Browser-pane `computer` key-press tool did not reliably deliver synthetic key presses into this page in either context — verification instead used direct `dispatchEvent` calls, which exercise the identical code path a real keypress reaches.
+
+**Also removed:** an `onFrameReady`/`frameReady` re-attach mechanism added mid-investigation on the (disproven, via debug logging) hypothesis that the iframe document ref was null on first effect run — it wasn't, so the mechanism and its comment were dead weight and have been reverted from `deck-export.tsx` and `fixed-slide-canvas.tsx`.
+
+**Files:** `engine/preview-app/src/deck-export.tsx`, `engine/preview-app/src/slide-transition-runtime.ts`, `engine/preview-app/src/fixed-slide-canvas.tsx`.
+
+**Follow-ups:** none. The still-pending `slide move` cascading-id-rename fix (see `01-slide-move-cascading-id-rename.md`) remains uncommitted alongside this fix.

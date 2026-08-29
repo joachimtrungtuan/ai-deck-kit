@@ -35,8 +35,15 @@ export function goToSlide(options: {
     return;
   }
   if (hasMorph(from, to)) {
-    const morphResult = doc.startViewTransition(() => flushSync(commit));
-    void morphResult.ready?.catch(() => {});
+    try {
+      const morphResult = doc.startViewTransition(() => flushSync(commit));
+      void morphResult.ready?.catch(() => {});
+    } catch {
+      // startViewTransition can throw synchronously if the iframe document isn't yet in a state
+      // the View Transitions API accepts (e.g. right after the iframe first becomes ready) — the
+      // cross-fade is a best-effort enhancement, so navigation must not depend on it succeeding.
+      commit();
+    }
     return;
   }
   const transition = to.transition ?? source.defaultTransition ?? "none";
@@ -46,10 +53,16 @@ export function goToSlide(options: {
   }
   doc.documentElement.dataset.slideTransition = transition;
   doc.documentElement.dataset.slideDirection = direction;
-  const result = doc.startViewTransition(() => flushSync(commit));
-  void result.ready?.catch(() => {});
-  void result.finished?.finally(() => {
+  try {
+    const result = doc.startViewTransition(() => flushSync(commit));
+    void result.ready?.catch(() => {});
+    void result.finished?.finally(() => {
+      delete doc.documentElement.dataset.slideTransition;
+      delete doc.documentElement.dataset.slideDirection;
+    });
+  } catch {
     delete doc.documentElement.dataset.slideTransition;
     delete doc.documentElement.dataset.slideDirection;
-  });
+    commit();
+  }
 }
