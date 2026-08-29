@@ -5,10 +5,11 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test, { after } from "node:test";
-import { createDeck, parseSections, slideContent } from "../lib/deck.ts";
+import { createDeck, parseSections, readDeck, slideContent } from "../lib/deck.ts";
 import { deckDrift, retemplateDeck } from "../lib/deck-template-sync.ts";
 import { inspectSchemaGuidance, syncSchemaGuidance } from "../lib/schema-guidance.ts";
 import { parseGuidanceSelection } from "../commands/guidance.ts";
+import { addSlide, moveSlide } from "../commands/presentation.ts";
 import { resolveTemplate, type TemplateManifest } from "../lib/templates.ts";
 import type { DeckManifest, Workspace } from "../lib/types.ts";
 
@@ -170,6 +171,45 @@ test("guidance sync backfills legacy templates and refreshes stale deck guidance
 function readManifest(deckRoot: string): DeckManifest {
   return JSON.parse(readFileSync(join(deckRoot, "deck.json"), "utf8")) as DeckManifest;
 }
+
+test("moving a slide cascades numeric ids to match its new position", () => {
+  const workspace = fixtureWorkspace();
+  const templateRoot = join(workspace.root, "templates", "v2-template.template");
+  writeTemplate(templateRoot, "V2 template", "v2-template");
+  const manifestPath = join(templateRoot, "template-manifest.json");
+  const templateManifest = JSON.parse(readFileSync(manifestPath, "utf8")) as TemplateManifest;
+  templateManifest.contentSchemaVersion = "2.0.0";
+  writeFileSync(manifestPath, `${JSON.stringify(templateManifest, null, 2)}\n`);
+  const root = createDeck(workspace, "talk", "v2-template");
+
+  addSlide(readDeck(workspace, "talk"), workspace, "slide-02", "title");
+  addSlide(readDeck(workspace, "talk"), workspace, "slide-03", "title");
+  addSlide(readDeck(workspace, "talk"), workspace, "slide-04", "title");
+  moveSlide(readDeck(workspace, "talk"), "slide-04", 2);
+
+  const manifest = readManifest(root);
+  assert.deepEqual(manifest.slides.map((slide) => slide.id), ["slide-01", "slide-02", "slide-03", "slide-04"]);
+  assert.deepEqual(manifest.slides.map((slide) => slide.file), ["content.md#slide-01", "content.md#slide-02", "content.md#slide-03", "content.md#slide-04"]);
+
+  const { sections } = parseSections(readFileSync(join(root, "content.md"), "utf8"));
+  assert.equal(sections.length, 4);
+  assert.match(sections[0], /^## Slide 01 \(slide-01\)/);
+  assert.match(sections[1], /^## Slide 02 \(slide-02\)\n[\s\S]*id: "slide-02"[\s\S]*title: "Slide 04"/);
+  assert.match(sections[2], /^## Slide 03 \(slide-03\)[\s\S]*id: "slide-03"/);
+  assert.match(sections[3], /^## Slide 04 \(slide-04\)[\s\S]*id: "slide-04"/);
+});
+
+test("a custom (non-numeric) slide id is left alone by a reorder", () => {
+  const workspace = fixtureWorkspace();
+  writeTemplate(join(workspace.root, "templates", "sample.template"), "Mine");
+  const root = createDeck(workspace, "talk", "sample");
+
+  addSlide(readDeck(workspace, "talk"), workspace, "slide-02", "title");
+  addSlide(readDeck(workspace, "talk"), workspace, "slide-summary", "title", "slide-02");
+  moveSlide(readDeck(workspace, "talk"), "slide-summary", 1);
+
+  assert.deepEqual(readManifest(root).slides.map((slide) => slide.id), ["slide-summary", "slide-02", "slide-03"]);
+});
 
 test("targeted guidance sync isolates bundles and preserves previous guidance", () => {
   const workspace = fixtureWorkspace();

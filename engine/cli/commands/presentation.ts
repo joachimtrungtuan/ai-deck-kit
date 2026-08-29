@@ -39,40 +39,42 @@ function slideCommand(workspace: ReturnType<typeof findWorkspace>, action: strin
   const id = args[0];
   const loaded = readDeck(workspace, deck);
   const existing = loaded.manifest.slides.find((slide) => slide.id === id);
-  if (action === "add") return addSlide(loaded, id, valueAfter(args, "--type") ?? "text-statement", valueAfter(args, "--after"));
+  if (action === "add") return addSlide(loaded, workspace, id, valueAfter(args, "--type") ?? "text-statement", valueAfter(args, "--after"));
   if (!existing) throw new Error(`Slide not found: ${id}`);
   if (action === "remove") return removeSlide(loaded, id);
   if (action === "move") return moveSlide(loaded, id, Number(valueAfter(args, "--to")));
   throw new Error(`Unknown slide action: ${action}`);
 }
 
-function addSlide(loaded: ReturnType<typeof readDeck>, id: string, type: string, after?: string): void {
+export function addSlide(loaded: ReturnType<typeof readDeck>, workspace: ReturnType<typeof findWorkspace>, id: string, type: string, after?: string): void {
   if (!id || !/^slide-[a-z0-9-]+$/.test(id)) throw new Error("Slide id must look like slide-02 or slide-summary.");
   if (loaded.manifest.slides.some((slide) => slide.id === id)) throw new Error(`Slide already exists: ${id}`);
-  const template = resolveTemplate(findWorkspace(), loaded.manifest.template.set);
+  const template = resolveTemplate(workspace, loaded.manifest.template.set);
   if (!template.manifest.supportedSlideTypes.includes(type)) throw new Error(`Template does not support slide type "${type}".`);
   const slide: DeckSlide = { id, type, file: `content.md#${id}`, animation: loaded.manifest.defaults.animation, transition: loaded.manifest.defaults.transition };
   const insertAt = after ? loaded.manifest.slides.findIndex((candidate) => candidate.id === after) + 1 : loaded.manifest.slides.length;
   if (after && insertAt === 0) throw new Error(`Slide not found: ${after}`);
   loaded.manifest.slides.splice(insertAt, 0, slide);
   const { prefix, sections } = parseSections(loaded.content);
-  const section = slideContent(slide, titleFromSlug(id), loaded.manifest.contentSchemaVersion).replace(/^## Slide\s+\d+/, `## Slide ${String(insertAt + 1).padStart(2, "0")}`);
+  const section = slideContent(slide, titleFromSlug(id), loaded.manifest.contentSchemaVersion);
   sections.splice(insertAt, 0, section.trimEnd());
-  writeDeck(loaded.root, renumberSlides(loaded.manifest, sections), `${prefix}${sections.map((item, index) => renumberHeading(item, index)).join("\n\n")}\n`);
-  console.log(`Added ${id}.`);
+  writeRenumbered(loaded, prefix, sections);
+  // `slide` is the manifest entry writeRenumbered just mutated, so slide.id is the final id —
+  // report that, not the requested one, which a cascading rename may have replaced.
+  console.log(slide.id === id ? `Added ${id}.` : `Added ${id} as ${slide.id} (numeric ids track slide position).`);
 }
 
-function removeSlide(loaded: ReturnType<typeof readDeck>, id: string): void {
+export function removeSlide(loaded: ReturnType<typeof readDeck>, id: string): void {
   if (loaded.manifest.slides.length === 1) throw new Error("Cannot remove the last slide.");
   const index = loaded.manifest.slides.findIndex((slide) => slide.id === id);
   const { prefix, sections } = parseSections(loaded.content);
   loaded.manifest.slides.splice(index, 1);
   sections.splice(index, 1);
-  writeDeck(loaded.root, renumberSlides(loaded.manifest, sections), `${prefix}${sections.map((item, position) => renumberHeading(item, position)).join("\n\n")}\n`);
+  writeRenumbered(loaded, prefix, sections);
   console.log(`Removed ${id}.`);
 }
 
-function moveSlide(loaded: ReturnType<typeof readDeck>, id: string, position: number): void {
+export function moveSlide(loaded: ReturnType<typeof readDeck>, id: string, position: number): void {
   if (!Number.isInteger(position) || position < 1 || position > loaded.manifest.slides.length) throw new Error("--to must be a valid 1-based slide position.");
   const from = loaded.manifest.slides.findIndex((slide) => slide.id === id);
   if (from < 0) throw new Error(`Slide not found: ${id}`);
@@ -81,8 +83,8 @@ function moveSlide(loaded: ReturnType<typeof readDeck>, id: string, position: nu
   const [section] = sections.splice(from, 1);
   loaded.manifest.slides.splice(position - 1, 0, slide);
   sections.splice(position - 1, 0, section);
-  writeDeck(loaded.root, renumberSlides(loaded.manifest, sections), `${prefix}${sections.map((item, index) => renumberHeading(item, index)).join("\n\n")}\n`);
-  console.log(`Moved ${id} to position ${position}.`);
+  writeRenumbered(loaded, prefix, sections);
+  console.log(slide.id === id ? `Moved ${id} to position ${position}.` : `Moved ${id} to position ${position} as ${slide.id}.`);
 }
 
 function animationCommand(workspace: ReturnType<typeof findWorkspace>, args: string[]): void {
@@ -121,13 +123,27 @@ function validateCommand(workspace: ReturnType<typeof findWorkspace>, deck: stri
   if (result.status !== 0) throw new Error(`Deck validation failed with exit code ${result.status ?? 1}.`);
 }
 
-function renumberSlides(manifest: ReturnType<typeof readDeck>["manifest"], sections: string[]): ReturnType<typeof readDeck>["manifest"] {
-  manifest.slides.forEach((slide, index) => { slide.file = `content.md#${slide.id}`; sections[index] = setYamlField(sections[index], "id", slide.id); sections[index] = setYamlField(sections[index], "type", slide.type); });
-  return manifest;
+const NUMBERED_SLIDE_ID = /^slide-(\d+)$/;
+
+// Ids that follow the numeric convention (slide-01, slide-02, ...) are position-derived, so a
+// reorder renames them to match their new index. Custom ids (slide-summary) are stable handles
+// and never touched. Each slide's new id depends only on its own old id and its own new index, so
+// no two renumbered ids can ever collide and no intermediate rename is needed.
+function writeRenumbered(loaded: ReturnType<typeof readDeck>, prefix: string, sections: string[]): void {
+  loaded.manifest.slides.forEach((slide, index) => {
+    const match = NUMBERED_SLIDE_ID.exec(slide.id);
+    if (match) slide.id = `slide-${String(index + 1).padStart(match[1].length, "0")}`;
+    slide.file = `content.md#${slide.id}`;
+    sections[index] = setYamlField(sections[index], "id", slide.id);
+    sections[index] = setYamlField(sections[index], "type", slide.type);
+  });
+  const content = sections.map((section, index) => renumberHeading(section, index, loaded.manifest.slides[index].id)).join("\n\n");
+  writeDeck(loaded.root, loaded.manifest, `${prefix}${content}\n`);
 }
 
-function renumberHeading(section: string, index: number): string {
-  return section.replace(/^## Slide\s+\d+/, `## Slide ${String(index + 1).padStart(2, "0")}`);
+function renumberHeading(section: string, index: number, id: string): string {
+  const number = String(index + 1).padStart(2, "0");
+  return section.replace(/^## Slide\s+\d+(\s*\([^)]*\))?/, (_match, labelled) => (labelled ? `## Slide ${number} (${id})` : `## Slide ${number}`));
 }
 
 function valueAfter(args: string[], option: string): string | undefined {
