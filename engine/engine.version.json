@@ -1,5 +1,5 @@
 {
-  "engineVersion": "1.0.1",
+  "engineVersion": "1.0.2",
   "contentSchemaVersion": "1.0.0",
   "supportedContentSchemaMajors": [1, 2],
   "supportedSlideTypeCatalogs": ["v1", "v2"],
