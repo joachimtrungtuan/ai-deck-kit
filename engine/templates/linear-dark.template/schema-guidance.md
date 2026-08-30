@@ -15,6 +15,7 @@ Before authoring or changing a deck:
    YAML fields. Preserve speaker notes and review annotations in `content.md`.
 
 For v2 content, `title` is YAML-owned and list/card content uses structured
-`items[]`. The engine contract is `engine/schemas/content-schema-guidance.md`.
+`items[]`, written in block style (one field per line, never a single-line
+flow mapping). The engine contract is `engine/schemas/content-schema-guidance.md`.
 Use the `content-schema-migration` skill for an explicit v1-to-v2 migration;
 never change only the version field or retemplate first.

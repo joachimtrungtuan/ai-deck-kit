@@ -23,6 +23,7 @@ const contentPath = path.join(deckDir, "content.md");
 const manifest = readJson(manifestPath);
 const content = readFile(contentPath);
 const errors = [];
+const warnings = [];
 let templateManifest;
 const blockCatalogV1 = new Set(["text", "title-description", "image", "chart", "table", "icon-text-card", "quote", "stat", "list", "code"]);
 const motionCatalogV1 = new Set(["none", "fade", "gentle-rise", "morph"]);
@@ -242,7 +243,12 @@ if (schemaMajor === 1) {
     }
   }
 } else {
-  validateContentV2({ manifest, content, templateManifest, manifestSlides, manifestIds, errors });
+  validateContentV2({ manifest, content, templateManifest, manifestSlides, manifestIds, errors, warnings });
+}
+
+if (warnings.length) {
+  console.warn("Deck validation warnings:");
+  warnings.forEach((warning) => console.warn(`- ${warning}`));
 }
 
 if (errors.length) {
@@ -263,7 +269,7 @@ console.log(`Deck is valid: ${path.relative(process.cwd(), deckDir)}`);
 // unify them. See plans/260826-1000-content-md-schema-redesign/
 // phase-03-validator-updates.md.
 // ============================================================================
-function validateContentV2({ manifest, content, templateManifest, manifestSlides, manifestIds, errors }) {
+function validateContentV2({ manifest, content, templateManifest, manifestSlides, manifestIds, errors, warnings }) {
   const headers = [...content.matchAll(/^## Slide\s+(\d+).*$/gm)];
   if (headers.length === 0) {
     errors.push("content.md: no slide sections found. Expected headings like: ## Slide 05 (slide-05)");
@@ -299,6 +305,16 @@ function validateContentV2({ manifest, content, templateManifest, manifestSlides
     // YAML title is the sole title source; there is no fallback to heading text in v2.
     if (typeof metadata.title !== "string" || !metadata.title.trim()) {
       errors.push(`${label}: missing or empty "title" in the slide metadata YAML. v2 requires title in YAML; there is no fallback to the heading text.`);
+    }
+
+    // items[]: flag single-line flow-style entries (`- {title: ..., ...}` or `items: [...]`).
+    // Block style keeps each attribute on its own line for IDE readability; see
+    // engine/schemas/content-schema-guidance.md > "items[] Formatting".
+    const itemsSection = v2ExtractItemsSection(yamlText);
+    if (itemsSection && /items:\s*\[/.test(itemsSection.split("\n", 1)[0])) {
+      warnings.push(`${label}: "items" uses flow-style (single-line "[...]"). Write it in block style, one field per line.`);
+    } else if (itemsSection && /^\s*-\s*\{/m.test(itemsSection)) {
+      warnings.push(`${label}: "items" contains a flow-style entry (single-line "{...}"). Write each entry in block style, one field per line.`);
     }
 
     // items[]: every entry needs a non-empty title; column is left/right when present.
@@ -376,6 +392,11 @@ function validateContentV2({ manifest, content, templateManifest, manifestSlides
       errors.push(`deck.json: slide "${slide.id}" has no matching ## Slide section in content.md.`);
     }
   }
+}
+
+function v2ExtractItemsSection(yamlText) {
+  const match = yamlText.match(/^items:[^\n]*\n(?:[ \t].*\n?|\n)*/m);
+  return match ? match[0] : null;
 }
 
 function v2ExtractFirstYamlFence(text) {

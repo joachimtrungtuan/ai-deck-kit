@@ -48,6 +48,23 @@ snapshot, so the deck and snapshot must remain schema-compatible.
 - If local guidance disagrees with its manifest or executable owners, stop and
   report the mismatch. Never guess which schema to apply.
 
+## `items[]` Formatting
+
+Write every `items[]` entry in YAML block style, one field per line — never a
+single-line flow mapping (`{title: "...", description: "..."}`). Block style
+keeps each attribute (`title`, `description`, `icon`, `column`) on its own
+line so it stays scannable in an IDE:
+
+```yaml
+items:
+  - title: "Prompt structure"
+    description: "..."
+    icon: "target"
+    column: "left"
+```
+
+`validate-slide-content.mjs` flags flow-style `items[]` entries.
+
 ## Icon Resolution
 
 V2 icons belong on the object they decorate, such as `items[].icon`. A valid
