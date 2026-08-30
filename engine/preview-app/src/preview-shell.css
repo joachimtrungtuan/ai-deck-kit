@@ -82,12 +82,16 @@ button {
 }
 
 .preview-sidebar-toggle {
-  flex: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  transform: translate(-50%, -50%);
   width: 28px;
   height: 28px;
   border: 1px solid #5a5a54;
   border-radius: 2px;
-  background: transparent;
+  background: #171716;
   color: #d7d7ce;
   cursor: pointer;
   font-size: 18px;
@@ -139,10 +143,6 @@ button {
 .preview-sidebar.is-collapsed {
   align-items: stretch;
   padding: 12px 6px;
-}
-
-.preview-sidebar.is-collapsed .preview-sidebar-header {
-  justify-content: center;
 }
 
 .preview-sidebar.is-collapsed .preview-slide-header {

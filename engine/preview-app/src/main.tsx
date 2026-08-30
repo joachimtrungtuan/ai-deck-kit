@@ -168,18 +168,6 @@ function PreviewApp({ galleryHref, source }: { galleryHref?: string; source: Pre
             <p className="preview-label">Slides</p>
             <h1>{source.label}</h1>
           </div>
-          <button
-            aria-expanded={!sidebarCollapsed}
-            aria-label={sidebarCollapsed ? "Expand slide sidebar" : "Collapse slide sidebar"}
-            className="preview-sidebar-toggle"
-            onKeyDown={(event) => {
-              if (event.key === " " || event.key === "Enter") event.stopPropagation();
-            }}
-            onClick={toggleSidebar}
-            type="button"
-          >
-            {sidebarCollapsed ? "▸" : "◂"}
-          </button>
         </header>
         <nav aria-label="Slides">
           {slides.map((slide, index) => (
@@ -205,7 +193,21 @@ function PreviewApp({ galleryHref, source }: { galleryHref?: string; source: Pre
         className={`preview-sidebar-resizer${sidebarCollapsed ? " is-disabled" : ""}`}
         onPointerDown={startSidebarResize}
         role="separator"
-      />
+      >
+        <button
+          aria-expanded={!sidebarCollapsed}
+          aria-label={sidebarCollapsed ? "Expand slide sidebar" : "Collapse slide sidebar"}
+          className="preview-sidebar-toggle"
+          onKeyDown={(event) => {
+            if (event.key === " " || event.key === "Enter") event.stopPropagation();
+          }}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={toggleSidebar}
+          type="button"
+        >
+          {sidebarCollapsed ? "▸" : "◂"}
+        </button>
+      </div>
       <section className="preview-stage" aria-label={activeSlide.type}>
         <FixedSlideCanvas documentRef={frameDocumentRef} mountAgentation slide={activeSlide} slideIndex={activeSlideIndex} source={source} />
       </section>
