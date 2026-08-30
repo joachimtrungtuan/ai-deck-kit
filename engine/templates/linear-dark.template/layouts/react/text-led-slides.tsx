@@ -1,3 +1,4 @@
+import { renderRichText } from "../../../../primitives/blocks";
 import { LinearFrame, LinearList, LinearSmallLabel, LinearTextBlock, type LinearSlideProps } from "./shared";
 
 export function LinearTextStatementSlide(props: LinearSlideProps) {
@@ -19,9 +20,9 @@ export function LinearTextListSlide(props: LinearSlideProps) {
   return (
     <LinearFrame animation={props.animation}>
       <div className="ld-rule-top" style={{ gridColumn: "1 / 7", gridRow: "1 / 6" }}>
-        {props.kicker ? <LinearSmallLabel>{props.kicker}</LinearSmallLabel> : null}
-        <h1 className="ld-section-title">{props.title}</h1>
-        {props.body ? <p className="ld-body">{props.body}</p> : null}
+        {props.kicker ? <LinearSmallLabel>{renderRichText(props.kicker)}</LinearSmallLabel> : null}
+        <h1 className="ld-section-title">{renderRichText(props.title)}</h1>
+        {props.body ? <p className="ld-body">{renderRichText(props.body)}</p> : null}
       </div>
       <div style={{ gridColumn: "8 / 13", gridRow: "1 / 8" }}>
         <LinearList items={props.items} />
@@ -37,8 +38,8 @@ export function LinearTwoColumnTextSlide(props: LinearSlideProps) {
     <LinearFrame animation={props.animation}>
       <header style={{ gridColumn: "1 / 13", gridRow: "1 / 3" }}>
         <div className="ld-rule-top">
-          {props.kicker ? <LinearSmallLabel>{props.kicker}</LinearSmallLabel> : null}
-          <h1 className="ld-section-title">{props.title}</h1>
+          {props.kicker ? <LinearSmallLabel>{renderRichText(props.kicker)}</LinearSmallLabel> : null}
+          <h1 className="ld-section-title">{renderRichText(props.title)}</h1>
         </div>
       </header>
       <section className="ld-panel" style={{ gridColumn: "1 / 7", gridRow: "4 / 8", padding: "32px" }}>
@@ -72,7 +73,7 @@ export function LinearQuoteSlide(props: LinearSlideProps) {
         &ldquo;
       </span>
       <blockquote style={{ gridColumn: "2 / 12", gridRow: "2 / 7", margin: 0, zIndex: 1 }}>
-        <p className="ld-title ld-title-compact">{props.title}</p>
+        <p className="ld-title ld-title-compact">{renderRichText(props.title)}</p>
         {props.attribution ? <footer className="ld-kicker" style={{ marginTop: "var(--ld-space-3)" }}>{props.attribution}</footer> : null}
       </blockquote>
     </LinearFrame>
@@ -83,9 +84,9 @@ export function LinearNumberedFrameworkSlide(props: LinearSlideProps) {
   return (
     <LinearFrame animation={props.animation}>
       <div className="ld-rule-top" style={{ gridColumn: "1 / 5", gridRow: "1 / 8" }}>
-        <LinearSmallLabel>{props.kicker ?? "Framework"}</LinearSmallLabel>
-        <h1 className="ld-section-title">{props.title}</h1>
-        {props.body ? <p className="ld-body">{props.body}</p> : null}
+        <LinearSmallLabel>{renderRichText(props.kicker ?? "Framework")}</LinearSmallLabel>
+        <h1 className="ld-section-title">{renderRichText(props.title)}</h1>
+        {props.body ? <p className="ld-body">{renderRichText(props.body)}</p> : null}
       </div>
       <div style={{ gridColumn: "6 / 13", gridRow: "1 / 8" }}>
         <LinearList items={props.items} />

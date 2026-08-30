@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { renderRichText } from "../../../../primitives/blocks";
 import { LinearFrame, LinearIconTile, LinearSmallLabel, type LinearSlideProps } from "./shared";
 
 // Lightweight code rendering: line numbers + optional highlighted rows.
@@ -34,9 +35,9 @@ export function LinearCodeSnippetSlide(props: LinearSlideProps) {
   return (
     <LinearFrame animation={props.animation}>
       <div className="ld-rule-top" style={{ gridColumn: "1 / 6", gridRow: "1 / 8", alignSelf: "start" }}>
-        <LinearSmallLabel>{props.kicker ?? props.language ?? "Code"}</LinearSmallLabel>
-        <h1 className="ld-section-title" style={{ fontSize: "calc(var(--ld-type) * clamp(28px, 3vw, 48px))" }}>{props.title}</h1>
-        {props.body ? <p className="ld-body">{props.body}</p> : null}
+        <LinearSmallLabel>{renderRichText(props.kicker ?? props.language ?? "Code")}</LinearSmallLabel>
+        <h1 className="ld-section-title" style={{ fontSize: "calc(var(--ld-type) * clamp(28px, 3vw, 48px))" }}>{renderRichText(props.title)}</h1>
+        {props.body ? <p className="ld-body">{renderRichText(props.body)}</p> : null}
       </div>
       <div style={{ gridColumn: "6 / 13", gridRow: "1 / 9", display: "grid" }}>
         <CodeBlock code={props.code} highlightLines={props.highlightLines} label={props.caption ?? props.language} />
@@ -50,8 +51,8 @@ export function LinearTerminalOutputSlide(props: LinearSlideProps) {
   return (
     <LinearFrame animation={props.animation}>
       <header className="ld-rule-top" style={{ gridColumn: "1 / 6", gridRow: "1 / 4" }}>
-        <LinearSmallLabel>{props.kicker ?? "Terminal"}</LinearSmallLabel>
-        <h1 className="ld-section-title" style={{ fontSize: "calc(var(--ld-type) * clamp(28px, 3vw, 48px))" }}>{props.title}</h1>
+        <LinearSmallLabel>{renderRichText(props.kicker ?? "Terminal")}</LinearSmallLabel>
+        <h1 className="ld-section-title" style={{ fontSize: "calc(var(--ld-type) * clamp(28px, 3vw, 48px))" }}>{renderRichText(props.title)}</h1>
       </header>
       <div
         className="ld-panel"
@@ -81,8 +82,8 @@ export function LinearArchitectureOverviewSlide(props: LinearSlideProps) {
   return (
     <LinearFrame animation={props.animation ?? "line-draw"}>
       <header className="ld-rule-top" style={{ gridColumn: "1 / 13", gridRow: "1 / 3" }}>
-        <LinearSmallLabel>{props.kicker ?? "Architecture"}</LinearSmallLabel>
-        <h1 className="ld-section-title" style={{ fontSize: "calc(var(--ld-type) * clamp(28px, 3vw, 48px))" }}>{props.title}</h1>
+        <LinearSmallLabel>{renderRichText(props.kicker ?? "Architecture")}</LinearSmallLabel>
+        <h1 className="ld-section-title" style={{ fontSize: "calc(var(--ld-type) * clamp(28px, 3vw, 48px))" }}>{renderRichText(props.title)}</h1>
       </header>
       <div className="ld-panel" style={{ gridColumn: "1 / 13", gridRow: "3 / 8", padding: "40px", display: "grid", placeItems: "center" }}>
         {props.children ?? (
@@ -94,7 +95,7 @@ export function LinearArchitectureOverviewSlide(props: LinearSlideProps) {
                   style={{ flexDirection: "column", gap: "10px", padding: "20px", animationDelay: `calc(var(--ld-stagger) * ${i})` }}
                 >
                   <LinearIconTile name={item.icon} />
-                  {item.title}
+                  {renderRichText(item.title)}
                 </span>
                 {i < arr.length - 1 ? (
                   <span className="ld-connector ld-anim-gentle-rise" style={{ maxWidth: "72px", animationDelay: `calc(var(--ld-stagger) * ${i} + 40ms)` }} />
@@ -109,7 +110,7 @@ export function LinearArchitectureOverviewSlide(props: LinearSlideProps) {
           {props.items.slice(0, 4).map((item, i) => (
             <div key={`${i}-${item.title}`}>
               <dt>Component {String(i + 1).padStart(2, "0")}</dt>
-              <dd>{item.title}</dd>
+              <dd>{renderRichText(item.title)}</dd>
             </div>
           ))}
         </div>
@@ -123,8 +124,8 @@ export function LinearDataFlowSlide(props: LinearSlideProps) {
   return (
     <LinearFrame animation={props.animation}>
       <header className="ld-rule-top" style={{ gridColumn: "1 / 8", gridRow: "1 / 4" }}>
-        <LinearSmallLabel>{props.kicker ?? "Data Flow"}</LinearSmallLabel>
-        <h1 className="ld-section-title" style={{ fontSize: "calc(var(--ld-type) * clamp(28px, 3vw, 48px))" }}>{props.title}</h1>
+        <LinearSmallLabel>{renderRichText(props.kicker ?? "Data Flow")}</LinearSmallLabel>
+        <h1 className="ld-section-title" style={{ fontSize: "calc(var(--ld-type) * clamp(28px, 3vw, 48px))" }}>{renderRichText(props.title)}</h1>
       </header>
       <div className="ld-anim-staggered-list" style={{ gridColumn: "1 / 13", gridRow: "4 / 8", display: "grid", gap: "10px", alignContent: "start", alignSelf: "start" }}>
         {steps.map((s, i) => (

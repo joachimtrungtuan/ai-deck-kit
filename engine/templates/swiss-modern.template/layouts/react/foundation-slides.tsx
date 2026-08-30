@@ -1,3 +1,4 @@
+import { renderRichText } from "../../../../primitives/blocks";
 import { SwissFrame, SwissList, SwissSmallLabel, SwissTextBlock, type SwissSlideProps } from "./shared";
 
 export function SwissTitleSlide(props: SwissSlideProps) {
@@ -35,8 +36,8 @@ export function SwissSectionDividerSlide(props: SwissSlideProps) {
         <p className="swiss-number">{props.index ?? "01"}</p>
       </div>
       <div className="swiss-rule-top" style={{ gridColumn: "5 / 13", gridRow: "2 / 8" }}>
-        <h1 className="swiss-section-title swiss-title-emphasis">{props.title}</h1>
-        {props.body ? <p className="swiss-body">{props.body}</p> : null}
+        <h1 className="swiss-section-title swiss-title-emphasis">{renderRichText(props.title)}</h1>
+        {props.body ? <p className="swiss-body">{renderRichText(props.body)}</p> : null}
       </div>
     </SwissFrame>
   );

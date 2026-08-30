@@ -1,3 +1,4 @@
+import { renderRichText } from "../../../../primitives/blocks";
 import { LinearFrame, LinearList, LinearTextBlock, type LinearSlideProps } from "./shared";
 
 export function LinearTitleSlide(props: LinearSlideProps) {
@@ -32,8 +33,8 @@ export function LinearSectionDividerSlide(props: LinearSlideProps) {
         <p className="ld-number">{props.index ?? "01"}</p>
       </div>
       <div className="ld-rule-top" style={{ gridColumn: "5 / 13", gridRow: "2 / 8" }}>
-        <h1 className="ld-section-title">{props.title}</h1>
-        {props.body ? <p className="ld-body">{props.body}</p> : null}
+        <h1 className="ld-section-title">{renderRichText(props.title)}</h1>
+        {props.body ? <p className="ld-body">{renderRichText(props.body)}</p> : null}
         <div className="ld-progress-bar ld-anim-line-draw" style={{ marginTop: "var(--ld-space-4)", maxWidth: "240px" }} />
       </div>
     </LinearFrame>

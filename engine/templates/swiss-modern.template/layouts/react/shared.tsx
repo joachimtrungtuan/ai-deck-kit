@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ImageBlock, TitleDescriptionBlock } from "../../../../primitives/blocks";
+import { ImageBlock, TitleDescriptionBlock, renderRichText } from "../../../../primitives/blocks";
 
 // Canonical v2 list/card entry (content-schema-v2). Every layout consumes list
 // data through one `items[]` prop of these; two-column layouts filter on
@@ -41,7 +41,7 @@ export function SwissFrame({ children, animation = "gentle-rise" }: { children: 
 export function SwissTextBlock({ kicker, title, body }: Pick<SwissSlideProps, "kicker" | "title" | "body">) {
   return (
     <div className="swiss-rule-top">
-      {kicker ? <p className="swiss-kicker">{kicker}</p> : null}
+      {kicker ? <p className="swiss-kicker">{renderRichText(kicker)}</p> : null}
       <TitleDescriptionBlock className="swiss-template-title-block" block={{ id: "title", title, description: body }} />
     </div>
   );
@@ -54,8 +54,8 @@ export function SwissList({ items = [] }: { items?: SlideItem[] }) {
         <li key={`${itemIndex}-${item.title}`}>
           <span className="swiss-index">{String(itemIndex + 1).padStart(2, "0")}</span>
           <span>
-            {item.title}
-            {item.description ? <span className="swiss-body" style={{ display: "block" }}>{item.description}</span> : null}
+            {renderRichText(item.title)}
+            {item.description ? <span className="swiss-body" style={{ display: "block" }}>{renderRichText(item.description)}</span> : null}
           </span>
         </li>
       ))}

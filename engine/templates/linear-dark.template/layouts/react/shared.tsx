@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from "react";
-import { ImageBlock, TitleDescriptionBlock } from "../../../../primitives/blocks";
+import { ImageBlock, TitleDescriptionBlock, renderRichText } from "../../../../primitives/blocks";
 import * as PhosphorIcons from "@phosphor-icons/react";
 
 // Canonical v2 list/card entry (content-schema-v2). Every layout consumes list
@@ -122,7 +122,7 @@ export function LinearFrame({ children, animation = "gentle-rise" }: { children:
 export function LinearTextBlock({ kicker, title, body }: Pick<LinearSlideProps, "kicker" | "title" | "body">) {
   return (
     <div className="ld-rule-top">
-      {kicker ? <p className="ld-kicker ld-kicker-dot">{kicker}</p> : null}
+      {kicker ? <p className="ld-kicker ld-kicker-dot">{renderRichText(kicker)}</p> : null}
       <TitleDescriptionBlock className="ld-template-title-block" block={{ id: "title", title, description: body }} />
     </div>
   );
@@ -143,8 +143,8 @@ export function LinearList({
         <li key={`${itemIndex}-${item.title}`}>
           <span className="ld-index">{String(itemIndex + 1).padStart(2, "0")}</span>
           <span style={itemTextStyle}>
-            {item.title}
-            {item.description ? <span className="ld-body" style={{ display: "block", fontWeight: 400 }}>{item.description}</span> : null}
+            {renderRichText(item.title)}
+            {item.description ? <span className="ld-body" style={{ display: "block", fontWeight: 400 }}>{renderRichText(item.description)}</span> : null}
           </span>
         </li>
       ))}

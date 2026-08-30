@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { renderRichText } from "../../../../primitives/blocks";
 import { LinearFrame, LinearIconTile, LinearList, LinearSmallLabel, type LinearSlideProps } from "./shared";
 
 export function LinearProcessFlowSlide(props: LinearSlideProps) {
@@ -6,9 +7,9 @@ export function LinearProcessFlowSlide(props: LinearSlideProps) {
   return (
     <LinearFrame animation={props.animation ?? "line-draw"}>
       <header className="ld-rule-top" style={{ gridColumn: "1 / 8", gridRow: "1 / 4" }}>
-        <LinearSmallLabel>{props.kicker ?? "Process"}</LinearSmallLabel>
-        <h1 className="ld-section-title">{props.title}</h1>
-        {props.body ? <p className="ld-body">{props.body}</p> : null}
+        <LinearSmallLabel>{renderRichText(props.kicker ?? "Process")}</LinearSmallLabel>
+        <h1 className="ld-section-title">{renderRichText(props.title)}</h1>
+        {props.body ? <p className="ld-body">{renderRichText(props.body)}</p> : null}
       </header>
       <div style={{ gridColumn: "1 / 13", gridRow: "5 / 8", display: "flex", alignItems: "stretch", gap: "16px" }}>
         {steps.map((item, i) => (
@@ -21,7 +22,7 @@ export function LinearProcessFlowSlide(props: LinearSlideProps) {
                 <LinearIconTile name={item.icon} />
                 <span className="ld-index" style={{ color: "var(--ld-accent)" }}>{String(i + 1).padStart(2, "0")}</span>
               </div>
-              <p className="ld-body" style={{ color: "var(--ld-ink)", fontWeight: 500, alignSelf: "stretch" }}>{item.title}</p>
+              <p className="ld-body" style={{ color: "var(--ld-ink)", fontWeight: 500, alignSelf: "stretch" }}>{renderRichText(item.title)}</p>
             </div>
             {i < steps.length - 1 ? (
               <span
@@ -45,8 +46,8 @@ export function LinearBeforeAfterSlide(props: LinearSlideProps) {
   return (
     <LinearFrame animation={props.animation}>
       <header className="ld-rule-top" style={{ gridColumn: "1 / 10", gridRow: "1 / 4" }}>
-        <LinearSmallLabel>{props.kicker ?? "Before / After"}</LinearSmallLabel>
-        <h1 className="ld-section-title">{props.title}</h1>
+        <LinearSmallLabel>{renderRichText(props.kicker ?? "Before / After")}</LinearSmallLabel>
+        <h1 className="ld-section-title">{renderRichText(props.title)}</h1>
       </header>
       <section className="ld-panel" style={{ gridColumn: "1 / 6", gridRow: "4 / 8", padding: "24px 32px" }}>
         <LinearSmallLabel>{props.leftTitle ?? "Before"}</LinearSmallLabel>
@@ -76,9 +77,9 @@ export function LinearUiShowcaseSlide(props: LinearSlideProps) {
         </div>
       </div>
       <aside className="ld-rule-top" style={{ gridColumn: "8 / 13", gridRow: "2 / 8" }}>
-        <LinearSmallLabel>{props.kicker ?? "UI"}</LinearSmallLabel>
-        <h1 className="ld-section-title">{props.title}</h1>
-        {props.body ? <p className="ld-body">{props.body}</p> : null}
+        <LinearSmallLabel>{renderRichText(props.kicker ?? "UI")}</LinearSmallLabel>
+        <h1 className="ld-section-title">{renderRichText(props.title)}</h1>
+        {props.body ? <p className="ld-body">{renderRichText(props.body)}</p> : null}
         <LinearList items={props.items} />
       </aside>
     </LinearFrame>
@@ -90,9 +91,9 @@ export function LinearTimelineSlide(props: LinearSlideProps) {
   return (
     <LinearFrame animation={props.animation}>
       <header className="ld-rule-top" style={{ gridColumn: "1 / 8", gridRow: "1 / 4" }}>
-        <LinearSmallLabel>{props.kicker ?? "Timeline"}</LinearSmallLabel>
-        <h1 className="ld-section-title">{props.title}</h1>
-        {props.body ? <p className="ld-body">{props.body}</p> : null}
+        <LinearSmallLabel>{renderRichText(props.kicker ?? "Timeline")}</LinearSmallLabel>
+        <h1 className="ld-section-title">{renderRichText(props.title)}</h1>
+        {props.body ? <p className="ld-body">{renderRichText(props.body)}</p> : null}
       </header>
       <div style={{ gridColumn: "1 / 13", gridRow: "5 / 8", display: "flex", alignItems: "flex-start", gap: "0" }}>
         {items.map((item, i) => (
@@ -104,7 +105,7 @@ export function LinearTimelineSlide(props: LinearSlideProps) {
             <div style={{ display: "grid", gap: "10px" }}>
               <LinearIconTile name={item.icon} />
               <span className="ld-index" style={{ color: "var(--ld-accent)" }}>{String(i + 1).padStart(2, "0")}</span>
-              <p className="ld-body" style={{ color: "var(--ld-ink)", fontWeight: 500, maxWidth: "18ch" }}>{item.title}</p>
+              <p className="ld-body" style={{ color: "var(--ld-ink)", fontWeight: 500, maxWidth: "18ch" }}>{renderRichText(item.title)}</p>
             </div>
           </div>
         ))}
