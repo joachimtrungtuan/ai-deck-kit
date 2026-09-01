@@ -77,7 +77,7 @@ test("an edited engine is reported once an installer has recorded one", () => {
   const workspace = fixtureWorkspace();
   writeTemplate(join(workspace.engineRoot, "templates", "sample.template"));
   writeEngineIntegrityManifest(workspace.engineRoot);
-  writeFileSync(join(workspace.engineRoot, "templates", "sample.template", "design-system.css"), ".sample-deck { color: red }\n");
+  writeFileSync(join(workspace.engineRoot, "templates", "sample.template", "design-system.css"), ".sample-deck { color: red; --deck-motion-ease: cubic-bezier(0.22, 1, 0.36, 1); --deck-motion-base: 480ms; }\n");
 
   const errors = verifyWorkspace(workspace).errors;
   assert.equal(errors.length, 1);
@@ -88,7 +88,7 @@ test("an edited engine is reported once an installer has recorded one", () => {
 test("an engine with no integrity manifest is not checked — that is the kit's own repository", () => {
   const workspace = fixtureWorkspace();
   writeTemplate(join(workspace.engineRoot, "templates", "sample.template"));
-  writeFileSync(join(workspace.engineRoot, "templates", "sample.template", "design-system.css"), ".sample-deck { color: red }\n");
+  writeFileSync(join(workspace.engineRoot, "templates", "sample.template", "design-system.css"), ".sample-deck { color: red; --deck-motion-ease: cubic-bezier(0.22, 1, 0.36, 1); --deck-motion-base: 480ms; }\n");
 
   assert.deepEqual(verifyWorkspace(workspace).errors, []);
 });
@@ -241,7 +241,7 @@ function writeTemplate(root: string, name = "sample"): void {
     supportedSlideTypes: ["title"],
   };
   writeFileSync(join(root, "template-manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
-  writeFileSync(join(root, "design-system.css"), `.${name}-deck {}\n`);
+  writeFileSync(join(root, "design-system.css"), `.${name}-deck { --deck-motion-ease: cubic-bezier(0.22, 1, 0.36, 1); --deck-motion-base: 480ms; }\n`);
   writeFileSync(join(root, "animation-presets.css"), `.${name}-enter {}\n`);
   writeFileSync(join(root, "icon-policy.md"), "# Icon policy\n\nUse Phosphor icons.\n");
   writeFileSync(join(root, "layouts", "layout-index.json"), `${JSON.stringify({ title: { component: "SampleTitle", source: "title.tsx" } }, null, 2)}\n`);

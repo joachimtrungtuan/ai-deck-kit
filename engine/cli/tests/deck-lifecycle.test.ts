@@ -270,7 +270,7 @@ function writeTemplate(root: string, displayName: string, name = "sample"): void
     supportedSlideTypes: ["title"],
   };
   writeFileSync(join(root, "template-manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
-  writeFileSync(join(root, "design-system.css"), `.${name}-deck {}\n`);
+  writeFileSync(join(root, "design-system.css"), `.${name}-deck { --deck-motion-ease: cubic-bezier(0.22, 1, 0.36, 1); --deck-motion-base: 480ms; }\n`);
   writeFileSync(join(root, "animation-presets.css"), `.${name}-enter {}\n`);
   writeFileSync(join(root, "icon-policy.md"), "# Icon policy\n\nUse Phosphor icons.\n");
   writeFileSync(join(root, "layouts", "layout-index.json"), `${JSON.stringify({ title: { component: "SampleTitle", source: "title.tsx" } }, null, 2)}\n`);

@@ -24,6 +24,7 @@
   --swiss-rule: 1px solid var(--swiss-line);
   --swiss-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --swiss-duration-base: 520ms;
+  --swiss-duration-slow: 760ms;
 }
 
 .swiss-deck {
@@ -51,6 +52,7 @@
   --deck-shadow: none;
   --deck-motion-ease: var(--swiss-ease);
   --deck-motion-base: var(--swiss-duration-base);
+  --deck-motion-slow: var(--swiss-duration-slow);
   --deck-code-ink: var(--swiss-ink);
   background: var(--swiss-bg);
   color: var(--swiss-ink);

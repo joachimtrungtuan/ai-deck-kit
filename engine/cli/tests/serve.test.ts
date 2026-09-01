@@ -7,7 +7,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { buildServeViteArgs, parseServeArgs } from "../commands/output.ts";
-import { createTemplate, listTemplates, migrateLegacyRegisteredTemplates, resolveTemplate, validateTemplateManifest, type TemplateManifest } from "../lib/templates.ts";
+import { createTemplate, listTemplates, migrateLegacyRegisteredTemplates, resolveTemplate, validateMotionTokens, validateTemplateManifest, type TemplateManifest } from "../lib/templates.ts";
 import type { Workspace } from "../lib/types.ts";
 import { resolveFontImports } from "../lib/font-catalog.ts";
 import { inlineDeckAssets, resolveGeneratedTemplateImport, templatePreviewSlideId } from "../../preview-app/vite-deck-plugin.ts";
@@ -468,12 +468,47 @@ test("new template scaffolds declare and scope their preview deck class", () => 
   const manifest = JSON.parse(readFileSync(join(root, "template-manifest.json"), "utf8"));
   assert.equal(manifest.deckClass, "new-template-deck");
   assert.equal(manifest.slideTypeCatalog, "v2");
-  assert.match(readFileSync(join(root, "design-system.css"), "utf8"), /^\.new-template-deck \{/);
+  const scaffoldCss = readFileSync(join(root, "design-system.css"), "utf8");
+  assert.match(scaffoldCss, /^\.new-template-deck \{/);
+  // The scaffold manifest advertises every element animation, so the tokens the engine reads
+  // must be seeded with it — a bundle missing them renders no motion at all.
+  assert.deepEqual(validateMotionTokens(root), []);
+  assert.match(scaffoldCss, /--deck-motion-base:/);
+  assert.match(scaffoldCss, /--deck-motion-ease:/);
   const guidance = readFileSync(join(root, "schema-guidance.md"), "utf8");
   assert.match(guidance, /template-manifest\.json/);
   assert.match(guidance, /layouts\/specs\/layout-contracts\.md/);
   assert.match(guidance, /engine\/schemas\/content-schema-guidance\.md/);
   assert.match(guidance, /never\nchange only a version field/);
+});
+
+test("motion token validation rejects the two ways a template silently loses animation", () => {
+  const root = mkdtempSync(join(tmpdir(), "aideck-motion-test-"));
+
+  // A template that defines no motion tokens: the engine's var() fallbacks keep it animating,
+  // but the bundle is still misdeclared and must not ship that way.
+  writeFileSync(join(root, "design-system.css"), ".sample-deck { color: red }\n");
+  assert.match(validateMotionTokens(root).join("\n"), /Missing motion token --deck-motion-base/);
+  assert.match(validateMotionTokens(root).join("\n"), /Missing motion token --deck-motion-ease/);
+
+  // A bridge pointing at tokens no CSS defines: the declaration is invalid at computed-value
+  // time, so `animation` degrades to none with nothing in the console to say so.
+  writeFileSync(join(root, "design-system.css"), ".sample-deck {\n  --deck-motion-base: var(--gone-base);\n  --deck-motion-ease: var(--gone-ease);\n}\n");
+  const dangling = validateMotionTokens(root).join("\n");
+  assert.match(dangling, /--deck-motion-base references --gone-base/);
+  assert.match(dangling, /--deck-motion-ease references --gone-ease/);
+
+  // A definition living in a sibling stylesheet still counts: the check reads the whole bundle.
+  writeFileSync(join(root, "tokens.css"), ".sample-deck { --gone-base: 480ms; --gone-ease: ease; }\n");
+  assert.deepEqual(validateMotionTokens(root), []);
+
+  rmSync(root, { recursive: true, force: true });
+});
+
+test("the shipped templates define the motion tokens their bridge points at", () => {
+  for (const name of ["linear-dark", "swiss-modern"]) {
+    assert.deepEqual(validateMotionTokens(join(projectRoot, "engine", "templates", `${name}.template`)), [], name);
+  }
 });
 
 test("upgrade rescues templates the old layout left inside the engine", () => {
@@ -590,7 +625,7 @@ function writeTemplate(root: string, displayName: string, name = "sample"): void
   const manifest = fixtureManifest(displayName);
   manifest.name = name;
   writeFileSync(join(root, "template-manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
-  writeFileSync(join(root, "design-system.css"), ".sample-deck {}\n");
+  writeFileSync(join(root, "design-system.css"), ".sample-deck { --deck-motion-ease: cubic-bezier(0.22, 1, 0.36, 1); --deck-motion-base: 480ms; }\n");
   writeFileSync(join(root, "animation-presets.css"), ".sample-enter {}\n");
   writeFileSync(join(root, "icon-policy.md"), "# Icon policy\n\nUse Phosphor icons.\n");
   writeFileSync(join(root, "layouts", "layout-index.json"), `${JSON.stringify({ title: { component: "SampleTitle", source: "title.tsx" } }, null, 2)}\n`);

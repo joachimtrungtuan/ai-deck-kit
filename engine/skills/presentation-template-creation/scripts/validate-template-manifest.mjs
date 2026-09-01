@@ -91,6 +91,29 @@ if (manifest.layoutVariants !== undefined) {
   }
 }
 
+// The engine's element animations resolve --deck-motion-base and --deck-motion-ease (plus the
+// optional --deck-motion-slow tier) and ship no template-side CSS. A bridge pointing at a token the
+// bundle never defines makes the whole `animation` declaration invalid at computed-value time, so
+// every animation degrades to none while the manifest still advertises them.
+const designSystemPath = path.join(path.dirname(file), "design-system.css");
+if (fs.existsSync(designSystemPath)) {
+  const css = collectBundleCss(path.dirname(file));
+  const defined = new Set(Array.from(css.matchAll(/(--[a-z0-9-]+)\s*:/gi), (match) => match[1]));
+  for (const token of ["--deck-motion-base", "--deck-motion-ease"]) {
+    if (!defined.has(token)) {
+      errors.push(`Missing motion token ${token}: the engine cannot animate a template that does not define it.`);
+    }
+  }
+  for (const [, token, value] of css.matchAll(/(--deck-motion-[a-z-]+)\s*:\s*([^;}]+)/gi)) {
+    // Only a var() without a fallback can leave the declaration unresolvable.
+    for (const [, referenced] of value.matchAll(/var\(\s*(--[a-z0-9-]+)\s*\)/gi)) {
+      if (!defined.has(referenced)) {
+        errors.push(`${token} references ${referenced}, which no CSS in this template defines.`);
+      }
+    }
+  }
+}
+
 if (manifest.backgroundVariants !== undefined) {
   if (!Array.isArray(manifest.backgroundVariants) || manifest.backgroundVariants.length === 0) {
     errors.push("backgroundVariants must include at least one variant.");
@@ -106,6 +129,14 @@ if (errors.length) {
 }
 
 console.log(`Template manifest is valid: ${path.relative(process.cwd(), file)}`);
+
+function collectBundleCss(root) {
+  return fs
+    .readdirSync(root, { recursive: true })
+    .filter((entry) => typeof entry === "string" && entry.endsWith(".css"))
+    .map((entry) => fs.readFileSync(path.join(root, entry), "utf8"))
+    .join("\n");
+}
 
 function readJson(target) {
   try {

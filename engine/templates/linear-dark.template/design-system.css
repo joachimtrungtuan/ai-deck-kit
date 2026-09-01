@@ -50,8 +50,16 @@
   --ld-radius: 10px;
   --ld-radius-sm: 6px;
   --ld-rule: 1px solid var(--ld-line);
+
+  /* Motion — the template owns its timing and easing; the engine reads only the --deck-motion-*
+     bridge below. These are the values Linear Dark shipped before animation CSS moved into the
+     engine, restored here because the bridge previously pointed at tokens that no longer existed. */
+  --ld-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ld-duration-base: 480ms;
+  --ld-duration-slow: 700ms;
   --deck-motion-ease: var(--ld-ease);
   --deck-motion-base: var(--ld-duration-base);
+  --deck-motion-slow: var(--ld-duration-slow);
 
   background: var(--ld-bg);
   color: var(--ld-ink);

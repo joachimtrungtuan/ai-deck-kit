@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, renameSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { readJson, writeJson, writeText } from "./fs.js";
 import { fontCatalogNames, unknownFontFamilies } from "./font-catalog.js";
@@ -84,6 +84,7 @@ export function validateTemplateBundle(root, manifest = readJson(join(root, "tem
     if (!existsSync(join(root, "icon-policy.md")))
         errors.push("Missing icon-policy.md.");
     errors.push(...validatePreviewProps(root));
+    errors.push(...validateMotionTokens(root));
     return errors;
 }
 /**
@@ -98,6 +99,35 @@ export function validatePreviewProps(root) {
     if (!declared || typeof declared !== "object" || Array.isArray(declared))
         return ["preview-props.json must be a JSON object keyed by prop name."];
     return [];
+}
+/**
+ * The engine's element animations resolve --deck-motion-base and --deck-motion-ease (plus the
+ * optional --deck-motion-slow tier) and ship no template-side CSS. A bridge that points at a token
+ * the bundle never defines makes the whole `animation` declaration invalid at computed-value time,
+ * so every animation degrades to none while the manifest still advertises them. That failure is
+ * invisible in a manifest check, so it is caught here against the bundle's own CSS.
+ */
+export function validateMotionTokens(root) {
+    if (!existsSync(join(root, "design-system.css")))
+        return [];
+    const css = readdirSync(root, { recursive: true })
+        .filter((entry) => typeof entry === "string" && entry.endsWith(".css"))
+        .map((entry) => readFileSync(join(root, entry), "utf8"))
+        .join("\n");
+    const errors = [];
+    const defined = new Set(Array.from(css.matchAll(/(--[a-z0-9-]+)\s*:/gi), (match) => match[1]));
+    for (const token of ["--deck-motion-base", "--deck-motion-ease"]) {
+        if (!defined.has(token))
+            errors.push(`Missing motion token ${token}: the engine cannot animate a template that does not define it.`);
+    }
+    for (const [, token, value] of css.matchAll(/(--deck-motion-[a-z-]+)\s*:\s*([^;}]+)/gi)) {
+        // Only a var() without a fallback can leave the declaration unresolvable.
+        for (const [, referenced] of value.matchAll(/var\(\s*(--[a-z0-9-]+)\s*\)/gi)) {
+            if (!defined.has(referenced))
+                errors.push(`${token} references ${referenced}, which no CSS in this template defines.`);
+        }
+    }
+    return errors;
 }
 export function validateTemplateManifest(manifest) {
     const errors = [];
@@ -174,7 +204,9 @@ export function createTemplate(workspace, name) {
         supportedSlideTypes: ["title", "section-divider", "closing", "text-statement"],
     };
     writeJson(join(target, "template-manifest.json"), manifest);
-    writeText(join(target, "design-system.css"), `.${name}-deck {\n  /* Add template design tokens here. */\n}\n`);
+    // The motion tokens are seeded because the manifest above advertises every element animation:
+    // a bundle that declares them without defining these renders no motion at all.
+    writeText(join(target, "design-system.css"), `.${name}-deck {\n  /* Add template design tokens here. */\n\n  /* Motion — the engine reads these three tokens and nothing else. Tune the values;\n     never ship template-side animation CSS. */\n  --deck-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);\n  --deck-motion-base: 480ms;\n  --deck-motion-slow: 760ms;\n}\n`);
     writeText(join(target, "icon-policy.md"), "# Icon policy\n\nUse the Phosphor icon family.\n");
     writeTemplateSchemaGuidance(target, manifest);
     // Fixtures this template's preview slides need beyond the engine defaults. Adding a key here is

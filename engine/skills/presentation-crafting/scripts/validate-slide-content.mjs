@@ -309,7 +309,7 @@ function validateContentV2({ manifest, content, templateManifest, manifestSlides
     if (typeof metadata.animation === "string" && !elementAnimationCatalogV1.has(metadata.animation)) {
       errors.push(`${label}: animation "${metadata.animation}" is not in element-animation catalog v1.`);
     }
-    if (templateManifest?.supportedAnimations && !templateManifest.supportedAnimations.includes(metadata.animation)) {
+    if (typeof metadata.animation === "string" && templateManifest?.supportedAnimations && !templateManifest.supportedAnimations.includes(metadata.animation)) {
       errors.push(`${label}: animation "${metadata.animation}" is not supported by template "${templateManifest.name}".`);
     }
 
@@ -375,7 +375,11 @@ function validateContentV2({ manifest, content, templateManifest, manifestSlides
     }
 
     // Morph anchors walk the whole metadata object recursively, mirroring the v2 parser's collectMorphAnchors.
-    slideMorphAnchors.push({ label, anchors: v2CollectMorphAnchors(metadata) });
+    const morphAnchors = v2CollectMorphAnchors(metadata);
+    if (metadata.animation === "morph" && morphAnchors.length === 0) {
+      errors.push(`${label}: animation "morph" requires a morph anchor.`);
+    }
+    slideMorphAnchors.push({ label, anchors: morphAnchors });
 
     if (!/^### Speaker Notes/m.test(block)) {
       errors.push(`${label}: missing ### Speaker Notes section.`);

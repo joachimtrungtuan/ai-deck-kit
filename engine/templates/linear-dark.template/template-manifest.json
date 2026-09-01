@@ -2,7 +2,7 @@
   "name": "linear-dark",
   "displayName": "Linear Dark",
   "deckClass": "ld-deck",
-  "templateVersion": "3.0.0",
+  "templateVersion": "3.1.0",
   "contentSchemaVersion": "2.0.0",
   "slideTypeCatalog": "v2",
   "blockCatalog": "v1",
