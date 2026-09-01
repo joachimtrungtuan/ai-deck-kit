@@ -8,7 +8,7 @@ Templates provide these aliases on their deck root. Primitive components consume
 | Type | `--deck-font-display`, `--deck-font-body`, `--deck-font-mono` |
 | Spacing | `--deck-space-1` through `--deck-space-7` |
 | Shape | `--deck-radius`, `--deck-radius-sm`, `--deck-stroke`, `--deck-shadow` |
-| Motion | `--deck-motion-ease`, `--deck-motion-base` |
+| Motion | `--deck-motion-ease`, `--deck-motion-base`, optional `--deck-motion-slow` (expansive effects; falls back to `--deck-motion-base`) |
 | Code | `--deck-code-ink` |
 
 Values remain the template’s responsibility. A template can map existing prefixed values to these aliases without changing its design system.

@@ -66,7 +66,7 @@ One place: the project's `templates/{name}.template/`. `engine/templates/` holds
 
 `deckClass` is the template-scoped CSS class applied by the shared preview runtime. New scaffolds set it to `<template-name>-deck`; older templates without the field fall back to the first `*-deck` selector in `design-system.css`.
 
-Element animations are engine-owned `primitive-anim-*` classes. Templates declare their supported names and tune them with `--deck-motion-base` and `--deck-motion-ease`; an `animation-presets.css` file is optional.
+Element animations are engine-owned `primitive-anim-*` classes. Templates declare their supported names and tune them with `--deck-motion-base`, `--deck-motion-ease`, and the optional `--deck-motion-slow` tier; they ship no animation CSS of their own.
 
 ## Controlled Overrides
 
