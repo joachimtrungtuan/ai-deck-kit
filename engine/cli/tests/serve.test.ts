@@ -248,6 +248,15 @@ test("manifest deck sources use unified item metadata and expose overrides", () 
   assert.match(source, /stats: arrayMeta\(metadata, "stats"\)/);
   assert.match(source, /regionSeries: arrayMeta\(metadata, "regionSeries"\)/);
   assert.match(source, /index: numberMeta\(metadata, "index"\)/);
+  assert.match(source, /commands: arrayMeta<\{ prompt: string; output\?: string \}>\(metadata, "commands"\)/);
+  assert.match(source, /flowSteps: arrayMeta<\{ from: string; to: string; label: string; icon\?: string \}>\(metadata, "flowSteps"\)/);
+  assert.match(source, /method: textMeta\(metadata, "method"\)/);
+  assert.match(source, /path: textMeta\(metadata, "path"\)/);
+  assert.match(source, /requestExample: textMeta\(metadata, "requestExample"\)/);
+  assert.match(source, /responseExample: textMeta\(metadata, "responseExample"\)/);
+  assert.match(source, /context: textMeta\(metadata, "context"\)/);
+  assert.match(source, /decision: textMeta\(metadata, "decision"\)/);
+  assert.match(source, /consequences: arrayMeta<string>\(metadata, "consequences"\)/);
   assert.match(source, /collectMorphAnchors\(metadata\)/);
   assert.match(source, /parseYaml\(yamlText\)/);
   assert.doesNotMatch(source, /section\.title|On-Slide Text/);
@@ -458,6 +467,7 @@ test("new template scaffolds declare and scope their preview deck class", () => 
   const root = createTemplate(workspace, "new-template");
   const manifest = JSON.parse(readFileSync(join(root, "template-manifest.json"), "utf8"));
   assert.equal(manifest.deckClass, "new-template-deck");
+  assert.equal(manifest.slideTypeCatalog, "v2");
   assert.match(readFileSync(join(root, "design-system.css"), "utf8"), /^\.new-template-deck \{/);
   const guidance = readFileSync(join(root, "schema-guidance.md"), "utf8");
   assert.match(guidance, /template-manifest\.json/);

@@ -2,14 +2,17 @@
 // documented named, versioned profile a template may declare for its own narrower use case
 // (template-system.md, "Rules" item 3) must both pass; anything else must still be rejected.
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { verifyWorkspace } from "../commands/verify.ts";
 import { createDeck } from "../lib/deck.ts";
 import type { TemplateManifest } from "../lib/templates.ts";
 import type { Workspace } from "../lib/types.ts";
+
+const projectRoot = fileURLToPath(new URL("../../..", import.meta.url));
 
 test("a deck using its own template's named catalog profile is not flagged unsupported", () => {
   const workspace = fixtureWorkspace();
@@ -43,6 +46,26 @@ test("content schema verification rejects malformed versions", () => {
 
   const report = verifyWorkspace(workspace);
   assert.ok(report.errors.some((error) => /talk\.deck: unsupported content schema 1abc\.0\.0/.test(error)));
+});
+
+test("verify accepts v2 decks created from both shipped templates", () => {
+  const root = mkdtempSync(join(tmpdir(), "aideck-shipped-v2-catalog-test-"));
+  const workspace: Workspace = {
+    root,
+    engineRoot: join(projectRoot, "engine"),
+    decksRoot: join(root, "decks"),
+    pointerPath: join(root, "ai-deck-kit.json"),
+    pointer: { engineRoot: join(projectRoot, "engine"), decksRoot: "decks", engineVersion: "1.0.2" },
+  };
+  try {
+    mkdirSync(workspace.decksRoot, { recursive: true });
+    for (const template of ["linear-dark", "swiss-modern"]) createDeck(workspace, `${template}-v2`, template);
+
+    const report = verifyWorkspace(workspace);
+    assert.deepEqual(report.errors, []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 function fixtureWorkspace(): Workspace {
