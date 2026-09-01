@@ -502,6 +502,34 @@ test("motion token validation rejects the two ways a template silently loses ani
   writeFileSync(join(root, "tokens.css"), ".sample-deck { --gone-base: 480ms; --gone-ease: ease; }\n");
   assert.deepEqual(validateMotionTokens(root), []);
 
+  // A fallback chain is not a dangling reference: var(--a, var(--b)) reaches --b only when --a is
+  // undefined, and a literal fallback resolves the declaration on its own.
+  rmSync(join(root, "tokens.css"));
+  writeFileSync(join(root, "design-system.css"), ".sample-deck {\n  --kept-base: 480ms;\n  --deck-motion-base: var(--kept-base, var(--gone-base));\n  --deck-motion-ease: var(--gone-ease, ease);\n}\n");
+  assert.deepEqual(validateMotionTokens(root), []);
+
+  rmSync(root, { recursive: true, force: true });
+});
+
+// The skill ships a standalone, dependency-free copy of this check so agents can run it without the
+// built CLI. Nothing but this test stops the two from drifting apart.
+test("the skill's standalone validator reports the same motion errors as the CLI", () => {
+  const root = mkdtempSync(join(tmpdir(), "aideck-motion-parity-"));
+  cpSync(join(projectRoot, "engine", "templates", "swiss-modern.template"), root, { recursive: true });
+  writeFileSync(join(root, "design-system.css"), ".swiss-deck {\n  --deck-motion-base: var(--gone-base);\n  --deck-motion-ease: var(--gone-ease);\n}\n");
+
+  const cliErrors = validateMotionTokens(root);
+  assert.notEqual(cliErrors.length, 0);
+
+  const validator = join(projectRoot, "engine", "skills", "presentation-template-creation", "scripts", "validate-template-manifest.mjs");
+  const skill = spawnSync(process.execPath, [validator, join(root, "template-manifest.json")], { encoding: "utf8" });
+  const skillErrors = skill.stderr
+    .split("\n")
+    .filter((line) => line.startsWith("- "))
+    .map((line) => line.slice(2))
+    .filter((line) => /Missing motion token|which no CSS in this template defines/.test(line));
+  assert.deepEqual(skillErrors, cliErrors);
+
   rmSync(root, { recursive: true, force: true });
 });
 

@@ -94,7 +94,9 @@ if (manifest.layoutVariants !== undefined) {
 // The engine's element animations resolve --deck-motion-base and --deck-motion-ease (plus the
 // optional --deck-motion-slow tier) and ship no template-side CSS. A bridge pointing at a token the
 // bundle never defines makes the whole `animation` declaration invalid at computed-value time, so
-// every animation degrades to none while the manifest still advertises them.
+// every animation degrades to none while the manifest still advertises them. This is a textual
+// check, not a cascade one: a token defined under a selector the deck never matches, or inside
+// an at-rule such as @media print, still reads as defined here.
 const designSystemPath = path.join(path.dirname(file), "design-system.css");
 if (fs.existsSync(designSystemPath)) {
   const css = collectBundleCss(path.dirname(file));
@@ -105,12 +107,15 @@ if (fs.existsSync(designSystemPath)) {
     }
   }
   for (const [, token, value] of css.matchAll(/(--deck-motion-[a-z-]+)\s*:\s*([^;}]+)/gi)) {
-    // Only a var() without a fallback can leave the declaration unresolvable.
-    for (const [, referenced] of value.matchAll(/var\(\s*(--[a-z0-9-]+)\s*\)/gi)) {
-      if (!defined.has(referenced)) {
-        errors.push(`${token} references ${referenced}, which no CSS in this template defines.`);
-      }
-    }
+    const references = Array.from(value.matchAll(/var\(\s*(--[a-z0-9-]+)\s*(,\s*var\(|,|\))/gi));
+    if (references.length === 0) continue;
+    // A defined token anywhere in the chain resolves the declaration, and so does a literal
+    // fallback. var(--a, var(--b)) only ever reaches --b when --a is undefined, so a dangling --b
+    // behind a defined --a is not a defect.
+    if (references.some(([, referenced]) => defined.has(referenced))) continue;
+    if (references.some(([, , tail]) => tail.startsWith(",") && !tail.includes("var("))) continue;
+    const missing = Array.from(new Set(references.map(([, referenced]) => referenced)));
+    errors.push(`${token} references ${missing.join(", ")}, which no CSS in this template defines.`);
   }
 }
 
