@@ -20,5 +20,13 @@
   "process-flow": { "component": "SwissProcessFlowSlide", "source": "react/product-workflow-slides.tsx" },
   "before-after": { "component": "SwissBeforeAfterSlide", "source": "react/product-workflow-slides.tsx" },
   "ui-showcase": { "component": "SwissUiShowcaseSlide", "source": "react/product-workflow-slides.tsx" },
-  "timeline": { "component": "SwissTimelineSlide", "source": "react/product-workflow-slides.tsx" }
+  "timeline": { "component": "SwissTimelineSlide", "source": "react/product-workflow-slides.tsx" },
+  "code-snippet": { "component": "SwissCodeSnippetSlide", "source": "react/technical-slides.tsx" },
+  "terminal-output": { "component": "SwissTerminalOutputSlide", "source": "react/technical-slides.tsx" },
+  "architecture-overview": { "component": "SwissArchitectureOverviewSlide", "source": "react/technical-slides.tsx" },
+  "data-flow": { "component": "SwissDataFlowSlide", "source": "react/technical-slides.tsx" },
+  "api-endpoint": { "component": "SwissApiEndpointSlide", "source": "react/technical-table-slides.tsx" },
+  "spec-table": { "component": "SwissSpecTableSlide", "source": "react/technical-table-slides.tsx" },
+  "comparison-table": { "component": "SwissComparisonTableSlide", "source": "react/technical-table-slides.tsx" },
+  "decision-record": { "component": "SwissDecisionRecordSlide", "source": "react/technical-table-slides.tsx" }
 }

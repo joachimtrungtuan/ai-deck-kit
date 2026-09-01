@@ -163,7 +163,7 @@ export function createTemplate(workspace, name) {
         deckClass: `${name}-deck`,
         templateVersion: "1.0.0",
         contentSchemaVersion: "2.0.0",
-        slideTypeCatalog: "v1",
+        slideTypeCatalog: "v2",
         blockCatalog: "v1",
         runtime: ["react", "static-html"],
         iconFamily: "phosphor-react",

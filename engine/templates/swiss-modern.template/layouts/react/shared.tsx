@@ -28,6 +28,21 @@ export type SwissSlideProps = {
   source?: string;
   animation?: string;
   children?: ReactNode;
+  code?: string;
+  language?: string;
+  highlightLines?: number[];
+  commands?: { prompt: string; output?: string }[];
+  flowSteps?: { from: string; to: string; label: string; icon?: string }[];
+  method?: string;
+  path?: string;
+  requestExample?: string;
+  responseExample?: string;
+  tableColumns?: string[];
+  tableRows?: string[][];
+  recommendedColumn?: number;
+  context?: string;
+  decision?: string;
+  consequences?: string[];
 };
 
 export function SwissFrame({ children, animation = "gentle-rise" }: { children: ReactNode; animation?: string }) {
