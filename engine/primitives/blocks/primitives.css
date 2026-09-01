@@ -51,8 +51,28 @@
 .primitive-code-block { padding: var(--deck-space-2); overflow: auto; }
 .primitive-code-block pre { margin: var(--deck-space-2) 0 0; color: var(--deck-code-ink); font-family: var(--deck-font-mono); font-size: 0.85rem; line-height: 1.5; }
 
+.primitive-anim-none,
+.primitive-anim-morph { animation: none; }
 .primitive-anim-fade { animation: primitiveFade var(--deck-motion-base) var(--deck-motion-ease) both; }
 .primitive-anim-gentle-rise { animation: primitiveRise var(--deck-motion-base) var(--deck-motion-ease) both; }
+.primitive-anim-soft-scale { animation: primitiveSoftScale var(--deck-motion-base) var(--deck-motion-ease) both; }
+.primitive-anim-masked-reveal { clip-path: inset(0 100% 0 0); animation: primitiveMaskedReveal var(--deck-motion-base) var(--deck-motion-ease) both; }
+.primitive-anim-staggered-list > * { animation: primitiveRise var(--deck-motion-base) var(--deck-motion-ease) both; }
+.primitive-anim-staggered-list > :nth-child(2) { animation-delay: calc(var(--deck-motion-base) * 0.15); }
+.primitive-anim-staggered-list > :nth-child(3) { animation-delay: calc(var(--deck-motion-base) * 0.3); }
+.primitive-anim-staggered-list > :nth-child(4) { animation-delay: calc(var(--deck-motion-base) * 0.45); }
+.primitive-anim-staggered-list > :nth-child(5) { animation-delay: calc(var(--deck-motion-base) * 0.6); }
+.primitive-anim-staggered-list > :nth-child(6) { animation-delay: calc(var(--deck-motion-base) * 0.75); }
+.primitive-anim-image-drift { animation: primitiveImageDrift var(--deck-motion-base) var(--deck-motion-ease) both; }
+.primitive-anim-line-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: primitiveLineDraw var(--deck-motion-base) var(--deck-motion-ease) both; }
+.primitive-anim-spotlight { animation: primitiveSpotlight var(--deck-motion-base) var(--deck-motion-ease) both; }
 @keyframes primitiveFade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes primitiveRise { from { opacity: 0; transform: translate3d(0, 14px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
-@media (prefers-reduced-motion: reduce) { .primitive-anim-fade, .primitive-anim-gentle-rise { animation: none; } }
+@keyframes primitiveSoftScale { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+@keyframes primitiveMaskedReveal { to { clip-path: inset(0); } }
+@keyframes primitiveImageDrift { from { opacity: 0; transform: scale(1.04) translate3d(0, 12px, 0); } to { opacity: 1; transform: scale(1) translate3d(0, 0, 0); } }
+@keyframes primitiveLineDraw { to { stroke-dashoffset: 0; } }
+@keyframes primitiveSpotlight { from { opacity: 0; transform: translate3d(-18px, 0, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
+@media (prefers-reduced-motion: reduce) {
+  [class*="primitive-anim-"] { animation: none; clip-path: none; transform: none; }
+}

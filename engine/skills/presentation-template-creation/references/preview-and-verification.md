@@ -8,7 +8,7 @@ Run `aideck serve --template {template-name}` from the workspace. The command pr
 
 A project template always wins over a shipped default of the same name. If the template cannot be resolved, `serve` fails and names both places it looked; it never quietly falls back to a different template.
 
-The template must contain a valid manifest, `design-system.css`, `animation-presets.css`, `layouts/layout-index.json`, and a component source for every declared supported slide type. The browser is review-only; edit the template source through the agent workflow and rely on live reload.
+The template must contain a valid manifest, `design-system.css`, `layouts/layout-index.json`, and a component source for every declared supported slide type. Engine-owned element animation uses the template's motion tokens; no animation stylesheet is required. The browser is review-only; edit the template source through the agent workflow and rely on live reload.
 
 ## Gallery
 

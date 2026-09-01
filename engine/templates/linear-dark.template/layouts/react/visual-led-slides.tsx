@@ -58,7 +58,7 @@ export function LinearIconGridSlide(props: LinearSlideProps) {
         {props.body ? <p className="ld-body">{renderRichText(props.body)}</p> : null}
       </div>
       <div
-        className="ld-anim-staggered-list"
+        className="primitive-anim-staggered-list"
         style={{ gridColumn: "7 / 13", gridRow: "1 / 9", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "24px", alignContent: "center" }}
       >
         {items.map((item, i) => (

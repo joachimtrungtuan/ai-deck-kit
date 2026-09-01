@@ -19,7 +19,7 @@ export function CodeBlock({ code = "", highlightLines = [], label }: { code?: st
         <span /><span /><span />
         {label ? <span className="ld-chrome-label">{label}</span> : null}
       </div>
-      <pre className="ld-code ld-anim-staggered-list">
+      <pre className="ld-code primitive-anim-staggered-list">
         {lines.map((line, i) => (
           <div key={`${i}-${line}`} className={`ld-code-line${highlight.has(i + 1) ? " ld-code-line-highlight" : ""}`}>
             <span className="ld-code-ln">{i + 1}</span>
@@ -62,7 +62,7 @@ export function LinearTerminalOutputSlide(props: LinearSlideProps) {
           <span /><span /><span />
           <span className="ld-chrome-label">{props.caption ?? "zsh"}</span>
         </div>
-        <div className="ld-terminal ld-anim-staggered-list" style={{ padding: "var(--ld-space-3)", overflow: "hidden" }}>
+        <div className="ld-terminal primitive-anim-staggered-list" style={{ padding: "var(--ld-space-3)", overflow: "hidden" }}>
           {commands.map((c, i) => (
             <div key={`${i}-${c.prompt}`} style={{ marginBottom: "10px" }}>
               <div>
@@ -91,14 +91,14 @@ export function LinearArchitectureOverviewSlide(props: LinearSlideProps) {
             {(props.items ?? []).slice(0, 5).map((item, i, arr) => (
               <Fragment key={`${i}-${item.title}`}>
                 <span
-                  className="ld-node ld-anim-gentle-rise"
+                  className="ld-node primitive-anim-gentle-rise"
                   style={{ flexDirection: "column", gap: "10px", padding: "20px", animationDelay: `calc(var(--ld-stagger) * ${i})` }}
                 >
                   <LinearIconTile name={item.icon} />
                   {renderRichText(item.title)}
                 </span>
                 {i < arr.length - 1 ? (
-                  <span className="ld-connector ld-anim-gentle-rise" style={{ maxWidth: "72px", animationDelay: `calc(var(--ld-stagger) * ${i} + 40ms)` }} />
+                  <span className="ld-connector primitive-anim-gentle-rise" style={{ maxWidth: "72px", animationDelay: `calc(var(--ld-stagger) * ${i} + 40ms)` }} />
                 ) : null}
               </Fragment>
             ))}
@@ -127,7 +127,7 @@ export function LinearDataFlowSlide(props: LinearSlideProps) {
         <LinearSmallLabel>{renderRichText(props.kicker ?? "Data Flow")}</LinearSmallLabel>
         <h1 className="ld-section-title" style={{ fontSize: "calc(var(--ld-type) * clamp(28px, 3vw, 48px))" }}>{renderRichText(props.title)}</h1>
       </header>
-      <div className="ld-anim-staggered-list" style={{ gridColumn: "1 / 13", gridRow: "4 / 8", display: "grid", gap: "10px", alignContent: "start", alignSelf: "start" }}>
+      <div className="primitive-anim-staggered-list" style={{ gridColumn: "1 / 13", gridRow: "4 / 8", display: "grid", gap: "10px", alignContent: "start", alignSelf: "start" }}>
         {steps.map((s, i) => (
           <div className="ld-panel ld-flow-row" key={`${i}-${s.label}`} style={{ padding: "10px 18px", display: "grid", gridTemplateColumns: "28px 44px minmax(0, 0.9fr) auto minmax(0, 1.1fr)", alignItems: "center", columnGap: "18px" }}>
             <span className="ld-index" style={{ color: "var(--ld-accent)" }}>{String(i + 1).padStart(2, "0")}</span>

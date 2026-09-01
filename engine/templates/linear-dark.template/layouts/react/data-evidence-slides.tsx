@@ -9,7 +9,7 @@ export function LinearMetricHighlightSlide(props: LinearSlideProps) {
           <LinearIconTile name={props.items?.[0]?.icon} />
           <LinearSmallLabel>{renderRichText(props.kicker ?? "Metric")}</LinearSmallLabel>
         </div>
-        <div className="ld-metric ld-anim-spotlight"><StatBlock className="ld-template-stat-block" block={{ id: "metric", value: props.metric ?? props.title, label: props.metricLabel ?? "" }} /></div>
+        <div className="ld-metric primitive-anim-spotlight"><StatBlock className="ld-template-stat-block" block={{ id: "metric", value: props.metric ?? props.title, label: props.metricLabel ?? "" }} /></div>
       </div>
       <aside style={{ gridColumn: "9 / 13", gridRow: "4 / 8" }}>
         <LinearList items={props.items} />

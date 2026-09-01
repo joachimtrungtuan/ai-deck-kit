@@ -39,7 +39,7 @@ function LinearTable(props: LinearSlideProps & { recommendedColumn?: number; gri
             ))}
           </tr>
         </thead>
-        <tbody className="ld-anim-staggered-list">
+        <tbody className="primitive-anim-staggered-list">
           {rows.map((row, r) => (
             <tr key={`${r}-${row[0]}`}>
               {row.slice(0, 5).map((cell, c) => (

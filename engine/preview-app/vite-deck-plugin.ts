@@ -34,7 +34,7 @@ type TemplateManifest = {
   defaultTransition?: string;
 };
 type TemplateDefinition = {
-  animationPath: string;
+  animationPath?: string;
   deckClass: string;
   designSystemPath: string;
   fontImports: string[];
@@ -138,8 +138,7 @@ function loadDeckSource(root: string, engineRoot: string, watchedFiles: Set<stri
     watchedFiles.add(source);
     return `import { ${sourceExport} } from ${JSON.stringify(source)};
 ${renderFontImports(definition).join("\n")}
-import ${JSON.stringify(definition.designSystemPath)};
-import ${JSON.stringify(definition.animationPath)};
+${renderTemplateStyleImports(definition).join("\n")}
 export const runtimeDeck = { id: ${JSON.stringify(manifest.slug)}, label: ${JSON.stringify(manifest.title)}, deckClass: ${JSON.stringify(definition.deckClass)}, slides: ${sourceExport}, defaultTransition: ${JSON.stringify(defaultTransition)} };
 export const runtimeTemplate = null;`;
   }
@@ -149,8 +148,7 @@ export const runtimeTemplate = null;`;
   const content = inlineDeckAssets(readFileSync(contentPath, "utf8"), root, watchedFiles);
   return `${componentImports.join("\n")}
 ${renderFontImports(definition).join("\n")}
-import ${JSON.stringify(definition.designSystemPath)};
-import ${JSON.stringify(definition.animationPath)};
+${renderTemplateStyleImports(definition).join("\n")}
 import { createManifestDeckSource } from ${JSON.stringify(join(process.cwd(), "preview-app/src/manifest-deck-source.tsx"))};
 const components = { ${componentMap.join(", ")} };
 export const runtimeDeck = createManifestDeckSource(${JSON.stringify(resolvedManifest)}, ${JSON.stringify(content)}, ${JSON.stringify(definition.deckClass)}, components);
@@ -212,6 +210,12 @@ function renderFontImports(definition: TemplateDefinition): string[] {
   return definition.fontImports.map((specifier) => `import ${JSON.stringify(specifier)};`);
 }
 
+function renderTemplateStyleImports(definition: TemplateDefinition): string[] {
+  return [definition.designSystemPath, definition.animationPath]
+    .filter((path): path is string => Boolean(path))
+    .map((path) => `import ${JSON.stringify(path)};`);
+}
+
 /**
  * The gallery is exactly the set of templates the CLI could resolve for this project — shipped
  * defaults and the user's own, with the user's winning. Nothing here is hardcoded per template.
@@ -233,8 +237,7 @@ function loadGallerySource(gallery: GalleryEntry[], watchedFiles: Set<string>): 
       imports.push(`import { ${[...names].map((name) => `${name} as ${alias(name)}`).join(", ")} } from ${JSON.stringify(source)};`);
     });
     imports.push(...renderFontImports(definition));
-    imports.push(`import ${JSON.stringify(definition.designSystemPath)};`);
-    imports.push(`import ${JSON.stringify(definition.animationPath)};`);
+    imports.push(...renderTemplateStyleImports(definition));
     // Fixtures are per template for the same reason components are: one template's extra props must
     // never leak into another's preview.
     const propsBinding = `g${index}_previewProps`;
@@ -254,8 +257,7 @@ function loadTemplateSource(root: string, watchedFiles: Set<string>): string {
 
   return `${componentImports.join("\n")}
 ${renderFontImports(definition).join("\n")}
-import ${JSON.stringify(definition.designSystemPath)};
-import ${JSON.stringify(definition.animationPath)};
+${renderTemplateStyleImports(definition).join("\n")}
 const previewProps = ${JSON.stringify(definition.previewProps)};
 export const runtimeDeck = null;
 export const runtimeTemplate = {
@@ -323,10 +325,11 @@ function loadTemplateDefinition(root: string, watchedFiles: Set<string>): Templa
   const layoutIndexPath = join(root, "layouts", "layout-index.json");
   const designSystemPath = join(root, "design-system.css");
   const animationPath = join(root, "animation-presets.css");
-  for (const file of [manifestPath, layoutIndexPath, designSystemPath, animationPath]) {
+  for (const file of [manifestPath, layoutIndexPath, designSystemPath]) {
     if (!existsSync(file)) throw new Error(`Template preview file missing: ${file}`);
     watchedFiles.add(file);
   }
+  if (existsSync(animationPath)) watchedFiles.add(animationPath);
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as TemplateManifest;
   const rawIndex = JSON.parse(readFileSync(layoutIndexPath, "utf8")) as Record<string, LayoutEntry> & { layouts?: Record<string, LayoutEntry> };
   const layouts = rawIndex.layouts ?? rawIndex;
@@ -345,7 +348,7 @@ function loadTemplateDefinition(root: string, watchedFiles: Set<string>): Templa
     imports.set(source, names);
   }
   return {
-    animationPath,
+    animationPath: existsSync(animationPath) ? animationPath : undefined,
     designSystemPath,
     deckClass: manifest.deckClass ?? inferDeckClass(readFileSync(designSystemPath, "utf8"), manifest.name),
     fontImports: resolveFontImports(manifest.fonts),

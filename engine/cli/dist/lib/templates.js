@@ -81,8 +81,6 @@ export function validateTemplateBundle(root, manifest = readJson(join(root, "tem
     }
     if (!existsSync(join(root, "design-system.css")))
         errors.push("Missing design-system.css.");
-    if (!existsSync(join(root, "animation-presets.css")))
-        errors.push("Missing animation-presets.css.");
     if (!existsSync(join(root, "icon-policy.md")))
         errors.push("Missing icon-policy.md.");
     errors.push(...validatePreviewProps(root));
@@ -103,7 +101,7 @@ export function validatePreviewProps(root) {
 }
 export function validateTemplateManifest(manifest) {
     const errors = [];
-    for (const field of ["name", "displayName", "templateVersion", "contentSchemaVersion", "slideTypeCatalog", "runtime", "iconFamily", "defaultAnimation", "supportedSlideTypes"]) {
+    for (const field of ["name", "displayName", "templateVersion", "contentSchemaVersion", "slideTypeCatalog", "runtime", "iconFamily", "defaultAnimation", "supportedAnimations", "supportedSlideTypes"]) {
         if (manifest[field] === undefined || manifest[field] === "")
             errors.push(`Missing manifest field: ${field}`);
     }
@@ -124,6 +122,8 @@ export function validateTemplateManifest(manifest) {
     }
     if (!Array.isArray(manifest.supportedSlideTypes) || manifest.supportedSlideTypes.length === 0)
         errors.push("supportedSlideTypes must include at least one slide type.");
+    if (!Array.isArray(manifest.supportedAnimations) || manifest.supportedAnimations.length === 0)
+        errors.push("supportedAnimations must include at least one animation.");
     if (manifest.layoutVariants !== undefined) {
         if (!manifest.layoutVariants || Array.isArray(manifest.layoutVariants) || typeof manifest.layoutVariants !== "object") {
             errors.push("layoutVariants must be an object keyed by supported slide type.");
@@ -168,13 +168,13 @@ export function createTemplate(workspace, name) {
         runtime: ["react", "static-html"],
         iconFamily: "phosphor-react",
         defaultAnimation: "gentle-rise",
+        supportedAnimations: ["none", "fade", "gentle-rise", "soft-scale", "masked-reveal", "staggered-list", "image-drift", "line-draw", "spotlight", "morph"],
         defaultTransition: "none",
         fonts: ["inter", "jetbrains-mono"],
         supportedSlideTypes: ["title", "section-divider", "closing", "text-statement"],
     };
     writeJson(join(target, "template-manifest.json"), manifest);
     writeText(join(target, "design-system.css"), `.${name}-deck {\n  /* Add template design tokens here. */\n}\n`);
-    writeText(join(target, "animation-presets.css"), "/* Add approved animation overrides here. */\n");
     writeText(join(target, "icon-policy.md"), "# Icon policy\n\nUse the Phosphor icon family.\n");
     writeTemplateSchemaGuidance(target, manifest);
     // Fixtures this template's preview slides need beyond the engine defaults. Adding a key here is

@@ -147,7 +147,8 @@ select {
   }
 
   [class*="ld-anim"],
-  [class*="swiss-anim"] {
+  [class*="swiss-anim"],
+  [class*="primitive-anim"] {
     animation: none !important;
     clip-path: none !important;
     transform: none !important;

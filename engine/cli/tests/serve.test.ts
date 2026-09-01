@@ -597,6 +597,7 @@ function fixtureManifest(displayName: string): TemplateManifest {
     runtime: ["react"],
     iconFamily: "phosphor-react",
     defaultAnimation: "gentle-rise",
+    supportedAnimations: ["none", "gentle-rise"],
     supportedSlideTypes: ["title"],
   };
 }

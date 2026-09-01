@@ -27,6 +27,7 @@ const warnings = [];
 let templateManifest;
 const blockCatalogV1 = new Set(["text", "title-description", "image", "chart", "table", "icon-text-card", "quote", "stat", "list", "code"]);
 const motionCatalogV1 = new Set(["none", "fade", "gentle-rise", "morph"]);
+const elementAnimationCatalogV1 = new Set(["none", "fade", "gentle-rise", "soft-scale", "masked-reveal", "staggered-list", "image-drift", "line-draw", "spotlight", "morph"]);
 const REACT_FORWARD_REF = Symbol.for("react.forward_ref");
 
 // Schema dispatch — mirrors engine/preview-app/src/manifest-deck-source.tsx exactly so the
@@ -141,7 +142,6 @@ if (schemaMajor === 1) {
         errors.push(`${label}: missing metadata field: ${field}`);
       }
     }
-
     const id = extractYamlField(metadata, "id");
     const type = extractYamlField(metadata, "type");
     for (const { field, value } of extractIconFields(metadata)) {
@@ -305,6 +305,12 @@ function validateContentV2({ manifest, content, templateManifest, manifestSlides
     // YAML title is the sole title source; there is no fallback to heading text in v2.
     if (typeof metadata.title !== "string" || !metadata.title.trim()) {
       errors.push(`${label}: missing or empty "title" in the slide metadata YAML. v2 requires title in YAML; there is no fallback to the heading text.`);
+    }
+    if (typeof metadata.animation === "string" && !elementAnimationCatalogV1.has(metadata.animation)) {
+      errors.push(`${label}: animation "${metadata.animation}" is not in element-animation catalog v1.`);
+    }
+    if (templateManifest?.supportedAnimations && !templateManifest.supportedAnimations.includes(metadata.animation)) {
+      errors.push(`${label}: animation "${metadata.animation}" is not supported by template "${templateManifest.name}".`);
     }
 
     // items[]: flag single-line flow-style entries (`- {title: ..., ...}` or `items: [...]`).

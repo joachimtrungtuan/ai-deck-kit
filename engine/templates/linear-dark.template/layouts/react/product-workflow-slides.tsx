@@ -15,7 +15,7 @@ export function LinearProcessFlowSlide(props: LinearSlideProps) {
         {steps.map((item, i) => (
           <Fragment key={`${i}-${item.title}`}>
             <div
-              className="ld-panel ld-anim-gentle-rise"
+              className="ld-panel primitive-anim-gentle-rise"
               style={{ flex: 1, padding: "24px", display: "grid", gridTemplateRows: "auto 1fr", gap: "16px", animationDelay: `calc(var(--ld-stagger) * ${i})` }}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -26,7 +26,7 @@ export function LinearProcessFlowSlide(props: LinearSlideProps) {
             </div>
             {i < steps.length - 1 ? (
               <span
-                className="ld-connector-arrow ld-anim-gentle-rise"
+                className="ld-connector-arrow primitive-anim-gentle-rise"
                 style={{ display: "flex", alignItems: "center", animationDelay: `calc(var(--ld-stagger) * ${i} + 40ms)` }}
                 aria-hidden
               >

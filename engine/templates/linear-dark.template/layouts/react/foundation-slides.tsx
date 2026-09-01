@@ -35,7 +35,7 @@ export function LinearSectionDividerSlide(props: LinearSlideProps) {
       <div className="ld-rule-top" style={{ gridColumn: "5 / 13", gridRow: "2 / 8" }}>
         <h1 className="ld-section-title">{renderRichText(props.title)}</h1>
         {props.body ? <p className="ld-body">{renderRichText(props.body)}</p> : null}
-        <div className="ld-progress-bar ld-anim-line-draw" style={{ marginTop: "var(--ld-space-4)", maxWidth: "240px" }} />
+        <div className="ld-progress-bar primitive-anim-line-draw" style={{ marginTop: "var(--ld-space-4)", maxWidth: "240px" }} />
       </div>
     </LinearFrame>
   );

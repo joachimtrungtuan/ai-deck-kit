@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { findWorkspace } from "../lib/workspace.js";
 export const catalogHelp = `Catalog commands:
   blocks list     Print block-catalog v1 entries
-  motion list     Print motion-catalog v1 entries
+  motion list     Print element-animation catalog v1 entries
   tokens print    Print the base token contract`;
 export function runCatalog(args) {
     if (!args.length || args.includes("--help"))
@@ -13,7 +13,7 @@ export function runCatalog(args) {
     if (group === "blocks" && action === "list")
         return printCatalog(workspace, "primitives/blocks/block-catalog-v1.md", /^\| `([^`]+)`/gm);
     if (group === "motion" && action === "list")
-        return printCatalog(workspace, "primitives/motion/motion-catalog-v1.md", /^\| `([^`]+)`/gm);
+        return printCatalog(workspace, "primitives/motion/element-animation-catalog-v1.md", /^\| `([^`]+)`/gm);
     if (group === "tokens" && action === "print") {
         const file = join(workspace.engineRoot, "primitives", "tokens", "base-token-contract.md");
         if (!existsSync(file))

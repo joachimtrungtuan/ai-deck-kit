@@ -1,6 +1,6 @@
 # Slide Transition Catalog v1
 
-Slide-to-slide transitions (whole-frame, on navigation) are a separate vocabulary from the [element motion catalog](motion-catalog-v1.md), which animates a block's entrance within a slide. Both are capped vocabularies: templates and decks select from the list below, they do not invent new transition names.
+Slide-to-slide transitions (whole-frame, on navigation) are a separate vocabulary from the [element-animation catalog](element-animation-catalog-v1.md), selected by `animation` within a slide. Transitions use `transition`; both catalogs are capped vocabularies.
 
 | Name | Effect |
 | --- | --- |

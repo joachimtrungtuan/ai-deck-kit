@@ -114,7 +114,7 @@ export function LinearIconTile({ name, size = 32, compact = false }: { name?: st
 export function LinearFrame({ children, animation = "gentle-rise" }: { children: ReactNode; animation?: string }) {
   return (
     <section className="ld-slide">
-      <div className={`ld-frame ld-anim-${animation}`}>{children}</div>
+      <div className={`ld-frame primitive-anim-${animation}`}>{children}</div>
     </section>
   );
 }
@@ -138,7 +138,7 @@ export function LinearList({
   itemTextStyle?: React.CSSProperties;
 }) {
   return (
-    <ol className={`ld-list ld-anim-staggered-list ${className}`.trim()}>
+    <ol className={`ld-list primitive-anim-staggered-list ${className}`.trim()}>
       {items.map((item, itemIndex) => (
         <li key={`${itemIndex}-${item.title}`}>
           <span className="ld-index">{String(itemIndex + 1).padStart(2, "0")}</span>

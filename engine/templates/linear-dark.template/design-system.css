@@ -50,6 +50,8 @@
   --ld-radius: 10px;
   --ld-radius-sm: 6px;
   --ld-rule: 1px solid var(--ld-line);
+  --deck-motion-ease: var(--ld-ease);
+  --deck-motion-base: var(--ld-duration-base);
 
   background: var(--ld-bg);
   color: var(--ld-ink);

@@ -139,7 +139,8 @@ select {
 /* Chrome's screenshot capture uses screen media even when the URL selects print mode. */
 .print-deck-capture [class*="ld-anim"],
 .print-deck-capture [class*="swiss-anim"],
-.print-deck-capture [class*="cc-anim"] {
+.print-deck-capture [class*="cc-anim"],
+.print-deck-capture [class*="primitive-anim"] {
   animation: none !important;
   clip-path: none !important;
   transform: none !important;
@@ -166,7 +167,8 @@ select {
   /* Freeze entrance animations at their resolved final state for a clean capture. */
   [class*="ld-anim"],
   [class*="swiss-anim"],
-  [class*="cc-anim"] {
+  [class*="cc-anim"],
+  [class*="primitive-anim"] {
     animation: none !important;
     clip-path: none !important;
     transform: none !important;

@@ -33,7 +33,7 @@ export type SwissSlideProps = {
 export function SwissFrame({ children, animation = "gentle-rise" }: { children: ReactNode; animation?: string }) {
   return (
     <section className="swiss-slide">
-      <div className={`swiss-frame swiss-anim-${animation}`}>{children}</div>
+      <div className={`swiss-frame primitive-anim-${animation}`}>{children}</div>
     </section>
   );
 }
@@ -49,7 +49,7 @@ export function SwissTextBlock({ kicker, title, body }: Pick<SwissSlideProps, "k
 
 export function SwissList({ items = [] }: { items?: SlideItem[] }) {
   return (
-    <ol className="swiss-list swiss-anim-staggered-list">
+    <ol className="swiss-list primitive-anim-staggered-list">
       {items.map((item, itemIndex) => (
         <li key={`${itemIndex}-${item.title}`}>
           <span className="swiss-index">{String(itemIndex + 1).padStart(2, "0")}</span>

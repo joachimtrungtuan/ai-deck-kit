@@ -111,7 +111,7 @@ decks/{presentation-slug}.deck/
 - `references/slide-types-v1.md` - Required v1 slide-type catalog.
 - `references/annotation-policy.md` - Where to put speaker notes, design notes, review notes, and change intent.
 - `references/icon-policy.md` - Phosphor-first icon guidance and icon-font tradeoffs.
-- `references/animation-presets.md` - Approved animation vocabulary.
+- `../../primitives/motion/element-animation-catalog-v1.md` - Approved element-animation vocabulary.
 - `references/preview-runtime.md` - Shared React preview app rules.
 - `references/export-runtime-contract.md` - Reusable preview/export shell contract and template-copy rules.
 - `references/export-workflow.md` - Standalone single-file HTML and PDF export (scripts, fixed-canvas rationale, validation).

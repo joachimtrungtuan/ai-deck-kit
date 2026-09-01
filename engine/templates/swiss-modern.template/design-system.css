@@ -22,6 +22,8 @@
   --swiss-slide-h: 900px;
   --swiss-radius: 0;
   --swiss-rule: 1px solid var(--swiss-line);
+  --swiss-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --swiss-duration-base: 520ms;
 }
 
 .swiss-deck {

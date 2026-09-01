@@ -4,7 +4,7 @@ import { findWorkspace } from "../lib/workspace.ts";
 
 export const catalogHelp = `Catalog commands:
   blocks list     Print block-catalog v1 entries
-  motion list     Print motion-catalog v1 entries
+  motion list     Print element-animation catalog v1 entries
   tokens print    Print the base token contract`;
 
 export function runCatalog(args: string[]): void {
@@ -12,7 +12,7 @@ export function runCatalog(args: string[]): void {
   const workspace = findWorkspace();
   const [group, action] = args;
   if (group === "blocks" && action === "list") return printCatalog(workspace, "primitives/blocks/block-catalog-v1.md", /^\| `([^`]+)`/gm);
-  if (group === "motion" && action === "list") return printCatalog(workspace, "primitives/motion/motion-catalog-v1.md", /^\| `([^`]+)`/gm);
+  if (group === "motion" && action === "list") return printCatalog(workspace, "primitives/motion/element-animation-catalog-v1.md", /^\| `([^`]+)`/gm);
   if (group === "tokens" && action === "print") {
     const file = join(workspace.engineRoot, "primitives", "tokens", "base-token-contract.md");
     if (!existsSync(file)) throw new Error(`Token contract missing: ${file}`);

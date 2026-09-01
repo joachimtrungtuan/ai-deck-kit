@@ -266,6 +266,7 @@ function writeTemplate(root: string, displayName: string, name = "sample"): void
     runtime: ["react"],
     iconFamily: "phosphor-react",
     defaultAnimation: "gentle-rise",
+    supportedAnimations: ["none", "gentle-rise"],
     supportedSlideTypes: ["title"],
   };
   writeFileSync(join(root, "template-manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);

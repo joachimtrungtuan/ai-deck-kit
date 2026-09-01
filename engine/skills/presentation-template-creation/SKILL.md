@@ -44,7 +44,7 @@ This skill handles template-set authoring and slide-type catalog evolution. It d
 2. Read `engine/templates/template-system.md`, `engine/schemas/content-schema-guidance.md`, and the newest `engine/templates/slide-types-v*.md`; read one existing template set (e.g. `swiss-modern.template/`) as the structural reference. When evolving a bundle, also read its local `schema-guidance.md`.
 3. Declare the catalog version: use the newest `slide-types-vN.md` the engine ships. If the domain genuinely needs slide types no catalog offers, stop and follow **Slide-Type Catalogs** below. See `references/template-system-and-versioning.md`.
 4. Scaffold the user-owned template bundle through `aideck template new <name>`. It creates `templates/<name>.template/`; do not hand-create its manifest or base files.
-5. Build its `design-system.css` (tokens + class inventory), `animation-presets.css` (re-skin the approved vocabulary with the same preset names), `icon-policy.md`, layouts, layout index, and layout contracts. Compose `engine/primitives/blocks` where a catalog block fits. Declare typefaces in the manifest's `fonts` array and any preview fixtures in `preview-props.json` — both live in the bundle.
+5. Build its `design-system.css` (tokens + class inventory, including motion tokens), `icon-policy.md`, layouts, layout index, and layout contracts. Compose `engine/primitives/blocks` where a catalog block fits. Declare typefaces in the manifest's `fonts` array and any preview fixtures in `preview-props.json` — both live in the bundle.
 6. Validate the completed bundle with `aideck template validate <name>`. It stays where it was authored — there is no install step and nothing is copied into the engine. When you finish an editing pass, run `aideck verify` as well: it parses every layout in the bundle and reports edits that landed outside it.
 7. Bump the version to match the size of the change (see **Versioning Discipline** below): `aideck template version <name> --bump patch|minor|major`. Reading it back is `aideck template version <name>`.
 8. Run all verification gates per `references/preview-and-verification.md`. The preview app discovers templates automatically — there is no registration file to edit.
@@ -74,7 +74,6 @@ Rules that follow from this:
 templates/{template-name}.template/       # the one and only home of a template
 ├── template-manifest.json
 ├── design-system.css
-├── animation-presets.css
 ├── icon-policy.md
 ├── schema-guidance.md                 # local content/prop contract route
 ├── preview-props.json                    # optional preview fixtures for this template
@@ -106,9 +105,9 @@ Inside the kit's own repository this is ordinary work: copy the previous catalog
 - `references/preview-and-verification.md` - Previewing a template in the shared runtime and the verification gates.
 - `../../primitives/tokens/base-token-contract.md` - required token aliases shared by primitive blocks.
 - `../../primitives/blocks/block-catalog-v1.md` - stable block contracts for layout composition.
-- `../../primitives/motion/motion-catalog-v1.md` - capped motion and morph vocabulary.
+- `../../primitives/motion/element-animation-catalog-v1.md` - capped element-animation and morph vocabulary.
 
-Cross-skill (canonical, do not duplicate here): `../presentation-crafting/references/workspace-boundary.md` (what may be written and how to escalate), `animation-presets.md` (approved preset vocabulary), `icon-policy.md` (icon family rules), `folder-structure.md` (repository layout), `preview-runtime.md` (shared runtime rules).
+Cross-skill (canonical, do not duplicate here): `../presentation-crafting/references/workspace-boundary.md` (what may be written and how to escalate), `icon-policy.md` (icon family rules), `folder-structure.md` (repository layout), `preview-runtime.md` (shared runtime rules).
 
 ## Scripts
 

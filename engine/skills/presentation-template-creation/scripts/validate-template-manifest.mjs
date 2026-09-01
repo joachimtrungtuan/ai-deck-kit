@@ -20,6 +20,7 @@ for (const field of [
   "runtime",
   "iconFamily",
   "defaultAnimation",
+  "supportedAnimations",
   "designTokens",
   "supportedSlideTypes",
 ]) {
@@ -42,6 +43,16 @@ if (manifest.runtime && !Array.isArray(manifest.runtime)) {
 
 if (manifest.supportedSlideTypes && !Array.isArray(manifest.supportedSlideTypes)) {
   errors.push("supportedSlideTypes must be an array.");
+}
+
+const elementAnimations = new Set(["none", "fade", "gentle-rise", "soft-scale", "masked-reveal", "staggered-list", "image-drift", "line-draw", "spotlight", "morph"]);
+if (!Array.isArray(manifest.supportedAnimations) || manifest.supportedAnimations.length === 0) {
+  errors.push("supportedAnimations must include at least one animation.");
+} else {
+  const invalid = manifest.supportedAnimations.filter((animation) => typeof animation !== "string" || !elementAnimations.has(animation));
+  if (invalid.length) errors.push(`supportedAnimations contains unsupported animation(s): ${invalid.join(", ")}.`);
+  if (new Set(manifest.supportedAnimations).size !== manifest.supportedAnimations.length) errors.push("supportedAnimations must not contain duplicates.");
+  if (!manifest.supportedAnimations.includes(manifest.defaultAnimation)) errors.push("defaultAnimation must be declared in supportedAnimations.");
 }
 
 if (manifest.fonts !== undefined && (!Array.isArray(manifest.fonts) || manifest.fonts.some((family) => typeof family !== "string"))) {

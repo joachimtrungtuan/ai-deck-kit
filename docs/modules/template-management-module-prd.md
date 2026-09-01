@@ -12,12 +12,12 @@ depends_on: ["design-primitives"]
 Authors and versions template sets (`.template` bundles), and keeps decks in a known relationship to the template they were built from. Templates compose primitives (blocks, motion, tokens) and declare slide-type layouts. One template per deck; templates live in exactly one place — the project's `templates/`.
 
 ## 2. Responsibilities
-- **In scope:** `aideck template new/validate/list/version`, `aideck deck status/retemplate`, .template bundle structure (`template-manifest.json`, design-system.css, layouts/, animation-presets.css, icon-policy.md), token customization, four version axes (`templateVersion`, `slideTypeCatalog`, `blockCatalog`, `contentSchemaVersion`).
+- **In scope:** `aideck template new/validate/list/version`, `aideck deck status/retemplate`, .template bundle structure (`template-manifest.json`, design-system.css with motion tokens, layouts/, icon-policy.md), token customization, four version axes (`templateVersion`, `slideTypeCatalog`, `blockCatalog`, `contentSchemaVersion`).
 - **Out of scope:** primitive block definitions (owned by design-primitives), deck content authoring (owned by presentation).
 
 ## 3. Surfaces
 - **CLI:** `aideck template new <name>` (scaffold .template in project `templates/`), `aideck template validate <name>` (check the bundle in place), `aideck template list` (every resolvable template with origin + `overrides shipped`), `aideck template version <name> [--bump <part>]` (read or bump semver; refuses shipped defaults), `aideck deck status [<slug>]` (drift), `aideck deck retemplate <slug> [--to <name>]` (re-sync one deck).
-- **Skill:** design token values, layout overrides, animation customization (within preset vocabulary), and **choosing the version bump after every template edit** — the CLI never edits template content or infers a bump, so an unbumped edit is invisible drift.
+- **Skill:** design token values, layout overrides, element-animation catalog selection, and **choosing the version bump after every template edit** — the CLI never edits template content or infers a bump, so an unbumped edit is invisible drift.
 - **Runtime:** —
 
 ## 4. Inputs & Outputs

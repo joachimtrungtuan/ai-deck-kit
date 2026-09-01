@@ -279,7 +279,7 @@ templates live in `templates/*.template/`; shipped defaults live in
 
 - **Embed-when-used:** when a deck uses a template, a resolved copy is **embedded into the `.deck`** (e.g. `my-talk.deck/template/`) so the deck stays portable and renders even if the recipient lacks that template installed. `deck.json.template` records `set` + `version`; validation requires the embedded manifest's name and version to match that pinned identity.
 - `aideck template ...` commands manage `.template` bundles; `aideck new` embeds the chosen template into the new deck.
-- `.template` bundle = `template-manifest.json` (manifest: tokens ref, slide-type→layout map, block/motion catalogs, versions) + `design-system.css` + `layouts/` + `animation-presets.css` + `icon-policy.md`.
+- `.template` bundle = `template-manifest.json` (manifest: tokens ref, slide-type→layout map, block/motion catalogs, versions) + `design-system.css` + `layouts/` + `icon-policy.md`. Element animation is engine-owned and tuned through design-system motion tokens.
 
 ## Decisions (locked)
 

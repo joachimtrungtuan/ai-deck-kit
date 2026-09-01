@@ -2,7 +2,7 @@
 // Build a deck into ONE standalone, self-contained HTML file (JS + CSS + fonts inlined as base64).
 // The result opens by double-click over file:// with no server. Layouts, elements, and the
 // template's CSS entrance animations are preserved because the same React source, design-system.css,
-// and animation-presets.css are bundled.
+// and any optional template animation stylesheet are bundled.
 //
 // Usage:
 //   node engine/skills/presentation-crafting/scripts/export-standalone-html.mjs --deck <deck-path-or-slug> [--out <dir>]

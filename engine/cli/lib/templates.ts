@@ -23,6 +23,7 @@ export type TemplateManifest = {
   runtime: string[];
   iconFamily: string;
   defaultAnimation: string;
+  supportedAnimations: string[];
   defaultTransition?: string;
   fonts?: string[];
   supportedSlideTypes: string[];
@@ -108,7 +109,6 @@ export function validateTemplateBundle(root: string, manifest = readJson<Templat
     }
   }
   if (!existsSync(join(root, "design-system.css"))) errors.push("Missing design-system.css.");
-  if (!existsSync(join(root, "animation-presets.css"))) errors.push("Missing animation-presets.css.");
   if (!existsSync(join(root, "icon-policy.md"))) errors.push("Missing icon-policy.md.");
   errors.push(...validatePreviewProps(root));
   return errors;
@@ -128,7 +128,7 @@ export function validatePreviewProps(root: string): string[] {
 
 export function validateTemplateManifest(manifest: TemplateManifest): string[] {
   const errors: string[] = [];
-  for (const field of ["name", "displayName", "templateVersion", "contentSchemaVersion", "slideTypeCatalog", "runtime", "iconFamily", "defaultAnimation", "supportedSlideTypes"] as const) {
+  for (const field of ["name", "displayName", "templateVersion", "contentSchemaVersion", "slideTypeCatalog", "runtime", "iconFamily", "defaultAnimation", "supportedAnimations", "supportedSlideTypes"] as const) {
     if (manifest[field] === undefined || manifest[field] === "") errors.push(`Missing manifest field: ${field}`);
   }
   if (manifest.name && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(manifest.name)) errors.push("name must be kebab-case.");
@@ -142,6 +142,7 @@ export function validateTemplateManifest(manifest: TemplateManifest): string[] {
     }
   }
   if (!Array.isArray(manifest.supportedSlideTypes) || manifest.supportedSlideTypes.length === 0) errors.push("supportedSlideTypes must include at least one slide type.");
+  if (!Array.isArray(manifest.supportedAnimations) || manifest.supportedAnimations.length === 0) errors.push("supportedAnimations must include at least one animation.");
   if (manifest.layoutVariants !== undefined) {
     if (!manifest.layoutVariants || Array.isArray(manifest.layoutVariants) || typeof manifest.layoutVariants !== "object") {
       errors.push("layoutVariants must be an object keyed by supported slide type.");
@@ -180,13 +181,13 @@ export function createTemplate(workspace: Workspace, name: string): string {
     runtime: ["react", "static-html"],
     iconFamily: "phosphor-react",
     defaultAnimation: "gentle-rise",
+    supportedAnimations: ["none", "fade", "gentle-rise", "soft-scale", "masked-reveal", "staggered-list", "image-drift", "line-draw", "spotlight", "morph"],
     defaultTransition: "none",
     fonts: ["inter", "jetbrains-mono"],
     supportedSlideTypes: ["title", "section-divider", "closing", "text-statement"],
   };
   writeJson(join(target, "template-manifest.json"), manifest);
   writeText(join(target, "design-system.css"), `.${name}-deck {\n  /* Add template design tokens here. */\n}\n`);
-  writeText(join(target, "animation-presets.css"), "/* Add approved animation overrides here. */\n");
   writeText(join(target, "icon-policy.md"), "# Icon policy\n\nUse the Phosphor icon family.\n");
   writeTemplateSchemaGuidance(target, manifest);
   // Fixtures this template's preview slides need beyond the engine defaults. Adding a key here is

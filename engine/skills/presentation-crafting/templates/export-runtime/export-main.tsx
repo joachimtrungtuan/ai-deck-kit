@@ -25,7 +25,7 @@ import "@fontsource-variable/newsreader/wght-italic.css";
 // Import the active template design system(s) used by registered sources.
 // Example:
 // import "../../templates/linear-dark.template/design-system.css";
-// import "../../templates/linear-dark.template/animation-presets.css";
+// Optional template animation styles load through the virtual deck module.
 import "./export-shell.css";
 import { getSource } from "./deck-registry";
 import { DeckExport } from "./deck-export";
