@@ -26,7 +26,9 @@ Version three things separately:
 - `slide_type_catalog`: the required slide-type list version.
 - `content_schema_version`: the canonical content file schema version.
 
-When `slide-types-v2` is created later, old templates that declared `v1` remain valid. Do not silently force old decks into newer slide types.
+Slide Types v2 is the current catalog for new template work. Templates that
+already declare `v1` remain supported; do not silently force their decks into
+newer slide types.
 
 `templateVersion` is the drift signal. A deck freezes a copy of its template at creation and records the version it froze; `aideck deck status` compares that against the live source. This only works if the agent bumps the version after every edit — the CLI reads versions, it never writes template content or infers a bump. See SKILL.md → Versioning Discipline for the patch/minor/major decision.
 
@@ -43,7 +45,7 @@ One place: the project's `templates/{name}.template/`. `engine/templates/` holds
   "deckClass": "swiss-deck",
   "templateVersion": "1.0.0",
   "contentSchemaVersion": "2.0.0",
-  "slideTypeCatalog": "v1",
+  "slideTypeCatalog": "v2",
   "runtime": ["react", "static-html"],
   "iconFamily": "phosphor-react",
   "defaultAnimation": "gentle-rise",

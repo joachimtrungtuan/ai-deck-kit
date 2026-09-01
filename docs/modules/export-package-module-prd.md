@@ -25,7 +25,7 @@ Exports .deck to shareable formats (standalone HTML, PDF) and packages .deck as 
 - **Outputs:** `{slug}.html` (self-contained bundle), `{slug}.pdf` (flattened raster), `{slug}.zip` (portable archive).
 
 ## 5. Files & Data Touched
-- **Reads:** `decks/{slug}.deck/*`, `engine/templates/{template-set}.template/`, `engine/primitives/`.
+- **Reads:** `decks/{slug}.deck/*`, resolved template bundle (`templates/{template-set}.template/` first, then `engine/templates/{template-set}.template/`), `engine/primitives/`.
 - **Writes:** export directory (HTML, PDF, zip); `.build/` if using .deck/.build/, or user-specified output path.
 
 ## 6. Dependencies

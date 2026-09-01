@@ -46,7 +46,7 @@ Promotes the current `.slides.md` frontmatter to a structured, validated file. T
   "audience": "Who this is for",
   "goal": "What the presentation should achieve",
   "template": { "set": "swiss-modern", "version": "2.0.0" },
-  "slideTypeCatalog": "v1",
+  "slideTypeCatalog": "v2",
   "blockCatalog": "v1",
   "contentSchemaVersion": "2.0.0",
   "outputMode": "react-and-static-html",
@@ -244,7 +244,8 @@ indefinitely.
 - `morph` anchors resolve to a matching anchor on an adjacent slide;
 - an embedded template snapshot, when present, has the same name, version, and
   slide-type catalog as `deck.json`; otherwise `template.set`/`version` resolves
-  to an installed `engine/templates/<name>.template` set.
+  to `templates/<name>.template` first, then the installed
+  `engine/templates/<name>.template` default.
 
 V1-to-v2 conversion is not part of `aideck upgrade`. It is an explicit,
 user-requested, agent-operated workflow owned by the engine's
@@ -274,8 +275,9 @@ migration:
 
 Template sets are their own folder-bundle artifact — **`*.template`** — kept
 separate from decks so the two evolve/upgrade independently. Project-authored
-templates live in `templates/*.template/`; shipped defaults live in
-`engine/templates/*.template/` and are replaced wholesale on engine upgrade.
+templates live in `{root}/templates/*.template/` by convention; that location
+is not configurable. Shipped defaults live in `engine/templates/*.template/`
+and are replaced wholesale on engine upgrade.
 
 - **Embed-when-used:** when a deck uses a template, a resolved copy is **embedded into the `.deck`** (e.g. `my-talk.deck/template/`) so the deck stays portable and renders even if the recipient lacks that template installed. `deck.json.template` records `set` + `version`; validation requires the embedded manifest's name and version to match that pinned identity.
 - `aideck template ...` commands manage `.template` bundles; `aideck new` embeds the chosen template into the new deck.

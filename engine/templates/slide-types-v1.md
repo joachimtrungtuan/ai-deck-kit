@@ -1,5 +1,7 @@
 # Slide Types V1
 
+> **Status: superseded.** Retained for templates that already declare `slideTypeCatalog: "v1"`; new template work targets [Slide Types V2](./slide-types-v2.md).
+
 The v1 catalog mirrors the Presentation Crafting skill baseline. Template sets that declare `slideTypeCatalog: "v1"` must support every type below.
 
 ## Foundation

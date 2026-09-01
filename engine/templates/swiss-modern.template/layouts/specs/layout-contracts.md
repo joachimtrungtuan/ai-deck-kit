@@ -61,3 +61,16 @@ Use these contracts when mapping canonical slide content to React components.
 | `before-after` | Two opposing panels with a central transformation marker. |
 | `ui-showcase` | Interface screenshot dominant, callouts in side rail. |
 | `timeline` | Horizontal time axis with milestone blocks aligned to grid. |
+
+## Technical
+
+| Type | Layout |
+| --- | --- |
+| `code-snippet` | Editorial explanation rail left; restrained mono code panel right. Limit code to ~14 lines and highlight only the key line. |
+| `terminal-output` | Header over a single terminal transcript panel; distinguish prompt, command, and output through mono weight and grayscale, never syntax colors. |
+| `architecture-overview` | Title rail plus central diagram field. Custom diagram markup uses `children`; the structured item list remains the fallback. |
+| `data-flow` | Numbered from-to rows on horizontal rules. Keep each request or handoff to one concise label. |
+| `api-endpoint` | Method label and path in the header, then paired request and response mono panels. |
+| `spec-table` | A sharp, rule-separated matrix, capped at 5 columns × 6 rows. Mono uppercase headers. |
+| `comparison-table` | Same matrix; the recommended column receives a solid ink field rather than a color accent. |
+| `decision-record` | Context, decision, and consequences in three aligned panels; emphasis comes from the decision panel's heavy rule. |

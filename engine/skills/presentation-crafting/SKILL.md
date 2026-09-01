@@ -108,7 +108,7 @@ decks/{presentation-slug}.deck/
 - `references/outline-first-generation.md` - Prompt/document to approved outline, scaffold, then content-fill workflow.
 - `references/canonical-slide-content-schema.md` - Required Markdown schema for each deck.
 - `references/folder-structure.md` - Repository layout for templates and working files.
-- `references/slide-types-v1.md` - Required v1 slide-type catalog.
+- `../../templates/slide-types-v2.md` - Current required slide-type catalog.
 - `references/annotation-policy.md` - Where to put speaker notes, design notes, review notes, and change intent.
 - `references/icon-policy.md` - Phosphor-first icon guidance and icon-font tradeoffs.
 - `../../primitives/motion/element-animation-catalog-v1.md` - Approved element-animation vocabulary.

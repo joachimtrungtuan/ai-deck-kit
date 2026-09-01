@@ -1,8 +1,10 @@
 # Slide Types V2
 
+> **Status: current.** New template work targets this catalog.
+
 The v2 catalog is additive over `v1`: it contains every v1 type verbatim, plus a new **Technical** category for software-requirements and engineering presentations. Template sets that declare `slideTypeCatalog: "v2"` must support every type below.
 
-V1 templates remain valid against `slide-types-v1.md` and are unaffected by this version.
+V1 remains supported for templates that already declare it; new templates should declare `v2`.
 
 ## Foundation
 
