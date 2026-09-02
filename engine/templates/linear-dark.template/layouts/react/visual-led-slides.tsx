@@ -40,9 +40,13 @@ export function LinearImageGridSlide(props: LinearSlideProps) {
         <h1 className="ld-section-title">{renderRichText(props.title)}</h1>
       </header>
       <div style={{ gridColumn: "6 / 13", gridRow: "1 / 9", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "24px" }}>
-        {(props.items ?? []).slice(0, 6).map((item, itemIndex) => (
-          <LinearMedia key={`${itemIndex}-${item.title}`} caption={item.title} />
-        ))}
+        {props.images?.length
+          ? props.images.slice(0, 6).map((image, imageIndex) => (
+              <LinearMedia key={`${imageIndex}-${image.src}`} imageSrc={image.src} imageAlt={image.alt ?? ""} caption={image.caption} />
+            ))
+          : (props.items ?? []).slice(0, 6).map((item, itemIndex) => (
+              <LinearMedia key={`${itemIndex}-${item.title}`} caption={item.title} />
+            ))}
       </div>
     </LinearFrame>
   );

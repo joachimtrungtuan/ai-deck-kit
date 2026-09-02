@@ -61,6 +61,32 @@
   --deck-motion-base: var(--ld-duration-base);
   --deck-motion-slow: var(--ld-duration-slow);
 
+  /* Base primitive contract (see primitives/tokens/base-token-contract.md): the
+     existing --ld- tokens stay authoritative. Without these aliases, primitive
+     blocks such as the chart fall through to undefined var() and render blank. */
+  --deck-color-bg: var(--ld-bg);
+  --deck-color-surface: var(--ld-surface);
+  --deck-color-panel: var(--ld-panel);
+  --deck-color-ink: var(--ld-ink);
+  --deck-color-muted: var(--ld-muted);
+  --deck-color-accent: var(--ld-accent);
+  --deck-color-accent-soft: var(--ld-accent-soft);
+  --deck-font-display: var(--ld-font-display);
+  --deck-font-body: var(--ld-font-body);
+  --deck-font-mono: var(--ld-font-mono);
+  --deck-space-1: var(--ld-space-1);
+  --deck-space-2: var(--ld-space-2);
+  --deck-space-3: var(--ld-space-3);
+  --deck-space-4: var(--ld-space-4);
+  --deck-space-5: var(--ld-space-5);
+  --deck-space-6: var(--ld-space-6);
+  --deck-space-7: var(--ld-space-7);
+  --deck-radius: var(--ld-radius);
+  --deck-radius-sm: var(--ld-radius-sm);
+  --deck-stroke: var(--ld-rule);
+  --deck-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --deck-code-ink: var(--ld-ink);
+
   background: var(--ld-bg);
   color: var(--ld-ink);
   font-family: var(--ld-font-body);
@@ -452,6 +478,7 @@
 }
 .ld-metric .ld-template-stat-block span {
   display: block;
+  letter-spacing: normal;
   margin-top: var(--ld-space-2);
   color: var(--ld-muted);
   font-family: var(--ld-font-body);

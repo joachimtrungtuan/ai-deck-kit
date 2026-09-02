@@ -1,5 +1,5 @@
 import { SwissFrame, SwissList, SwissSmallLabel, type SwissSlideProps } from "./shared";
-import { StatBlock, renderRichText } from "../../../../primitives/blocks";
+import { ChartBlock, StatBlock, renderRichText } from "../../../../primitives/blocks";
 
 export function SwissMetricHighlightSlide(props: SwissSlideProps) {
   return (
@@ -24,7 +24,9 @@ export function SwissChartSlide(props: SwissSlideProps) {
         {props.body ? <p className="swiss-body">{renderRichText(props.body)}</p> : null}
       </aside>
       <div className="swiss-panel" style={{ gridColumn: "6 / 13", gridRow: "1 / 8", padding: "40px" }}>
-        {props.children ?? <SwissSmallLabel>Chart component slot</SwissSmallLabel>}
+        {props.children ?? (props.chartData?.length
+          ? <ChartBlock className="swiss-template-chart-block" block={{ id: "chart", kind: "bar", series: props.chartData }} />
+          : <SwissSmallLabel>Chart component slot</SwissSmallLabel>)}
       </div>
     </SwissFrame>
   );

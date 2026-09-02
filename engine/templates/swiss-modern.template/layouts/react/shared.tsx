@@ -26,6 +26,8 @@ export type SwissSlideProps = {
   metric?: string;
   metricLabel?: string;
   source?: string;
+  chartData?: { label: string; value: number }[];
+  images?: { src: string; alt?: string; caption?: string }[];
   animation?: string;
   children?: ReactNode;
   code?: string;

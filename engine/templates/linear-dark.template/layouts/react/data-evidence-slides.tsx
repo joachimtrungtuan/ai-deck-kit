@@ -1,5 +1,5 @@
 import { LinearFrame, LinearIconTile, LinearList, LinearSmallLabel, type LinearSlideProps } from "./shared";
-import { StatBlock, renderRichText } from "../../../../primitives/blocks";
+import { ChartBlock, StatBlock, renderRichText } from "../../../../primitives/blocks";
 
 export function LinearMetricHighlightSlide(props: LinearSlideProps) {
   return (
@@ -27,7 +27,9 @@ export function LinearChartSlide(props: LinearSlideProps) {
         {props.body ? <p className="ld-body">{renderRichText(props.body)}</p> : null}
       </aside>
       <div className="ld-panel" style={{ gridColumn: "6 / 13", gridRow: "1 / 8", padding: "40px", display: "grid", alignContent: "center" }}>
-        {props.children ?? <LinearSmallLabel>Chart component slot</LinearSmallLabel>}
+        {props.children ?? (props.chartData?.length
+          ? <ChartBlock className="ld-template-chart-block" block={{ id: "chart", kind: "bar", series: props.chartData }} />
+          : <LinearSmallLabel>Chart component slot</LinearSmallLabel>)}
       </div>
     </LinearFrame>
   );

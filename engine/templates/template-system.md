@@ -23,8 +23,8 @@ This folder stores reusable presentation template sets.
 
 | Template | Version | Catalog | Use |
 | --- | --- | --- | --- |
-| `swiss-modern` | `3.1.0` | `v2` | Typography-first Swiss style decks with strong grid discipline, bold hierarchy, and restrained motion. |
-| `linear-dark` | `3.0.0` | `v2` | Dark, cinematic narrative decks with expressive editorial layouts. |
+| `swiss-modern` | `3.3.0` | `v2` | Typography-first Swiss style decks with strong grid discipline, bold hierarchy, and restrained motion. |
+| `linear-dark` | `3.2.0` | `v2` | Dark, cinematic narrative decks with expressive editorial layouts. |
 
 Template version and slide-type catalog version are independent axes. Both
 shipped templates target the current v2 slide catalog; the manifest's

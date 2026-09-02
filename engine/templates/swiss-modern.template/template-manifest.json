@@ -2,7 +2,7 @@
   "name": "swiss-modern",
   "displayName": "Swiss Modern",
   "deckClass": "swiss-deck",
-  "templateVersion": "3.2.0",
+  "templateVersion": "3.3.0",
   "contentSchemaVersion": "2.0.0",
   "slideTypeCatalog": "v2",
   "blockCatalog": "v1",
