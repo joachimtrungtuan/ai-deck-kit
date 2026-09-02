@@ -90,6 +90,10 @@ assets/
 # Exception: use-mcp ships a persistent tool catalog at assets/tools.json
 !claude/skills/use-mcp/assets/
 !claude/skills/use-mcp/assets/**
+# Exception: the shipped showcase deck's assets are canonical (see plans/
+# 260901-1104 phase 3 — nothing under a .deck bundle's assets/ is ignored).
+!engine/examples/showcase.deck/assets/
+!engine/examples/showcase.deck/assets/**
 
 # External repos for study/reference
 external/
@@ -105,6 +109,7 @@ worktrees/
 
 # Transient browser-automation output
 playwright-output/
+.playwright-mcp/
 
 # AI Deck Kit — user data (never touched by engine upgrade).
 # Keep user decks private by default. Add a specific re-include here only for

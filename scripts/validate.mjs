@@ -14,6 +14,12 @@ for (const name of shippedTemplates) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
+// Conformance fixture: the shipped showcase deck must validate from its own
+// bundle (embedded template snapshot included) on every CI run.
+const deckValidator = join(root, "engine", "skills", "presentation-crafting", "scripts", "validate-slide-content.mjs");
+const deckResult = spawnSync(process.execPath, [deckValidator, join(root, "engine", "examples", "showcase.deck")], { stdio: "inherit" });
+if (deckResult.status !== 0) process.exit(deckResult.status ?? 1);
+
 const npmCache = mkdtempSync(join(tmpdir(), "aideck-package-validation-"));
 const pack = spawnSync("npm", ["pack", "--json", "--dry-run", "--ignore-scripts"], {
   cwd: root,
@@ -41,6 +47,9 @@ for (const name of shippedTemplates) {
 for (const required of [
   "engine/schemas/content-schema-guidance.md",
   "engine/skills/content-schema-migration/SKILL.md",
+  "engine/examples/showcase.deck/deck.json",
+  "engine/examples/showcase.deck/content.md",
+  "engine/examples/showcase.deck/assets/station-ridge.svg",
 ]) {
   if (!packedFiles.has(required)) {
     console.error(`Release package is missing schema authority: ${required}`);

@@ -1,0 +1,247 @@
+{
+  "schema": "ai-deck-kit/deck@1.0.0",
+  "title": "Reading the Weather, Together",
+  "slug": "showcase",
+  "audience": "A general audience seeing the AI Deck Kit template system exercised end to end; no domain knowledge assumed.",
+  "goal": "Conformance fixture for the kit: neutral, evergreen subject matter (community weather station networks) that exercises every v2 slide type, all 9 slide transitions, and all 10 element animations with realistic copy lengths and zero brand-specific content.",
+  "template": {
+    "set": "linear-dark",
+    "version": "3.2.0",
+    "origin": "shipped"
+  },
+  "slideTypeCatalog": "v2",
+  "blockCatalog": "v1",
+  "contentSchemaVersion": "2.0.0",
+  "outputMode": "react-and-static-html",
+  "status": "ready",
+  "defaults": {
+    "animation": "gentle-rise",
+    "transition": "none"
+  },
+  "slides": [
+    {
+      "id": "slide-01",
+      "type": "title",
+      "file": "content.md#slide-01",
+      "animation": "gentle-rise",
+      "transition": "none"
+    },
+    {
+      "id": "slide-02",
+      "type": "agenda",
+      "file": "content.md#slide-02",
+      "animation": "staggered-list",
+      "transition": "crossfade"
+    },
+    {
+      "id": "slide-03",
+      "type": "text-statement",
+      "file": "content.md#slide-03",
+      "animation": "fade",
+      "transition": "blur-crossfade"
+    },
+    {
+      "id": "slide-04",
+      "type": "section-divider",
+      "file": "content.md#slide-04",
+      "animation": "line-draw",
+      "transition": "push"
+    },
+    {
+      "id": "slide-05",
+      "type": "text-list",
+      "file": "content.md#slide-05",
+      "animation": "staggered-list",
+      "transition": "zoom"
+    },
+    {
+      "id": "slide-06",
+      "type": "two-column-text",
+      "file": "content.md#slide-06",
+      "animation": "soft-scale",
+      "transition": "wipe"
+    },
+    {
+      "id": "slide-07",
+      "type": "numbered-framework",
+      "file": "content.md#slide-07",
+      "animation": "fade",
+      "transition": "iris"
+    },
+    {
+      "id": "slide-08",
+      "type": "quote",
+      "file": "content.md#slide-08",
+      "animation": "masked-reveal",
+      "transition": "flip"
+    },
+    {
+      "id": "slide-09",
+      "type": "section-divider",
+      "file": "content.md#slide-09",
+      "animation": "line-draw",
+      "transition": "page-turn"
+    },
+    {
+      "id": "slide-10",
+      "type": "full-bleed-image",
+      "file": "content.md#slide-10",
+      "animation": "image-drift",
+      "transition": "none"
+    },
+    {
+      "id": "slide-11",
+      "type": "image-text-split",
+      "file": "content.md#slide-11",
+      "animation": "gentle-rise",
+      "transition": "none"
+    },
+    {
+      "id": "slide-12",
+      "type": "image-grid",
+      "file": "content.md#slide-12",
+      "animation": "soft-scale",
+      "transition": "none"
+    },
+    {
+      "id": "slide-13",
+      "type": "icon-grid",
+      "file": "content.md#slide-13",
+      "animation": "staggered-list",
+      "transition": "none"
+    },
+    {
+      "id": "slide-14",
+      "type": "diagram",
+      "file": "content.md#slide-14",
+      "animation": "line-draw",
+      "transition": "none"
+    },
+    {
+      "id": "slide-15",
+      "type": "chart",
+      "file": "content.md#slide-15",
+      "animation": "morph",
+      "transition": "none"
+    },
+    {
+      "id": "slide-16",
+      "type": "metric-highlight",
+      "file": "content.md#slide-16",
+      "animation": "morph",
+      "transition": "crossfade"
+    },
+    {
+      "id": "slide-17",
+      "type": "section-divider",
+      "file": "content.md#slide-17",
+      "animation": "gentle-rise",
+      "transition": "none"
+    },
+    {
+      "id": "slide-18",
+      "type": "process-flow",
+      "file": "content.md#slide-18",
+      "animation": "staggered-list",
+      "transition": "none"
+    },
+    {
+      "id": "slide-19",
+      "type": "before-after",
+      "file": "content.md#slide-19",
+      "animation": "none",
+      "transition": "none"
+    },
+    {
+      "id": "slide-20",
+      "type": "ui-showcase",
+      "file": "content.md#slide-20",
+      "animation": "soft-scale",
+      "transition": "none"
+    },
+    {
+      "id": "slide-21",
+      "type": "timeline",
+      "file": "content.md#slide-21",
+      "animation": "masked-reveal",
+      "transition": "none"
+    },
+    {
+      "id": "slide-22",
+      "type": "case-study",
+      "file": "content.md#slide-22",
+      "animation": "gentle-rise",
+      "transition": "none"
+    },
+    {
+      "id": "slide-23",
+      "type": "evidence-stack",
+      "file": "content.md#slide-23",
+      "animation": "fade",
+      "transition": "none"
+    },
+    {
+      "id": "slide-24",
+      "type": "code-snippet",
+      "file": "content.md#slide-24",
+      "animation": "staggered-list",
+      "transition": "none"
+    },
+    {
+      "id": "slide-25",
+      "type": "terminal-output",
+      "file": "content.md#slide-25",
+      "animation": "staggered-list",
+      "transition": "none"
+    },
+    {
+      "id": "slide-26",
+      "type": "architecture-overview",
+      "file": "content.md#slide-26",
+      "animation": "line-draw",
+      "transition": "none"
+    },
+    {
+      "id": "slide-27",
+      "type": "data-flow",
+      "file": "content.md#slide-27",
+      "animation": "gentle-rise",
+      "transition": "none"
+    },
+    {
+      "id": "slide-28",
+      "type": "api-endpoint",
+      "file": "content.md#slide-28",
+      "animation": "soft-scale",
+      "transition": "none"
+    },
+    {
+      "id": "slide-29",
+      "type": "spec-table",
+      "file": "content.md#slide-29",
+      "animation": "fade",
+      "transition": "none"
+    },
+    {
+      "id": "slide-30",
+      "type": "comparison-table",
+      "file": "content.md#slide-30",
+      "animation": "gentle-rise",
+      "transition": "none"
+    },
+    {
+      "id": "slide-31",
+      "type": "decision-record",
+      "file": "content.md#slide-31",
+      "animation": "masked-reveal",
+      "transition": "none"
+    },
+    {
+      "id": "slide-32",
+      "type": "closing",
+      "file": "content.md#slide-32",
+      "animation": "spotlight",
+      "transition": "none"
+    }
+  ]
+}

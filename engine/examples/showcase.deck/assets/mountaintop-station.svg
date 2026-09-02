@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-label="Station on a mountaintop with relay dish">
+  <defs>
+    <linearGradient id="msky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#151b33"/>
+      <stop offset="1" stop-color="#3b4368"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="900" fill="url(#msky)"/>
+  <circle cx="940" cy="180" r="70" fill="#e8ecff" opacity="0.9"/>
+  <circle cx="915" cy="165" r="60" fill="url(#msky)"/>
+  <g fill="#e8ecff" opacity="0.7">
+    <circle cx="150" cy="120" r="2"/><circle cx="330" cy="80" r="1.6"/><circle cx="520" cy="140" r="1.8"/>
+    <circle cx="700" cy="70" r="1.4"/><circle cx="1120" cy="110" r="2"/>
+  </g>
+  <path d="M0 620 L200 470 L430 600 L640 380 L880 560 L1060 460 L1200 590 L1200 900 L0 900 Z" fill="#0a0d18"/>
+  <g transform="translate(640 380)" fill="#070910" stroke="#070910">
+    <rect x="-4" y="-130" width="8" height="132"/>
+    <path d="M-46 -96 a46 46 0 0 1 92 0 z" opacity="0.95"/>
+    <line x1="0" y1="-96" x2="0" y2="-150"/>
+    <circle cx="0" cy="-156" r="6"/>
+    <rect x="-30" y="-40" width="60" height="40" rx="6"/>
+    <rect x="-16" y="-118" width="16" height="10" rx="2"/>
+  </g>
+  <g stroke="#6366f1" stroke-width="4" fill="none" opacity="0.75">
+    <path d="M648 224 q26 10 40 30"/>
+    <path d="M660 198 q44 16 68 52"/>
+    <path d="M672 176 q62 22 96 74"/>
+  </g>
+  <g fill="#8a93b8">
+    <rect x="180" y="820" width="14" height="60" rx="4"/>
+    <rect x="260" y="836" width="14" height="44" rx="4"/>
+  </g>
+</svg>

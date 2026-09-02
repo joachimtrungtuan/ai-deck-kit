@@ -1,0 +1,695 @@
+/* Linear Dark — design system.
+   Linear.app-inspired: near-black canvas, hairline translucent borders, one energy-blue accent,
+   soft top glow, tight Inter typography. All tokens prefixed --ld-, all classes .ld-.
+   Global styles are scoped under .ld-deck / .ld-slide so swiss-modern CSS is unaffected. */
+
+.ld-deck {
+  /* Color */
+  --ld-bg: #08090a;
+  --ld-surface: #0f1011;
+  --ld-panel: rgba(255, 255, 255, 0.03);
+  --ld-panel-hover: rgba(255, 255, 255, 0.05);
+  --ld-line: rgba(255, 255, 255, 0.08);
+  --ld-line-strong: rgba(255, 255, 255, 0.14);
+  --ld-ink: #f7f8f8;
+  --ld-muted: #8a8f98;
+  --ld-soft: #62666d;
+  --ld-accent: #0f8cff;
+  --ld-accent-soft: rgba(15, 140, 255, 0.16);
+  --ld-accent-glow: rgba(15, 140, 255, 0.34);
+  --ld-spotlight: #066dff;
+  --ld-emphasis-ink: #ffffff;
+
+  /* Typography — Inter only (display + body), JetBrains Mono for code/labels. Max weight 700.
+     --ld-type scales every font-size at once (presentation reads smaller on large screens). */
+  --ld-type: 0.85;
+  --ld-font-display: "Inter", system-ui, sans-serif;
+  --ld-font-body: "Inter", system-ui, sans-serif;
+  --ld-font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Code token colors — muted; accent reserved for highlighted line/emphasis */
+  --ld-code-keyword: #7fc4ff;
+  --ld-code-string: #9ece9e;
+  --ld-code-comment: #62666d;
+  --ld-code-fn: #42b6ff;
+  --ld-code-highlight-bg: rgba(15, 140, 255, 0.12);
+  --ld-terminal-bg: #0a0b0c;
+
+  /* Spacing */
+  --ld-space-1: 8px;
+  --ld-space-2: 16px;
+  --ld-space-3: 24px;
+  --ld-space-4: 32px;
+  --ld-space-5: 48px;
+  --ld-space-6: 64px;
+  --ld-space-7: 96px;
+
+  /* Grid + radii */
+  --ld-slide-w: 1600px;
+  --ld-slide-h: 900px;
+  --ld-radius: 10px;
+  --ld-radius-sm: 6px;
+  --ld-rule: 1px solid var(--ld-line);
+
+  /* Motion — the template owns its timing and easing; the engine reads only the --deck-motion-*
+     bridge below. These are the values Linear Dark shipped before animation CSS moved into the
+     engine, restored here because the bridge previously pointed at tokens that no longer existed. */
+  --ld-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ld-duration-base: 480ms;
+  --ld-duration-slow: 700ms;
+  --deck-motion-ease: var(--ld-ease);
+  --deck-motion-base: var(--ld-duration-base);
+  --deck-motion-slow: var(--ld-duration-slow);
+
+  /* Base primitive contract (see primitives/tokens/base-token-contract.md): the
+     existing --ld- tokens stay authoritative. Without these aliases, primitive
+     blocks such as the chart fall through to undefined var() and render blank. */
+  --deck-color-bg: var(--ld-bg);
+  --deck-color-surface: var(--ld-surface);
+  --deck-color-panel: var(--ld-panel);
+  --deck-color-ink: var(--ld-ink);
+  --deck-color-muted: var(--ld-muted);
+  --deck-color-accent: var(--ld-accent);
+  --deck-color-accent-soft: var(--ld-accent-soft);
+  --deck-font-display: var(--ld-font-display);
+  --deck-font-body: var(--ld-font-body);
+  --deck-font-mono: var(--ld-font-mono);
+  --deck-space-1: var(--ld-space-1);
+  --deck-space-2: var(--ld-space-2);
+  --deck-space-3: var(--ld-space-3);
+  --deck-space-4: var(--ld-space-4);
+  --deck-space-5: var(--ld-space-5);
+  --deck-space-6: var(--ld-space-6);
+  --deck-space-7: var(--ld-space-7);
+  --deck-radius: var(--ld-radius);
+  --deck-radius-sm: var(--ld-radius-sm);
+  --deck-stroke: var(--ld-rule);
+  --deck-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --deck-code-ink: var(--ld-ink);
+
+  background: var(--ld-bg);
+  color: var(--ld-ink);
+  font-family: var(--ld-font-body);
+}
+
+.ld-slide {
+  position: relative;
+  width: min(100vw, var(--ld-slide-w));
+  aspect-ratio: 16 / 9;
+  min-height: 100dvh;
+  margin: 0 auto;
+  overflow: hidden;
+  /* Full-bleed static grain (desaturated fractal noise, rendered once) over the surface. */
+  /* Full-bleed static grain (rendered once). Desaturated + luminance-lowered (slope 0.45) so the
+     grain reads as DARK texture, not light speckle — this keeps the surface from going pale.
+     It sits beneath the spotlight (::before), so the blue depth is unaffected. */
+  background-color: var(--ld-surface);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  /* multiply blends the grain DOWN into the surface — only darkens, never pales it. */
+  background-blend-mode: multiply;
+  color: var(--ld-ink);
+}
+
+/* Signature spotlight — one soft energy-blue radial anchored top-center (brand accent, single hue). */
+.ld-slide::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle 640px at 50% 180px,
+    color-mix(in srgb, var(--ld-spotlight) 42%, transparent) 0%,
+    color-mix(in srgb, var(--ld-spotlight) 24%, transparent) 36%,
+    transparent 72%
+  );
+}
+
+/* Soft dot grid with a gentle top-anchored radial fade. Kept at z-index 0 — strictly BEHIND the
+   content frame (z-index 1) — so it can never overlay or lower the contrast of foreground elements. */
+.ld-slide::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle, rgba(148, 163, 184, 0.08) 0 0.7px, transparent 0.8px);
+  background-size: 18px 18px;
+  -webkit-mask-image: radial-gradient(ellipse 85% 55% at 50% 15%, #000 70%, transparent 100%);
+  mask-image: radial-gradient(ellipse 85% 55% at 50% 15%, #000 70%, transparent 100%);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.ld-frame {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+  gap: var(--ld-space-3);
+  height: 100%;
+  padding: var(--ld-space-6);
+}
+
+/* Kickers / indices — mono, uppercase, accent or soft */
+.ld-kicker,
+.ld-index {
+  margin: 0;
+  font-family: var(--ld-font-mono);
+  font-size: calc(var(--ld-type) * clamp(11px, 0.86vw, 13px));
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ld-accent);
+}
+
+.ld-index {
+  color: var(--ld-soft);
+}
+
+/* A small accent dot helper that can precede a kicker */
+.ld-kicker-dot::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--ld-accent);
+  box-shadow: 0 0 10px var(--ld-accent-glow);
+  vertical-align: middle;
+}
+
+/* Gradient headline text */
+.ld-title {
+  margin: 0;
+  font-family: var(--ld-font-display);
+  font-size: calc(var(--ld-type) * clamp(48px, 6vw, 96px));
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  background: linear-gradient(180deg, #f7f8f8 0%, rgba(247, 248, 248, 0.7) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.ld-title-compact {
+  font-size: calc(var(--ld-type) * clamp(32px, 4vw, 60px));
+  line-height: 1.06;
+}
+
+.ld-section-title {
+  margin: 0;
+  font-family: var(--ld-font-display);
+  font-size: calc(var(--ld-type) * clamp(32px, 4.4vw, 72px));
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--ld-ink);
+}
+
+/* One emphasized word may use 700 + accent — never above 700 */
+.ld-emphasis-word {
+  font-weight: 700;
+  color: var(--ld-emphasis-ink);
+}
+
+.ld-accent-word {
+  color: var(--ld-accent);
+}
+
+.ld-body {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--ld-muted);
+  font-size: calc(var(--ld-type) * clamp(15px, 1.2vw, 20px));
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.ld-title + .ld-body,
+.ld-section-title + .ld-body {
+  margin-top: var(--ld-space-2);
+}
+
+/* Top hairline rule (replaces swiss heavy 2px ink rule) */
+.ld-rule-top {
+  border-top: var(--ld-rule);
+  padding-top: var(--ld-space-3);
+}
+
+.ld-rule-top > .ld-kicker {
+  margin: 0 0 var(--ld-space-2);
+}
+
+/* Panels — the core Linear surface: hairline border, faint fill, top-edge sheen */
+.ld-panel {
+  border: var(--ld-rule);
+  border-radius: var(--ld-radius);
+  background: var(--ld-panel);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.ld-panel-accent {
+  border-color: var(--ld-accent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0 28px var(--ld-accent-soft);
+}
+
+.ld-emphasis-block {
+  background: var(--ld-accent-soft);
+  border: 1px solid var(--ld-accent);
+  border-radius: var(--ld-radius);
+}
+
+/* Lists — no bullets, mono accent index */
+.ld-list {
+  display: grid;
+  gap: var(--ld-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ld-list li {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  column-gap: var(--ld-space-2);
+  border-top: var(--ld-rule);
+  padding-top: var(--ld-space-2);
+  font-size: calc(var(--ld-type) * clamp(16px, 1.3vw, 22px));
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--ld-ink);
+}
+
+.ld-list li .ld-index {
+  font-family: var(--ld-font-mono);
+  color: var(--ld-accent);
+}
+
+.ld-list li span:last-child {
+  display: block;
+  max-width: 30ch;
+}
+
+.ld-panel .ld-list {
+  gap: var(--ld-space-1);
+}
+
+.ld-panel .ld-list li {
+  grid-template-columns: 32px minmax(0, 1fr);
+  font-size: calc(var(--ld-type) * clamp(14px, 1.05vw, 18px));
+  line-height: 1.18;
+}
+
+.ld-list-compact-tall-text {
+  margin-top: 18px;
+  gap: 18px;
+}
+
+.ld-list-compact-tall-text li {
+  padding-top: 16px;
+  font-size: calc(var(--ld-type) * clamp(21px, 1.55vw, 26px));
+  line-height: 1.18;
+}
+
+/* Media — rounded hairline frame, slight brightness reduction (NO grayscale) */
+.ld-media {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  margin: 0;
+  overflow: hidden;
+  border: var(--ld-rule);
+  border-radius: var(--ld-radius);
+  background:
+    linear-gradient(135deg, #16181c, #0f1011 60%, #0a0b0c),
+    var(--ld-surface);
+}
+
+.ld-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: brightness(0.92);
+  object-fit: cover;
+}
+
+.ld-media figcaption {
+  position: absolute;
+  left: var(--ld-space-2);
+  right: var(--ld-space-2);
+  bottom: var(--ld-space-2);
+  z-index: 1;
+  margin: 0;
+  color: var(--ld-ink);
+}
+
+/* Full-bleed bottom scrim for text legibility */
+.ld-media-scrim::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent 45%, rgba(8, 9, 10, 0.85));
+  pointer-events: none;
+}
+
+/* Primitive compositions retain the established Linear Dark layout surface. */
+.ld-rule-top .ld-template-title-block {
+  color: var(--ld-ink);
+}
+.ld-rule-top .ld-template-title-block h2 {
+  margin: 0;
+  font-family: var(--ld-font-display);
+  font-size: calc(var(--ld-type) * clamp(48px, 6vw, 96px));
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  background: linear-gradient(180deg, #f7f8f8 0%, rgb(247 248 248 / 0.7) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.ld-rule-top .ld-template-title-block p {
+  max-width: 62ch;
+  margin: var(--ld-space-2) 0 0;
+  color: var(--ld-muted);
+  font-size: calc(var(--ld-type) * clamp(15px, 1.2vw, 20px));
+  line-height: 1.5;
+}
+.ld-media .ld-template-image-block {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.ld-media .ld-template-image-block img {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  object-fit: cover;
+}
+.ld-media .ld-template-image-block figcaption {
+  position: absolute;
+  left: var(--ld-space-2);
+  right: var(--ld-space-2);
+  bottom: var(--ld-space-2);
+  z-index: 1;
+  padding: 0;
+  color: var(--ld-ink);
+  font-family: var(--ld-font-mono);
+  font-size: calc(var(--ld-type) * 0.75rem);
+  text-transform: uppercase;
+}
+
+/* Meta row */
+.ld-meta-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ld-space-3);
+  align-items: start;
+  border-top: var(--ld-rule);
+  margin: 0;
+  padding-top: var(--ld-space-2);
+}
+
+.ld-meta-row p,
+.ld-meta-row dd,
+.ld-meta-row dt {
+  margin: 0;
+}
+
+.ld-meta-row dt {
+  color: var(--ld-soft);
+  font-family: var(--ld-font-mono);
+  font-size: calc(var(--ld-type) * 11px);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ld-meta-row dd {
+  margin-top: 4px;
+  color: var(--ld-ink);
+  font-size: calc(var(--ld-type) * clamp(14px, 1.05vw, 17px));
+  line-height: 1.2;
+}
+
+/* Oversized section number / generic number */
+.ld-number {
+  margin: 0;
+  font-family: var(--ld-font-mono);
+  font-size: calc(var(--ld-type) * clamp(56px, 8vw, 128px));
+  font-weight: 600;
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  color: var(--ld-soft);
+}
+
+/* Hero metric — gradient text + faint accent glow */
+.ld-metric {
+  font-family: var(--ld-font-display);
+  font-size: calc(var(--ld-type) * clamp(60px, 9vw, 144px));
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  background: linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.72) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  filter: drop-shadow(0 0 32px var(--ld-accent-soft));
+}
+.ld-metric .ld-template-stat-block strong {
+  display: block;
+  font-family: var(--ld-font-display);
+  font-size: inherit;
+  line-height: inherit;
+}
+.ld-metric .ld-template-stat-block span {
+  display: block;
+  letter-spacing: normal;
+  margin-top: var(--ld-space-2);
+  color: var(--ld-muted);
+  font-family: var(--ld-font-body);
+  font-size: calc(var(--ld-type) * clamp(15px, 1.2vw, 20px));
+  line-height: 1.5;
+  -webkit-text-fill-color: var(--ld-muted);
+}
+
+/* Thin accent progress bar (section dividers, timelines) */
+.ld-progress-bar {
+  height: 2px;
+  width: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--ld-accent), transparent);
+}
+
+/* Chips (priority/status/method) */
+.ld-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--ld-radius-sm);
+  border: 1px solid var(--ld-line-strong);
+  background: var(--ld-panel);
+  font-family: var(--ld-font-mono);
+  font-size: calc(var(--ld-type) * 12px);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ld-muted);
+}
+
+.ld-chip-accent {
+  border-color: var(--ld-accent);
+  background: var(--ld-accent-soft);
+  color: var(--ld-ink);
+}
+
+/* Square icon tile */
+.ld-icon-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--ld-radius-sm);
+  border: var(--ld-rule);
+  background: var(--ld-panel);
+  color: var(--ld-accent);
+}
+
+.ld-icon-tile-compact {
+  width: 44px;
+  height: 44px;
+}
+
+/* Unfilled icon slot — dashed hairline + muted glyph signals "place an icon here". */
+.ld-icon-tile-empty {
+  border-style: dashed;
+  border-color: var(--ld-line-strong);
+  color: var(--ld-soft);
+}
+
+/* Invalid authoring value — keep the slide renderable but make the mistake unmistakable. */
+.ld-icon-tile-error {
+  border-color: #ff7a7a;
+  color: #ff7a7a;
+  font-size: 10px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+  padding: 4px;
+  text-align: center;
+}
+
+/* Window chrome bar (code / terminal / ui-showcase) */
+.ld-chrome {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 14px;
+  border-bottom: var(--ld-rule);
+}
+
+.ld-chrome span {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--ld-line-strong);
+}
+
+.ld-chrome .ld-chrome-label {
+  width: auto;
+  height: auto;
+  margin-left: 8px;
+  border-radius: 0;
+  background: none;
+  font-family: var(--ld-font-mono);
+  font-size: calc(var(--ld-type) * 12px);
+  letter-spacing: 0.04em;
+  color: var(--ld-soft);
+}
+
+/* Code block */
+.ld-code {
+  margin: 0;
+  padding: var(--ld-space-3);
+  overflow: hidden;
+  font-family: var(--ld-font-mono);
+  font-size: calc(var(--ld-type) * clamp(15px, 1.1vw, 18px));
+  line-height: 1.6;
+  color: var(--ld-ink);
+}
+
+.ld-code-line {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  column-gap: var(--ld-space-2);
+  padding: 1px var(--ld-space-2);
+  margin: 0 calc(-1 * var(--ld-space-2));
+  white-space: pre;
+}
+
+.ld-code-line .ld-code-ln {
+  color: var(--ld-soft);
+  text-align: right;
+  user-select: none;
+}
+
+.ld-code-line-highlight {
+  background: var(--ld-code-highlight-bg);
+  box-shadow: inset 2px 0 0 var(--ld-accent);
+}
+
+.ld-tok-keyword { color: var(--ld-code-keyword); }
+.ld-tok-string { color: var(--ld-code-string); }
+.ld-tok-comment { color: var(--ld-code-comment); font-style: italic; }
+.ld-tok-fn { color: var(--ld-code-fn); }
+
+/* Terminal */
+.ld-terminal {
+  font-family: var(--ld-font-mono);
+  font-size: calc(var(--ld-type) * clamp(14px, 1.05vw, 17px));
+  line-height: 1.7;
+}
+
+.ld-terminal-prompt { color: var(--ld-accent); }
+.ld-terminal-cmd { color: var(--ld-ink); }
+.ld-terminal-output { color: var(--ld-muted); white-space: pre-wrap; }
+
+/* Tables */
+.ld-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: calc(var(--ld-type) * clamp(13px, 1vw, 16px));
+}
+
+.ld-table th {
+  padding: var(--ld-space-2);
+  border-bottom: 1px solid var(--ld-line-strong);
+  font-family: var(--ld-font-mono);
+  font-size: calc(var(--ld-type) * 12px);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--ld-soft);
+}
+
+.ld-table td {
+  padding: var(--ld-space-2);
+  border-bottom: var(--ld-rule);
+  color: var(--ld-ink);
+  vertical-align: top;
+}
+
+.ld-table-col-recommended {
+  background: var(--ld-accent-soft);
+}
+
+/* Flow / process nodes */
+.ld-node {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ld-space-2) var(--ld-space-3);
+  border: 1px solid var(--ld-accent);
+  border-radius: var(--ld-radius-sm);
+  background: var(--ld-panel);
+  color: var(--ld-ink);
+  font-weight: 500;
+}
+
+.ld-connector {
+  flex: 1;
+  height: 1px;
+  background: var(--ld-line-strong);
+}
+
+.ld-connector-arrow {
+  color: var(--ld-accent);
+}
+
+@media (max-width: 900px) {
+  .ld-frame {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-rows: repeat(10, minmax(0, auto));
+    padding: var(--ld-space-4);
+  }
+
+  .ld-meta-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

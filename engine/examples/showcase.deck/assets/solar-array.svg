@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-label="Solar array angled toward the sun beside a station pole">
+  <defs>
+    <linearGradient id="ssky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0c1022"/>
+      <stop offset="1" stop-color="#37324f"/>
+    </linearGradient>
+    <linearGradient id="pv" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2c3560"/>
+      <stop offset="1" stop-color="#4a5488"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="900" fill="url(#ssky)"/>
+  <circle cx="1020" cy="150" r="56" fill="#f2c98a"/>
+  <g stroke="#f2c98a" stroke-width="5" stroke-linecap="round" opacity="0.6">
+    <line x1="1020" y1="60" x2="1020" y2="24"/><line x1="1110" y1="150" x2="1146" y2="150"/>
+    <line x1="1084" y1="86" x2="1110" y2="60"/><line x1="1084" y1="214" x2="1110" y2="240"/>
+  </g>
+  <rect x="0" y="700" width="1200" height="200" fill="#0a0d18"/>
+  <g>
+    <g transform="translate(280 470) skewX(-12)">
+      <rect x="0" y="0" width="330" height="180" rx="8" fill="url(#pv)" stroke="#8a93b8" stroke-width="4"/>
+      <g stroke="#8a93b8" stroke-width="3">
+        <line x1="82" y1="0" x2="82" y2="180"/><line x1="165" y1="0" x2="165" y2="180"/><line x1="247" y1="0" x2="247" y2="180"/>
+        <line x1="0" y1="90" x2="330" y2="90"/>
+      </g>
+    </g>
+    <g transform="translate(660 470) skewX(-12)">
+      <rect x="0" y="0" width="330" height="180" rx="8" fill="url(#pv)" stroke="#8a93b8" stroke-width="4"/>
+      <g stroke="#8a93b8" stroke-width="3">
+        <line x1="82" y1="0" x2="82" y2="180"/><line x1="165" y1="0" x2="165" y2="180"/><line x1="247" y1="0" x2="247" y2="180"/>
+        <line x1="0" y1="90" x2="330" y2="90"/>
+      </g>
+    </g>
+    <g fill="#2a3153">
+      <rect x="330" y="640" width="12" height="90"/><rect x="560" y="640" width="12" height="90"/>
+      <rect x="712" y="640" width="12" height="90"/><rect x="940" y="640" width="12" height="90"/>
+    </g>
+  </g>
+  <g fill="#070910">
+    <rect x="120" y="380" width="8" height="280"/>
+    <rect x="96" y="380" width="56" height="8"/>
+    <rect x="104" y="404" width="16" height="12" rx="3"/>
+  </g>
+</svg>
