@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-// Build a deck into ONE standalone, self-contained HTML file (JS + CSS + fonts inlined as base64).
+// Build a deck into a standalone, self-contained HTML file (JS + CSS + fonts inlined as base64).
 // The result opens by double-click over file:// with no server. Layouts, elements, and the
 // template's CSS entrance animations are preserved because the same React source, design-system.css,
-// and any optional template animation stylesheet are bundled.
+// and any optional template animation stylesheet are bundled. The deck's assets/ folder (including
+// regenerable diagram IR) is copied alongside so the export is re-renderable from itself.
 //
 // Usage:
 //   node engine/skills/presentation-crafting/scripts/export-standalone-html.mjs --deck <deck-path-or-slug> [--out <dir>]
@@ -11,7 +12,7 @@
 //   --out    Output directory. Defaults to the selected deck's .build/export/.
 
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync, renameSync, rmSync } from "node:fs";
+import { cpSync, existsSync, readFileSync, renameSync, rmSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -64,11 +65,18 @@ if (existsSync(built)) {
   renameSync(built, finalFile);
 }
 
-// favicon.svg from public/ is copied but the export head doesn't reference it — drop the orphan
-// so the output folder holds exactly one self-contained file.
+// favicon.svg from public/ is copied but the export head doesn't reference it — drop the orphan.
 const orphanFavicon = resolve(outDir, "favicon.svg");
 if (existsSync(orphanFavicon)) {
   rmSync(orphanFavicon);
+}
+
+// The deck's assets payload — including regenerable source artifacts such as
+// assets/diagrams/*.json — ships next to the HTML (report decision: deck assets are
+// excluded from nothing, so an export can be re-rendered from itself).
+const deckAssets = resolve(deckRoot, "assets");
+if (existsSync(deckAssets)) {
+  cpSync(deckAssets, resolve(outDir, "assets"), { recursive: true });
 }
 
 console.log(`\nDone. Standalone deck: ${finalFile}`);

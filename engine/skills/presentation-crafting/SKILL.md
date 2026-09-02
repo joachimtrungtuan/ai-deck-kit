@@ -46,6 +46,7 @@ This skill handles deck content normalization, React deck source, standalone HTM
    - Slide-ready or manually structured: `aideck new <slug> --template <set>`.
    - Approved outline: `aideck gen scaffold <slug> --template <set> --outline <approved-outline.md>`.
 4. Author or refine only `decks/<slug>.deck/content.md`: visible copy, intent, visual direction, speaker notes, design notes, review questions, and valid structured blocks. Use `aideck slide add|remove|move`, `aideck anim toggle`, and `aideck transition set` for structure or motion metadata. Reordering renames numeric slide ids to match their new position (the command prints the final id), so re-read `deck.json` before addressing a slide by id again — see the id rules in `references/canonical-slide-content-schema.md`.
+   - Slide diagrams (flow, topology, custody): author the JSON IR in `assets/diagrams/`, validate it, and render it into that slide's `override` with `scripts/render-diagram.mjs` — never hand-draw override HTML. Follow `references/diagram-authoring.md`.
 5. Validate the canonical bundle with `aideck validate <slug>`. Resolve every manifest/content mismatch before preview or export. When you finish an editing pass, run `aideck verify` for the workspace as a whole — it catches edits that landed outside the deck, including a template edited inside the deck's frozen copy.
 6. Review through the shared runtime with `aideck serve --deck <slug>`. The command prints the deck path and the resolved template before Vite starts — read it back and confirm it is the deck and template you intended.
 7. When the deck is renderable, export with `aideck export html <slug>` or `aideck export pdf <slug>`, then perform the HTML/PDF visual checks in `references/export-workflow.md`.
@@ -115,6 +116,8 @@ decks/{presentation-slug}.deck/
 - `references/preview-runtime.md` - Shared React preview app rules.
 - `references/export-runtime-contract.md` - Reusable preview/export shell contract and template-copy rules.
 - `references/export-workflow.md` - Standalone single-file HTML and PDF export (scripts, fixed-canvas rationale, validation).
+- `references/diagram-authoring.md` - Diagram IR authoring, validation, render-to-override, and portability.
+- `../../primitives/diagrams/diagram-ir-v1.md` - Diagram IR vocabulary and its limits.
 - `references/quality-gate.md` - Final review checklist before handoff.
 
 Template authoring (manifests, catalogs, versioning, new template sets) lives in the sibling `presentation-template-creation` skill — this skill only consumes templates.
@@ -127,7 +130,8 @@ not migrate content or templates.
 
 - `aideck validate <slug>` checks a `.deck` bundle's `deck.json` manifest against its `content.md` (parity, required fields, override reasons).
 - `aideck deck status [<slug>]` reports how each deck compares to its source template; `aideck deck retemplate <slug> [--to <name>]` re-syncs one deck's frozen snapshot.
-- `aideck export html <slug>` builds one self-contained HTML file. `aideck export pdf <slug>` follows with the flattened PDF pipeline.
+- `aideck export html <slug>` builds one self-contained HTML file. `aideck export pdf <slug>` follows with the flattened PDF pipeline. The export also copies the deck's `assets/` beside the HTML so diagram IR travels with the output.
+- `scripts/validate-diagram-ir.mjs <file>` checks a diagram IR against the engine diagram schema; `scripts/render-diagram.mjs --ir <file> --animation <name>` renders a slide's diagram `override:` block. See `references/diagram-authoring.md`.
 
 ## Templates
 

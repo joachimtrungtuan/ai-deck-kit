@@ -237,9 +237,16 @@
       "transition": "none"
     },
     {
-      "id": "slide-32",
+      "id": "slide-network-diagram",
+      "type": "diagram",
+      "file": "content.md#slide-network-diagram",
+      "animation": "gentle-rise",
+      "transition": "crossfade"
+    },
+    {
+      "id": "slide-33",
       "type": "closing",
-      "file": "content.md#slide-32",
+      "file": "content.md#slide-33",
       "animation": "spotlight",
       "transition": "none"
     }

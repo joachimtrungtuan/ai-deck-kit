@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/joachimtrungtuan/ai-deck-kit/raw/main/engine/primitives/diagrams/diagram-ir-v1.schema.json",
+  "title": "AI Deck Kit Diagram IR v1",
+  "$comment": "PROVENANCE: This schema is ours. Its node/edge/group/layout-hint vocabulary is adapted from Archify's typed IR specification — upstream repo https://github.com/tt-a1i/archify, commit 06dd052602dd9a369e4d034e24faef0917b5a60c, read 2026-09-02 (archify/schemas/architecture.schema.json + archify/schemas/common.schema.json). No Archify code is installed, forked, or vendored; Archify's renderer is never used. Upstream changes are adopted only by a human reading the diff against that SHA and deciding — the same way any specification is tracked. There is deliberately no automatic update path. This file versions independently of upstream (v1, v2, ...).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["irVersion", "meta", "nodes"],
+  "properties": {
+    "irVersion": {
+      "const": 1
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "subtitle": { "type": "string", "maxLength": 160 }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["grid"] },
+        "cols": { "type": "integer", "minimum": 1, "maximum": 6 },
+        "cellW": { "type": "number", "minimum": 120, "maximum": 360 },
+        "cellH": { "type": "number", "minimum": 70, "maximum": 200 },
+        "gapX": { "type": "number", "minimum": 0, "maximum": 120 },
+        "gapY": { "type": "number", "minimum": 0, "maximum": 120 }
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "col", "row"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "label": { "type": "string", "minLength": 1, "maxLength": 40 },
+          "sublabel": { "type": "string", "maxLength": 60 },
+          "kind": { "$ref": "#/$defs/nodeKind" },
+          "col": { "type": "integer", "minimum": 0, "maximum": 5 },
+          "row": { "type": "integer", "minimum": 0, "maximum": 3 },
+          "emphasis": { "type": "boolean" }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "from": { "$ref": "#/$defs/id" },
+          "to": { "$ref": "#/$defs/id" },
+          "label": { "type": "string", "minLength": 1, "maxLength": 32 },
+          "variant": { "$ref": "#/$defs/edgeVariant" },
+          "fromSide": { "$ref": "#/$defs/side" },
+          "toSide": { "$ref": "#/$defs/side" }
+        }
+      }
+    },
+    "groups": {
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "wraps"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "label": { "type": "string", "minLength": 1, "maxLength": 40 },
+          "kind": { "enum": ["region", "security-group"] },
+          "wraps": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/$defs/id" }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*$"
+    },
+    "nodeKind": {
+      "enum": ["frontend", "backend", "database", "cloud", "security", "messagebus", "external"]
+    },
+    "edgeVariant": {
+      "enum": ["default", "emphasis", "security", "dashed"]
+    },
+    "side": {
+      "enum": ["left", "right", "top", "bottom"]
+    }
+  }
+}

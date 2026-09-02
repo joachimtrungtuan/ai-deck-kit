@@ -15,6 +15,7 @@ The root pointer resolves the installed engine and user deck roots. Keep authore
 │       ├── content.md              # author/agent-owned content + annotations
 │       ├── schema-guidance.md       # thin local schema/editing guardrails
 │       ├── assets/
+│       │   └── diagrams/           # diagram IR JSON sources (see diagram-authoring.md)
 │       ├── template/               # pinned template snapshot
 │       └── .build/                 # generated, disposable source/export
 └── templates/
@@ -31,7 +32,7 @@ default of the same name everywhere the CLI resolves one.
 - `content.md` is the one canonical authored file: copy, visual direction, speaker notes, design notes, review questions, and explicit override reasons.
 - `schema-guidance.md` records the deck's schema/template boundary for agents;
   it does not replace `deck.json` or migrate content.
-- `assets/` stores deck-specific images, generated graphics, exported diagrams, and local media.
+- `assets/` stores deck-specific images, generated graphics, and local media. `assets/diagrams/` holds diagram IR JSON sources (one file per diagram slide; see `diagram-authoring.md`); the rendered diagram lives in that slide's `override`, and the IR ships with the export so it can be re-rendered.
 - `template/` is the deck's frozen snapshot, taken at creation. It is what preview and export render, so editing the source template never disturbs an existing deck. Replace it only through `aideck deck retemplate`.
 - `.build/` stores regenerated source and exports; never treat it as canonical input.
 - Do not create per-template or per-deck app scaffolds. `engine/preview-app/` is the one shared runtime.

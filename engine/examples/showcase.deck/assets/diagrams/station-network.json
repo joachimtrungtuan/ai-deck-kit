@@ -1,0 +1,29 @@
+{
+  "irVersion": 1,
+  "meta": {
+    "title": "How a reading reaches the map",
+    "subtitle": "From a tipping bucket to a public tile"
+  },
+  "layout": { "mode": "grid", "cols": 4, "gapX": 72, "gapY": 56 },
+  "nodes": [
+    { "id": "station", "label": "Field station", "sublabel": "sensor, logger, solar", "col": 0, "row": 0 },
+    { "id": "volunteer", "label": "Volunteer host", "sublabel": "landowner, gateway power", "col": 0, "row": 2, "kind": "external" },
+    { "id": "gateway", "label": "Neighborhood gateway", "sublabel": "radio uplink", "col": 1, "row": 0 },
+    { "id": "phone", "label": "Phone check-in", "sublabel": "manual readings", "col": 1, "row": 2, "kind": "frontend" },
+    { "id": "ingest", "label": "Cloud ingest", "sublabel": "dedupe, QA, stamps", "col": 2, "row": 1, "kind": "cloud", "emphasis": true },
+    { "id": "archive", "label": "Reading archive", "sublabel": "15-minute buckets", "col": 3, "row": 0, "kind": "database" },
+    { "id": "map", "label": "Public map", "sublabel": "live tiles", "col": 3, "row": 2, "kind": "frontend" }
+  ],
+  "edges": [
+    { "from": "station", "to": "gateway", "label": "radio", "variant": "dashed" },
+    { "from": "volunteer", "to": "gateway" },
+    { "from": "gateway", "to": "ingest", "label": "MQTT" },
+    { "from": "phone", "to": "ingest", "label": "sync", "variant": "dashed" },
+    { "from": "ingest", "to": "archive", "label": "QA'd batch", "fromSide": "top", "toSide": "bottom" },
+    { "from": "archive", "to": "map", "variant": "emphasis", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "groups": [
+    { "id": "field", "label": "On the ground", "wraps": ["station", "volunteer", "phone"] },
+    { "id": "platform", "label": "Platform", "kind": "security-group", "wraps": ["ingest", "archive", "map"] }
+  ]
+}
