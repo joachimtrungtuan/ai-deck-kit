@@ -23,9 +23,9 @@ test("serve help documents template selection and headless mode", () => {
 
 test("serve normalizes gallery, deck, and template command forms", () => {
   assert.deepEqual(parseServeArgs(["serve"]), { open: true });
-  assert.deepEqual(parseServeArgs(["serve", "vivimoon-website"]), { deck: "vivimoon-website", open: true });
-  assert.deepEqual(parseServeArgs(["serve", "deck", "vivimoon-website"]), { deck: "vivimoon-website", open: true });
-  assert.deepEqual(parseServeArgs(["serve", "--deck", "vivimoon-website"]), { deck: "vivimoon-website", open: true });
+  assert.deepEqual(parseServeArgs(["serve", "showcase"]), { deck: "showcase", open: true });
+  assert.deepEqual(parseServeArgs(["serve", "deck", "showcase"]), { deck: "showcase", open: true });
+  assert.deepEqual(parseServeArgs(["serve", "--deck", "showcase"]), { deck: "showcase", open: true });
   assert.deepEqual(parseServeArgs(["serve", "template", "linear-dark"]), { open: true, template: "linear-dark" });
   assert.deepEqual(parseServeArgs(["serve", "--template", "linear-dark"]), { open: true, template: "linear-dark" });
 });
@@ -34,7 +34,7 @@ test("serve validates ambiguous targets and forwards browser-open options", () =
   assert.throws(() => parseServeArgs(["serve", "deck"]), /deck requires a value/);
   assert.throws(() => parseServeArgs(["serve", "unknown", "extra"]), /Unknown serve arguments/);
   assert.throws(
-    () => parseServeArgs(["serve", "vivimoon-website", "--template", "linear-dark"]),
+    () => parseServeArgs(["serve", "showcase", "--template", "linear-dark"]),
     /Choose one serve target/,
   );
   assert.throws(() => parseServeArgs(["serve", "--deck", "first", "--deck", "second"]), /--deck can only be provided once/);
