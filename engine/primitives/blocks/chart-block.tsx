@@ -7,7 +7,7 @@ export function ChartBlock({ block, className = "" }: { block: ChartBlockData; c
     <BlockShell block={block} className={`primitive-chart-block ${className}`.trim()}>
       {block.label ? <p className="primitive-label">{block.label}</p> : null}
       <div className="primitive-chart-bars" aria-label={block.label ?? "Bar chart"} role="img">
-        {block.series.map((item) => <div className="primitive-chart-column" key={item.label}><span style={{ height: `${(item.value / maximum) * 100}%` }} /><small>{item.label}</small></div>)}
+        {block.series.map((item, index) => <div className="primitive-chart-column" key={`${index}-${item.label}`}><span style={{ height: `${(item.value / maximum) * 100}%` }} /><small>{item.label}</small></div>)}
       </div>
     </BlockShell>
   );

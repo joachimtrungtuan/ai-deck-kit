@@ -27,4 +27,5 @@ jobs:
       - name: Verify the committed CLI build matches its source
         run: npm run build:check
       - run: npm run validate
+      - run: npm test
       - run: npm run test:smoke

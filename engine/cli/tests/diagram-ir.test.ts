@@ -4,7 +4,7 @@
 // imported by the TS build), through the shipped worked-example IR.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, globSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -14,6 +14,8 @@ import { parse as parseYaml } from "yaml";
 const projectRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const engineDir = path.join(projectRoot, "engine");
 const scriptDir = path.join(engineDir, "skills/presentation-crafting/scripts");
+// Both shipped templates cap their layout at z-index 1; the override overlay must sit above it.
+const TEMPLATE_CONTENT_MAX_Z = 1;
 const showcaseIrPath = path.join(engineDir, "examples/showcase.deck/assets/diagrams/station-network.json");
 const showcaseIr = JSON.parse(readFileSync(showcaseIrPath, "utf8"));
 
@@ -182,12 +184,46 @@ function validateDeck(deckDir: string) {
   return { status: result.status, output: `${result.stdout}${result.stderr}` };
 }
 
-test("runtime: override html layer paints above template content", () => {
-  // Diagram slides depend on this: the layer is emitted after <slide.Component/> and must carry
-  // a z-index above template content (both shipped templates cap their layout at z-index: 1),
-  // or the recorded layout shows through the rendered diagram.
+// Diagram slides depend on the override overlay painting ON TOP of the recorded layout, or the
+// template content shows through the rendered diagram. That invariant has three separable parts,
+// asserted here against source rather than a rendered DOM (these tests run under node --test with
+// no renderer). Each assertion is order-independent so formatting changes cannot break it.
+test("override overlay: layer is absolutely positioned and stacked above content", () => {
   const source = readFileSync(path.join(engineDir, "preview-app/src/slide-override-layer.tsx"), "utf8");
-  assert.match(source, /position: "absolute", inset: 0, pointerEvents: "none", zIndex: 2/);
+  const overlayStyle = source.match(/className="aideck-override-overlay"[\s\S]*?style=\{\{([^}]*)\}\}/);
+  assert.ok(overlayStyle, "overlay div must carry an inline style object");
+  assert.match(overlayStyle[1], /position:\s*"absolute"/);
+  assert.match(overlayStyle[1], /inset:\s*0/);
+  assert.match(overlayStyle[1], /pointerEvents:\s*"none"/);
+  const zIndex = overlayStyle[1].match(/zIndex:\s*(\d+)/);
+  assert.ok(zIndex, "overlay must set an explicit zIndex");
+  assert.ok(Number(zIndex[1]) > TEMPLATE_CONTENT_MAX_Z, `overlay zIndex ${zIndex[1]} must exceed template content`);
+});
+
+test("override overlay: every render site emits the layer after the slide component", () => {
+  for (const site of ["preview-app/src/fixed-slide-canvas.tsx", "preview-app/src/deck-export.tsx"]) {
+    const source = readFileSync(path.join(engineDir, site), "utf8");
+    const component = source.indexOf("<slide.Component");
+    const layer = source.indexOf("<SlideOverrideLayer");
+    assert.ok(component !== -1, `${site} must render <slide.Component`);
+    assert.ok(layer !== -1, `${site} must render <SlideOverrideLayer`);
+    assert.ok(layer > component, `${site} must emit the override layer after the slide component`);
+  }
+});
+
+test("override overlay: shipped templates keep content at or below the assumed z-index cap", () => {
+  const files = globSync("templates/*.template/**/*.{css,tsx}", { cwd: engineDir })
+    .map((rel) => path.join(engineDir, rel));
+  assert.ok(files.length > 0, "expected shipped template sources");
+  for (const file of files) {
+    const source = readFileSync(file, "utf8");
+    for (const [, value] of source.matchAll(/z-?[iI]ndex:\s*(-?\d+)/g)) {
+      assert.ok(
+        Number(value) <= TEMPLATE_CONTENT_MAX_Z,
+        `${path.relative(engineDir, file)} declares z-index ${value}, above the cap the override overlay assumes`,
+      );
+    }
+  }
 });
 
 test("deck validator: generated diagram override passes on a clean bundle", () => {
@@ -210,6 +246,47 @@ test("deck validator: stale IR after render fails", () => {
     const { status, output } = validateDeck(deckDir);
     assert.equal(status, 1);
     assert.match(output, /changed .* after render/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// The override-shape guards must not hide behind the IR-exists branch: a deck that both lost its
+// IR and carries a bad override has to report the bad override too, not just the missing file.
+test("deck validator: override-shape guards still fire when the IR is missing", () => {
+  const { dir, deckDir } = copyShowcaseDeck();
+  try {
+    rmSync(path.join(deckDir, "assets/diagrams/station-network.json"));
+    const contentPath = path.join(deckDir, "content.md");
+    const content = readFileSync(contentPath, "utf8");
+    const edited = content.replace('  layout: "none"\n  animation: "none"', '  layout: "split"\n  animation: "fade"');
+    assert.notEqual(edited, content, "layout/animation replacement targeted nothing");
+    writeFileSync(contentPath, edited);
+    const { status, output } = validateDeck(deckDir);
+    assert.equal(status, 1);
+    assert.match(output, /missing from the deck bundle/);
+    assert.match(output, /must set override\.layout and override\.animation to "none"/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("deck validator: traversing IR path is rejected, not followed", () => {
+  const { dir, deckDir } = copyShowcaseDeck();
+  try {
+    // A marker that satisfies a naive startsWith("assets/diagrams/") test but escapes the bundle.
+    writeFileSync(path.join(dir, "outside.json"), JSON.stringify(showcaseIr, null, 2) + "\n");
+    const contentPath = path.join(deckDir, "content.md");
+    const content = readFileSync(contentPath, "utf8");
+    const edited = content.replace(
+      /(Generated by render-diagram\.mjs from )\S+\.json \(diagram IR v1, content ([0-9a-f]{8})\)/,
+      "$1assets/diagrams/../../outside.json (diagram IR v1, content $2)",
+    );
+    assert.notEqual(edited, content, "marker replacement targeted nothing");
+    writeFileSync(contentPath, edited);
+    const { status, output } = validateDeck(deckDir);
+    assert.equal(status, 1);
+    assert.match(output, /outside assets\/diagrams\//);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

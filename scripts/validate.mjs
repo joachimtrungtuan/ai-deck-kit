@@ -50,6 +50,9 @@ for (const required of [
   "engine/examples/showcase.deck/deck.json",
   "engine/examples/showcase.deck/content.md",
   "engine/examples/showcase.deck/assets/station-ridge.svg",
+  // The diagram override in the fixture is only regenerable while its source IR ships with it.
+  "engine/examples/showcase.deck/assets/diagrams/station-network.json",
+  "engine/primitives/diagrams/diagram-ir-v1.schema.json",
 ]) {
   if (!packedFiles.has(required)) {
     console.error(`Release package is missing schema authority: ${required}`);

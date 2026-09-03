@@ -773,8 +773,8 @@ tableRows:
   - ["SR-04", "Rain gauge clear of drip line and canopy", "Must", "Site visit", "Pass"]
   - ["SR-05", "Landowner consent on file", "Must", "Register", "Pass"]
 override:
-  css: ".ld-table td { font-variant-numeric: tabular-nums }"
-  reason: "Requirement tables mix numeric tolerances and codes; tabular numerals keep SR-01 to SR-05 aligned so the ID column scans as one block."
+  css: "[data-slide-id=\"slide-29\"] td { font-variant-numeric: tabular-nums }"
+  reason: "Requirement tables mix numeric tolerances and codes; tabular numerals keep SR-01 to SR-05 aligned so the ID column scans as one block. Scoped by slide id rather than a template class so it holds under any template set."
 ```
 
 ### Speaker Notes

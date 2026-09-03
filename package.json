@@ -16,6 +16,7 @@
     "lint": "node scripts/lint.mjs",
     "typecheck": "npm --prefix engine run typecheck",
     "validate": "node scripts/validate.mjs",
+    "test": "node --experimental-strip-types --test engine/cli/tests/*.test.ts",
     "test:serve": "node --experimental-strip-types --test engine/cli/tests/serve.test.ts",
     "test:diagram": "node --experimental-strip-types --test engine/cli/tests/diagram-ir.test.ts",
     "test:lifecycle": "node --experimental-strip-types --test engine/cli/tests/deck-lifecycle.test.ts",
