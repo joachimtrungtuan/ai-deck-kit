@@ -303,7 +303,7 @@
 
 .ld-panel .ld-list li {
   grid-template-columns: 32px minmax(0, 1fr);
-  font-size: calc(var(--ld-type) * clamp(14px, 1.05vw, 18px));
+  font-size: calc(var(--ld-type) * clamp(16px, 1.3vw, 22px));
   line-height: 1.18;
 }
 
@@ -313,6 +313,15 @@
 }
 
 .ld-list-compact-tall-text li {
+  padding-top: 16px;
+  font-size: calc(var(--ld-type) * clamp(21px, 1.55vw, 26px));
+  line-height: 1.18;
+}
+
+/* Review-density variant: panels (before-after) must actually receive the
+   tall-text scale — .ld-panel .ld-list li outranks .ld-list-compact-tall-text li,
+   which previously left the class inert inside panels. */
+.ld-panel .ld-list-compact-tall-text li {
   padding-top: 16px;
   font-size: calc(var(--ld-type) * clamp(21px, 1.55vw, 26px));
   line-height: 1.18;

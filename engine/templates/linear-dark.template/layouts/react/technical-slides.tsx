@@ -137,7 +137,7 @@ export function LinearDataFlowSlide(props: LinearSlideProps) {
                 minWidth: 0,
                 paddingLeft: "2px",
                 fontFamily: "var(--ld-font-mono)",
-                fontSize: "calc(var(--ld-type) * 13px)",
+                fontSize: "calc(var(--ld-type) * clamp(15px, 1.15vw, 20px))",
                 color: "var(--ld-ink)",
                 ...props.dataFlowPrimaryTextStyle,
               }}
@@ -160,7 +160,7 @@ export function LinearDataFlowSlide(props: LinearSlideProps) {
                 style={{
                   display: "block",
                   marginTop: "2px",
-                  fontSize: "calc(var(--ld-type) * 12px)",
+                  fontSize: "calc(var(--ld-type) * clamp(13px, 1vw, 16px))",
                   lineHeight: 1.3,
                   fontFamily: "var(--ld-font-body)",
                   ...props.dataFlowSecondaryTextStyle,
