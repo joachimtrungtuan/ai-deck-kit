@@ -15,6 +15,9 @@ Run this checklist before handing off a deck.
 - One template set is used across the deck.
 - Every slide maps to an active slide type.
 - Overrides are explicit and justified.
+- Override count checked against the promotion tripwire (`SKILL.md` → Override
+  Promotion Tripwire): same intent on 3+ slides in one deck means a promotion
+  proposal is open with the user — never promoted silently.
 - Typography, color, spacing, icon weight, and animation style are consistent.
 
 ## Runtime

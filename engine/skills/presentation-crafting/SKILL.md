@@ -38,6 +38,41 @@ This skill handles deck content normalization, React deck source, standalone HTM
 - Use one shared React preview runtime for template and deck review. Do not create a separate React app per template or per presentation.
 - Reuse the export runtime templates for canvas, controls, standalone HTML, and PDF capture. Do not rewrite this wrapper per deck.
 
+## Override Promotion Tripwire
+
+An override is an edge case. When the same override keeps appearing, it is not
+an edge case anymore — it is the template missing a feature. This tripwire tells
+you when to stop and raise that with the user.
+
+**Threshold:** the same override — the same *intent*, not a byte-identical
+string — appears on **3 or more slides within one deck**. Slide count is the
+whole trigger. Counting rules:
+
+- Two slides bumping item font size in two different layouts are the same
+  override: the intent is "this text is unreadable at the template's scale."
+- An inert override (`layout: "none"`, `animation: "none"`) counts for nothing
+  — and should not be written at all, since it declares nothing.
+- The count is per template set, scoped to the deck you are authoring. Never
+  read sibling decks to build a cross-deck tally.
+
+**When the threshold is crossed:** *propose, never promote.* State where the
+override recurs, what the underlying template gap appears to be, what promoting
+it would change (a layout variant, an animation, a block capability — plus the
+`templateVersion` bump that follows), and what staying put costs. Then ask the
+user. The user decides whether to promote the fix, leave the overrides in
+place, or do something else. **An agent never promotes an override into the
+template on its own initiative, and silence is not consent** — an unanswered
+proposal means the overrides stay exactly as they are. Below the threshold, the
+existing rule stands: the override is allowed and its `reason` is mandatory.
+
+The same rule covers diagram overrides: a repeated diagram pattern crossing the
+threshold means the pattern belongs in the diagram IR vocabulary or the
+template, not in per-slide override HTML.
+
+This is authoring-time judgment, deliberately **not** a validator check — a
+validator that failed on a crossed threshold would be the auto-promotion this
+rule forbids.
+
 ## Workflow
 
 1. Read the available user material and select exactly one template set from `aideck template list`. If no suitable set exists, stop and switch to `presentation-template-creation`; never improvise a deck style. Before authoring, read `engine/schemas/content-schema-guidance.md`, the selected template's `schema-guidance.md` when present, and the deck's root `schema-guidance.md` when editing an existing deck. The manifest remains authoritative when a legacy bundle predates these guidance files.

@@ -51,6 +51,10 @@ IR file, `css`/`html` as YAML literal blocks, no `<script`, no `</style`.
 - Source of truth: `assets/diagrams/<name>.json` (edit this, re-render).
 - Rendered output: inside the slide's own `override:` in `content.md` — never a
   shared stylesheet, never another slide's block.
+- Diagram overrides obey the same promotion tripwire as every other override
+  (`SKILL.md` → Override Promotion Tripwire): the same diagram pattern on 3+
+  slides in one deck means the pattern belongs in the IR vocabulary or the
+  template — propose that to the user; never promote it yourself.
 - The renderer emits only `primitive-anim-*` classes; it has no per-template
   branch, and none may be added. The active template's `--deck-motion-*` and
   `--deck-*` design tokens are what make the diagram look native to it.
