@@ -253,6 +253,8 @@ indefinitely.
 - `override.reason` is non-empty when any of `override.layout`, `override.animation`, `override.css`, or `override.html` is set;
 - `override.css` must not contain an unescaped `</style>` and `override.html` must not contain `<script`;
 - a diagram override (CSS carrying the `render-diagram.mjs` generator marker) must reference an existing `assets/diagrams/*.json` whose content hash still matches the rendered output, must pass diagram IR v1 validation, must keep its unique scope class on the html root, and must set `override.layout`/`override.animation` to `"none"`;
+- `chartData[]` entries are objects with a non-empty string `label` (unique across the series — bars are keyed by it) and a finite numeric `value`; a quoted number fails;
+- `images[].src` and `imageSrc` resolve to a file that exists inside the bundle; absolute paths and paths escaping the bundle fail; a missing `alt`/`imageAlt` warns;
 - every `items[].icon` value resolves to a real export from `@phosphor-icons/react` (kebab-case or PascalCase); unknown values fail validation with the slide and value named;
 - every `blocks[].type` exists in the declared `blockCatalog`; data blocks carry required structured fields;
 - `morph` anchors resolve to a matching anchor on an adjacent slide;
@@ -307,4 +309,12 @@ and are replaced wholesale on engine upgrade.
 - `stats[]`, `images[]`, `chartData[]`, `regionSeries[]`, `tableColumns`, and `tableRows` retain distinct shapes.
 - `data-visual` concept diagrams accept `items[].icon` before their semantic-icon guess.
 - `language` remains documentation-only metadata for code slides.
-- `.build/` lives inside the bundle, git-ignored. No remaining open questions.
+- `.build/` lives inside the bundle, git-ignored.
+- **Remote (`http(s)`) image srcs warn; they do not fail validation.** A remote asset contradicts the
+  self-contained bundle principle above and will not render offline or in an export, so the author is
+  told — but decks that deliberately point at a hosted image stay valid. Revisit only if remote assets
+  start causing real breakage in shared decks; do not silently promote this to an error.
+- **Shape validation covers the props the shipped templates read as data:** `chartData[]`, `images[]`,
+  `imageSrc`/`imageAlt`. The remaining array props (`flowSteps`, `commands`, `consequences`,
+  `highlightLines`) are Array-checked only by the runtime; their failure mode is empty or garbled text
+  rather than a broken render, so they are a known, accepted gap. No remaining open questions.
