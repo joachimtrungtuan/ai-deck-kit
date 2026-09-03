@@ -312,15 +312,10 @@
   gap: 18px;
 }
 
-.ld-list-compact-tall-text li {
-  padding-top: 16px;
-  font-size: calc(var(--ld-type) * clamp(21px, 1.55vw, 26px));
-  line-height: 1.18;
-}
-
-/* Review-density variant: panels (before-after) must actually receive the
-   tall-text scale — .ld-panel .ld-list li outranks .ld-list-compact-tall-text li,
-   which previously left the class inert inside panels. */
+/* Panels (before-after) must receive the tall-text scale. The panel-scoped
+   selector here is specificity (0,2,1) — exactly tied with .ld-panel .ld-list li
+   above — so this rule wins by source order alone and must stay below it. */
+.ld-list-compact-tall-text li,
 .ld-panel .ld-list-compact-tall-text li {
   padding-top: 16px;
   font-size: calc(var(--ld-type) * clamp(21px, 1.55vw, 26px));
