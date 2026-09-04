@@ -1,6 +1,7 @@
 // Compares each deck's frozen template snapshot against the template it came from, and re-syncs it.
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { LEGACY_CONTENT_SCHEMA_VERSION } from "./deck.js";
 import { copyTree, hashTree, readJson, removeTree, writeJson } from "./fs.js";
 import { writeDeckSchemaGuidance } from "./schema-guidance.js";
 import { findTemplate } from "./templates.js";
@@ -63,6 +64,9 @@ export function describeDrift(drift) {
  * Also refuses when the source template consumes a different content-schema major than the deck's
  * content was authored for. In either direction, the re-synced components would be fed props shaped
  * for another schema and could silently render broken content.
+ *
+ * On the paths it does allow, it writes the resolved schema back into deck.json, so a deck that
+ * reached here without the field stops being ambiguous the first time it is re-synced.
  */
 export function retemplateDeck(deckRoot, template) {
     const manifestPath = join(deckRoot, "deck.json");
@@ -76,8 +80,8 @@ export function retemplateDeck(deckRoot, template) {
             `Change those slides first, or choose a template that declares these types.`,
         ].join("\n"));
     }
-    const deckSchema = manifest.contentSchemaVersion ?? "3.0.0";
-    const templateSchema = template.manifest.contentSchemaVersion ?? "3.0.0";
+    const deckSchema = manifest.contentSchemaVersion ?? LEGACY_CONTENT_SCHEMA_VERSION;
+    const templateSchema = template.manifest.contentSchemaVersion ?? LEGACY_CONTENT_SCHEMA_VERSION;
     if (majorPart(deckSchema) !== majorPart(templateSchema)) {
         throw new Error([
             `Refusing: deck "${manifest.slug ?? deckRoot}" is on content schema ${deckSchema}, but template "${template.manifest.name}" ${template.manifest.templateVersion} consumes ${templateSchema}.`,
@@ -105,6 +109,7 @@ export function retemplateDeck(deckRoot, template) {
     }
     removeTree(backup);
     manifest.template = { set: template.manifest.name, version: to, origin: template.origin };
+    manifest.contentSchemaVersion = deckSchema;
     manifest.slideTypeCatalog = template.manifest.slideTypeCatalog;
     manifest.blockCatalog = template.manifest.blockCatalog ?? manifest.blockCatalog;
     writeJson(manifestPath, manifest);

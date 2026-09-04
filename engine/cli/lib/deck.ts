@@ -51,7 +51,7 @@ export function createDeck(workspace: Workspace, slug: string, templateName: str
     template: { set: template.manifest.name, version: template.manifest.templateVersion, origin: template.origin },
     slideTypeCatalog: template.manifest.slideTypeCatalog,
     blockCatalog: template.manifest.blockCatalog ?? "v1",
-    contentSchemaVersion: template.manifest.contentSchemaVersion,
+    contentSchemaVersion: template.manifest.contentSchemaVersion ?? LEGACY_CONTENT_SCHEMA_VERSION,
     outputMode: "react-and-static-html",
     status: "draft",
     defaults: { animation: template.manifest.defaultAnimation, transition: defaultTransition },
@@ -86,7 +86,16 @@ export function setYamlField(section: string, field: string, value: string): str
   return pattern.test(section) ? section.replace(pattern, line) : section.replace(/^```ya?ml\n/, (opening) => `${opening}${line}\n`);
 }
 
-export function slideContent(slide: DeckSlide, title: string, contentSchemaVersion = "3.0.0"): string {
+/**
+ * The schema a deck or template is assumed to speak when its manifest names none. The field was
+ * written into every deck the CLI has ever created, and it predates the v2 grammar, so a manifest
+ * without it can only have come from the v1 era. Guessing "old" is also the loud guess: a wrong
+ * assumption surfaces as a refusal or a validator error, where guessing "new" writes v3-shaped
+ * content into a v1 deck and mis-renders in silence.
+ */
+export const LEGACY_CONTENT_SCHEMA_VERSION = "1.0.0";
+
+export function slideContent(slide: DeckSlide, title: string, contentSchemaVersion = LEGACY_CONTENT_SCHEMA_VERSION): string {
   const major = parseContentSchemaMajor(contentSchemaVersion);
   if (major === 1) return legacySlideContent(slide, title);
   if (major === 2 || major === 3) return canonicalSlideContent(slide, title);

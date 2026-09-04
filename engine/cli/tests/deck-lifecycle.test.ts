@@ -146,6 +146,50 @@ test("re-syncing refuses a template on an older content-schema major", () => {
   assert.equal(JSON.parse(readFileSync(join(deckRoot, "template", "template-manifest.json"), "utf8")).name, "v2");
 });
 
+test("a deck that never recorded a content schema is read as v1 and refused against a v2 template", () => {
+  const workspace = fixtureWorkspace();
+  writeTemplate(join(workspace.root, "templates", "sample.template"), "Mine");
+  const deckRoot = createDeck(workspace, "talk", "sample");
+  stripContentSchemaVersion(deckRoot);
+
+  const v2Root = join(workspace.root, "templates", "v2.template");
+  writeTemplate(v2Root, "V2", "v2");
+  const v2ManifestPath = join(v2Root, "template-manifest.json");
+  const v2Manifest = JSON.parse(readFileSync(v2ManifestPath, "utf8")) as TemplateManifest;
+  v2Manifest.contentSchemaVersion = "2.0.0";
+  writeFileSync(v2ManifestPath, `${JSON.stringify(v2Manifest, null, 2)}\n`);
+
+  assert.throws(
+    () => retemplateDeck(deckRoot, resolveTemplate(workspace, "v2")),
+    /content schema 1\.0\.0/,
+  );
+  assert.equal(readManifest(deckRoot).template.set, "sample");
+});
+
+test("adding a slide to a deck that never recorded a content schema writes v1 grammar", () => {
+  const workspace = fixtureWorkspace();
+  writeTemplate(join(workspace.root, "templates", "sample.template"), "Mine");
+  const deckRoot = createDeck(workspace, "talk", "sample");
+  stripContentSchemaVersion(deckRoot);
+
+  addSlide(readDeck(workspace, "talk"), workspace, "slide-02", "title");
+  const content = readFileSync(join(deckRoot, "content.md"), "utf8");
+  // `icons` and the "On-Slide Text" heading are v1-only; `items`/`description` are v2+ only.
+  assert.match(content, /^## Slide 02: /m);
+  assert.equal(content.match(/^icons: \[\]$/gm)?.length, 2);
+  assert.doesNotMatch(content, /^items: \[\]$/m);
+});
+
+test("re-syncing stamps the assumed content schema into a deck that never recorded one", () => {
+  const workspace = fixtureWorkspace();
+  writeTemplate(join(workspace.root, "templates", "sample.template"), "Mine");
+  const deckRoot = createDeck(workspace, "talk", "sample");
+  stripContentSchemaVersion(deckRoot);
+
+  retemplateDeck(deckRoot, resolveTemplate(workspace, "sample"));
+  assert.equal(readManifest(deckRoot).contentSchemaVersion, "1.0.0");
+});
+
 test("guidance sync backfills legacy templates and refreshes stale deck guidance idempotently", () => {
   const workspace = fixtureWorkspace();
   mkdirSync(join(workspace.engineRoot, "schemas"), { recursive: true });
@@ -253,6 +297,14 @@ function fixtureWorkspace(): Workspace {
     pointerPath: join(root, "ai-deck-kit.json"),
     pointer: { engineRoot: "engine", decksRoot: "decks", engineVersion: "0.1.0" },
   };
+}
+
+/** Reproduces a deck bundle from before deck.json carried contentSchemaVersion. */
+function stripContentSchemaVersion(deckRoot: string): void {
+  const manifestPath = join(deckRoot, "deck.json");
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as Record<string, unknown>;
+  delete manifest.contentSchemaVersion;
+  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 }
 
 function writeTemplate(root: string, displayName: string, name = "sample"): void {

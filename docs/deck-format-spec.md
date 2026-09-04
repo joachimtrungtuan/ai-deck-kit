@@ -13,6 +13,17 @@ behavior unchanged. Decks stamped `2.x` keep loading unchanged — the engine
 supports majors 1, 2, and 3. V1 is not extended or automatically migrated;
 this document deliberately does not redefine it.
 
+An absent `contentSchemaVersion` reads as `1.0.0` everywhere the toolkit
+inspects it — the CLI, the verifier, the preview runtime, and the content
+validator. The field predates the v2 grammar, so a manifest without it can only
+have come from the v1 era. Any operation that rewrites `deck.json` stamps the
+resolved version back into it, so a deck stops being ambiguous the first time it
+is touched. When the assumption is wrong for a bundle that arrived from outside
+the toolkit, the mismatch surfaces as a refusal — a content-schema major
+conflict on re-sync, or a validator error — never as a silent re-render. Judging
+what such a bundle actually is, and what to do about it, is the migration
+skill's job, not the CLI's.
+
 ## 1. What a `.deck` is
 
 A `.deck` is a **folder bundle** — the portable, self-contained unit of one presentation. It is git-diffable, zippable for sharing, and readable/editable by both the agent and the CLI. It contains authored content, a structured manifest, and local assets. Generated artifacts (React source, exports) are regenerable and kept out of the canonical bundle.
