@@ -20,9 +20,9 @@ npx github:joachimtrungtuan/ai-deck-kit init --dir tools/ai-deck-kit
 
 ### Install sequence
 
-1. **Prerequisite preflight.** Hard requirements (Node ≥ 22.6.0, npm, git) abort the install before anything is written; soft ones (`zip`/`unzip`, Chrome, ImageMagick) only warn, naming the feature each unlocks. `--skip-checks` downgrades a hard failure to a warning. `aideck doctor` runs the same report.
+1. **Prerequisite preflight.** Hard requirements (Node ≥ 22.6.0, npm, git) abort the install before anything is written; soft ones (`zip`/`unzip`, Chrome, ImageMagick) only warn, naming the feature each unlocks. `--skip-checks` downgrades a hard failure to a warning. `aideck doctor` runs the same report against an already-installed workspace, where git is only a warning — it isn't needed until the next `aideck upgrade`.
 2. **Engine copy + pointer.** The pinned engine is copied to the chosen root and `ai-deck-kit.json` is written.
-3. **Dependency install.** `npm install --prefix <engineRoot>`. Set the package-specific offline install flag for CLI-only scaffolding without preview/export dependencies.
+3. **Dependency install.** `npm ci --prefix <engineRoot>`, honouring the committed `engine/package-lock.json` so every install resolves the same dependency tree. Set the package-specific offline install flag for CLI-only scaffolding without preview/export dependencies.
 4. **Version-control boundary.** A `.gitignore` block ignores the resolved engine directory, the `./aideck` wrapper, and `**/.build/`; `decks/` and `ai-deck-kit.json` are deliberately left committable. A missing file is created; an existing one is appended to, and a file already carrying the block is left untouched.
 5. **Project wrapper.** `./aideck` is written at the project root, so the toolkit is fully usable with no global registration.
 6. **Skill wiring.** See below.
@@ -40,7 +40,10 @@ Links are relative symlinks, with a copy fallback where symlinks are unavailable
 
 ```sh
 aideck skills wire [--to <path>]
+aideck skills unwire [--to <path>]
 ```
+
+`unwire` undoes `wire` for a project: it removes only the symlinks `wireSkills` created (a managed link is identified by where it resolves, not by name, so a user's own real folder of the same name is never touched — this still works after the engine tree is gone, since resolution reads the link's stored target rather than requiring it to exist), the Claude write-guard and verify hooks for `.claude` homes, and the boundary notes it added to `AGENTS.md`/`CLAUDE.md` and `.gitignore`. Without `--to`, it targets every agent home found at the project root — the same set a non-interactive `wire` would use.
 
 ### Command registration
 
@@ -103,7 +106,7 @@ aideck uninstall --yes                                  # remove engine + pointe
 aideck uninstall --purge --yes                          # also remove decks/ and templates/
 ```
 
-Every destructive command prints its full target list before deleting, requires `--yes`, and refuses any path at or outside the project root. `remove template` refuses shipped defaults, and refuses to delete a template decks still use unless `--reassign` is given — in which case affected decks are re-templated first.
+Every destructive command prints its full target list before deleting, requires `--yes`, and refuses any path at or outside the project root. `remove template` refuses shipped defaults, and refuses to delete a template decks still use unless `--reassign` is given — in which case affected decks are re-templated first. `uninstall` also runs `skills unwire` for the project root, so it never leaves dangling skill symlinks, stale Claude hooks, or boundary notes behind — with or without `--purge`.
 
 For a local release smoke test, pass an engine directory explicitly:
 

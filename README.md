@@ -165,9 +165,8 @@ Four things keep this honest:
   Your own content in those files is never touched.
 - For Claude Code, `aideck skills wire` offers two safeguards: one refuses a write to a
   file the toolkit owns as it happens, the other runs `aideck verify` when the agent
-  finishes editing and sends it back to fix anything it broke. Remove them any time by
-  deleting `.claude/hooks/aideck-engine-guard.mjs`, `.claude/hooks/aideck-verify.mjs`
-  and their entries in `.claude/settings.json`.
+  finishes editing and sends it back to fix anything it broke. Remove them any time,
+  along with the skill links and boundary notes, with `aideck skills unwire`.
 
 ---
 
@@ -187,6 +186,7 @@ You can do this at any later time:
 ```sh
 aideck skills wire                       # find the agent folder and ask
 aideck skills wire --to ../../.claude    # use exactly this folder
+aideck skills unwire                     # undo it: remove the links, hooks, and boundary notes
 ```
 
 Existing folders of your own are never overwritten.
@@ -397,7 +397,9 @@ pointing at something that is gone. It refuses rather than guessing.
 
 `aideck uninstall` on its own removes `engine/` and the workspace pointer and leaves
 `decks/` and `templates/` untouched — your presentations survive. `--purge` is the
-one that deletes your work too.
+one that deletes your work too. Either way, it also runs `skills unwire` for you —
+the skill links, Claude safeguard hooks, and boundary notes in `AGENTS.md`,
+`CLAUDE.md` and `.gitignore` go with it, so nothing dangling is left behind.
 
 ---
 

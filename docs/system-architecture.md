@@ -73,7 +73,7 @@ Five enforcement layers, weakest to strongest:
 
 `aideck verify` (`cli/commands/verify.ts`) is the runtime-agnostic statement of the boundary and what the Stop hook runs: engine drift, per-template manifest + source parse (`cli/lib/template-source-syntax.ts`, esbuild), deck manifest/content validation, template edits made inside a deck's snapshot (`snapshotEdits`), and loose files beside the bundles. It is read-only and spawns nothing but the content validator, because it runs after every editing pass; `doctor` is `verify` plus the machine-prerequisite probes.
 
-Both hooks are written by `aideck skills wire` behind one consent prompt (they edit a user-owned `settings.json`) and refreshed by `upgrade`, which re-runs the wiring for agent homes at the project root.
+Both hooks are written by `aideck skills wire` behind one consent prompt (they edit a user-owned `settings.json`) and refreshed by `upgrade`, which re-runs the wiring for agent homes at the project root. `aideck skills unwire` removes them again, along with the skill symlinks and the boundary notes in `AGENTS.md`/`CLAUDE.md`/`.gitignore`; `uninstall` calls it automatically so a removed install leaves no residue.
 
 Every layer keys off artifacts the installer creates. The kit's own repository has no integrity manifest and no installed engine, so the checks and both hooks are structurally inert here — engine edits are the work in this repo.
 
@@ -118,7 +118,7 @@ Each module has a deterministic CLI surface and, where creative, a paired skill.
 | Module | CLI (deterministic) | Skill (AI-driven) |
 |---|---|---|
 | **Core / orchestration** | `init`, `upgrade`, `verify`, `doctor`, `config`, `list` (deck registry), `guidance status|sync`, workspace resolution | workflow routing |
-| **Onboarding** | `link`/`unlink` (register the workspace-resolving `aideck` launcher), `skills wire` (link engine skills into `.claude`/`.agents`) | — |
+| **Onboarding** | `link`/`unlink` (register the workspace-resolving `aideck` launcher), `skills wire`/`skills unwire` (link/unlink engine skills in `.claude`/`.agents`) | — |
 | **Design primitives** | `blocks list`, `motion list`, `tokens print` (read/scaffold shared blocks + motion + tokens) | choose/compose blocks, tune motion |
 | **Presentation** | `new`, `slide add/remove/move`, `anim toggle`, `transition set` (scaffold + flag flips in `content.md`/manifest) | author & edit slide content |
 | **Deck maintenance** | `deck status` (drift vs source template), `deck retemplate` (re-sync one deck's frozen snapshot) | judge the diff, reconcile `content.md`, decide when to re-sync |
