@@ -36,7 +36,7 @@ const REACT_FORWARD_REF = Symbol.for("react.forward_ref");
 // Schema dispatch — mirrors engine/preview-app/src/manifest-deck-source.tsx exactly so the
 // validator never disagrees with the parser about which schema a deck is.
 const DEFAULT_CONTENT_SCHEMA_VERSION = "1.0.0";
-const SUPPORTED_CONTENT_SCHEMA_MAJORS = [1, 2];
+const SUPPORTED_CONTENT_SCHEMA_MAJORS = [1, 2, 3];
 
 const rawSchemaVersion = manifest.contentSchemaVersion ?? DEFAULT_CONTENT_SCHEMA_VERSION;
 const schemaMajorMatch = /^(\d+)\.\d+\.\d+$/.exec(String(rawSchemaVersion));

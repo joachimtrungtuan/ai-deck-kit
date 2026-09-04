@@ -76,8 +76,8 @@ export function retemplateDeck(deckRoot, template) {
             `Change those slides first, or choose a template that declares these types.`,
         ].join("\n"));
     }
-    const deckSchema = manifest.contentSchemaVersion ?? "1.0.0";
-    const templateSchema = template.manifest.contentSchemaVersion ?? "1.0.0";
+    const deckSchema = manifest.contentSchemaVersion ?? "3.0.0";
+    const templateSchema = template.manifest.contentSchemaVersion ?? "3.0.0";
     if (majorPart(deckSchema) !== majorPart(templateSchema)) {
         throw new Error([
             `Refusing: deck "${manifest.slug ?? deckRoot}" is on content schema ${deckSchema}, but template "${template.manifest.name}" ${template.manifest.templateVersion} consumes ${templateSchema}.`,

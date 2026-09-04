@@ -1,14 +1,17 @@
 # `.deck` Bundle Format Specification
 
-**Status:** Canonical v2 spec (2026-08-28). `contentSchemaVersion: "2.0.0"` is the
-current authoring format for newly created decks.
+**Status:** Canonical spec (2026-09-04). `contentSchemaVersion: "3.0.0"` is the
+current authoring format for newly created decks. The v3 grammar is identical
+to the v2 grammar; the major bump marks the aggregate breaking changes of the
+motion/catalog/diagram work (see §10 Content Schema History).
 Companion specs: `system-architecture.md`, `project-overview-pdr.md`.
 
-This document defines the v2 content schema only. Decks stamped with
-`contentSchemaVersion: 1.x` (or with the field absent) remain on the supported,
-frozen v1 schema and keep their legacy parser and validator behavior unchanged.
-V1 is not extended or automatically migrated; this document deliberately does
-not redefine it.
+This document defines the v2/v3 content schema (they share one grammar). Decks
+stamped with `contentSchemaVersion: 1.x` (or with the field absent) remain on
+the supported, frozen v1 schema and keep their legacy parser and validator
+behavior unchanged. Decks stamped `2.x` keep loading unchanged — the engine
+supports majors 1, 2, and 3. V1 is not extended or automatically migrated;
+this document deliberately does not redefine it.
 
 ## 1. What a `.deck` is
 
@@ -61,7 +64,7 @@ Promotes the current `.slides.md` frontmatter to a structured, validated file. T
   "template": { "set": "swiss-modern", "version": "2.0.0" },
   "slideTypeCatalog": "v2",
   "blockCatalog": "v1",
-  "contentSchemaVersion": "2.0.0",
+  "contentSchemaVersion": "3.0.0",
   "outputMode": "react-and-static-html",
   "status": "draft",
   "defaults": { "animation": "gentle-rise", "transition": "none" },
@@ -238,9 +241,9 @@ The following is the validation contract for this schema. The
 canonical `validate-slide-content.mjs` implementation (and `aideck validate`,
 which wraps it) now dispatches on the major of the deck's
 `contentSchemaVersion`: a `1.x` deck is judged by its frozen legacy rule set
-and must pass exactly as it always has; a `2.x` deck is judged by the rules
-below. No deck migration exists or is planned — existing decks stay on v1
-indefinitely.
+and must pass exactly as it always has; a `2.x` or `3.x` deck is judged by the
+rules below (they share one grammar). No deck migration exists or is planned —
+existing v1 decks stay on v1 indefinitely.
 
 `aideck validate <deck>` (wrapping the canonical
 `validate-slide-content.mjs` logic) enforces:
@@ -299,7 +302,49 @@ and are replaced wholesale on engine upgrade.
 - `aideck template ...` commands manage `.template` bundles; `aideck new` embeds the chosen template into the new deck.
 - `.template` bundle = `template-manifest.json` (manifest: tokens ref, slide-type→layout map, block/motion catalogs, versions) + `design-system.css` + `layouts/` + `icon-policy.md`. Element animation is engine-owned and tuned through design-system motion tokens.
 
+## 10. Content Schema History
+
+### `3.0.0` (2026-09-04) — current
+
+One declared value across the engine, both shipped templates, and the showcase
+deck. **Major bump, deliberate:** the v3 grammar is identical to the v2 grammar
+(same parser, same validator rule set); the major marks the aggregate breaking
+changes that landed with engine phases 1–5 of the motion-unification plan:
+
+- The element `animation` field now resolves against the **merged, engine-owned
+  element-animation catalog** (10 names: `none`, `fade`, `gentle-rise`,
+  `soft-scale`, `masked-reveal`, `staggered-list`, `image-drift`, `line-draw`,
+  `spotlight`, `morph`). The old template-local animation vocabularies
+  (`swiss-anim-*`, `ld-anim-*`) are gone; templates tune motion through
+  `--deck-motion-*` tokens instead.
+- Slide-level `animation` is now **validated** (against the same catalog) where
+  it previously was not — content accepted by a v2-era validator can now fail.
+- Templates gain a required **`supportedAnimations`** manifest field declaring
+  which of the 10 engine animations they cover.
+- The default **slide-type catalog moves to `v2`** (30 types).
+- **`assets/diagrams/`** becomes a recognised bundle location: diagrams authored
+  from a typed IR render into deck-local slide overrides.
+
+**What a consumer must do to upgrade a v2 deck:**
+
+1. Replace template-local `animation` values (`swiss-anim-*` / `ld-anim-*`)
+   with the engine catalog names above — or remove the field to inherit the
+   slide's default.
+2. If you authored a template that shipped its own animation CSS, delete it;
+   the engine implements every element animation as `primitive-anim-*` CSS.
+   Declare coverage in the template manifest's `supportedAnimations` array and
+   tune motion via the `--deck-motion-base` / `--deck-motion-ease` tokens.
+3. If your template predates `slideTypeCatalog: "v2"`, add/align it.
+4. Bump your deck's `contentSchemaVersion` to `3.0.0` only after steps 1–3;
+   until then a `2.x` stamp keeps loading correctly.
+
+Decks on `1.x` (or fieldless) are unaffected: the frozen v1 parser and
+validator rules are retained, and `supportedContentSchemaMajors: [1, 2, 3]`
+keeps them loading.
+
 ## Decisions (locked)
+
+
 
 - Slide headings are structural only; YAML `title:` is the sole title source, including quote text.
 - Card/list data uses one object-array `items[]` shape with optional `description`, `icon`, and `column`.

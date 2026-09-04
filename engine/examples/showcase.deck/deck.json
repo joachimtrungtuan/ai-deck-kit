@@ -11,7 +11,7 @@
   },
   "slideTypeCatalog": "v2",
   "blockCatalog": "v1",
-  "contentSchemaVersion": "2.0.0",
+  "contentSchemaVersion": "3.0.0",
   "outputMode": "react-and-static-html",
   "status": "ready",
   "defaults": {

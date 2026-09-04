@@ -83,13 +83,13 @@ export function setYamlField(section, field, value) {
     const pattern = new RegExp(`^${field}:.*$`, "m");
     return pattern.test(section) ? section.replace(pattern, line) : section.replace(/^```ya?ml\n/, (opening) => `${opening}${line}\n`);
 }
-export function slideContent(slide, title, contentSchemaVersion = "2.0.0") {
+export function slideContent(slide, title, contentSchemaVersion = "3.0.0") {
     const major = parseContentSchemaMajor(contentSchemaVersion);
     if (major === 1)
         return legacySlideContent(slide, title);
-    if (major === 2)
+    if (major === 2 || major === 3)
         return canonicalSlideContent(slide, title);
-    throw new Error(`Unsupported content schema version "${contentSchemaVersion}". Supported schema majors: 1, 2.`);
+    throw new Error(`Unsupported content schema version "${contentSchemaVersion}". Supported schema majors: 1, 2, 3.`);
 }
 function parseContentSchemaMajor(version) {
     const match = /^(\d+)\.\d+\.\d+$/.exec(version);

@@ -8,10 +8,10 @@
 AI Deck Kit is a single-package, agent-native presentation toolkit. The root package exposes the `ai-deck-kit` installer and `aideck` binary. The `engine/` tree contains the deterministic CLI, preview/export runtime, primitives, skills, and shipped templates. User decks and user-authored templates are separate workspace data roots.
 
 The shipped template set comprises `swiss-modern` and `linear-dark`; both declare
-the current `slideTypeCatalog: "v2"` and `contentSchemaVersion: "2.0.0"`, at
-template versions `3.1.0` and `3.0.0` respectively. The engine supports
-content-schema majors 1 and 2: existing v1 decks remain frozen, while newly created
-decks inherit the selected template's schema. Project-local templates and existing
+the current `slideTypeCatalog: "v2"` and `contentSchemaVersion: "3.0.0"`, at
+template version `3.3.0`. The engine
+supports content-schema majors 1, 2, and 3: existing v1 decks remain frozen,
+while newly created decks inherit the selected template's schema. Project-local templates and existing
 decks are not migrated by upgrade.
 
 ```text

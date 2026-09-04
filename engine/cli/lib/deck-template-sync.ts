@@ -102,8 +102,8 @@ export function retemplateDeck(deckRoot: string, template: ResolvedTemplate): Re
     );
   }
 
-  const deckSchema = manifest.contentSchemaVersion ?? "1.0.0";
-  const templateSchema = template.manifest.contentSchemaVersion ?? "1.0.0";
+  const deckSchema = manifest.contentSchemaVersion ?? "3.0.0";
+  const templateSchema = template.manifest.contentSchemaVersion ?? "3.0.0";
   if (majorPart(deckSchema) !== majorPart(templateSchema)) {
     throw new Error(
       [

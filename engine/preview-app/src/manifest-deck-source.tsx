@@ -13,7 +13,7 @@ type Manifest = {
 };
 
 const DEFAULT_CONTENT_SCHEMA_VERSION = "1.0.0";
-const SUPPORTED_CONTENT_SCHEMA_MAJORS = [1, 2] as const;
+const SUPPORTED_CONTENT_SCHEMA_MAJORS = [1, 2, 3] as const;
 
 export function createManifestDeckSource(
   manifest: Manifest,

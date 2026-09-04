@@ -211,7 +211,7 @@ export function createTemplate(workspace: Workspace, name: string): string {
     displayName: name.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()),
     deckClass: `${name}-deck`,
     templateVersion: "1.0.0",
-    contentSchemaVersion: "2.0.0",
+    contentSchemaVersion: "3.0.0",
     slideTypeCatalog: "v2",
     blockCatalog: "v1",
     runtime: ["react", "static-html"],
