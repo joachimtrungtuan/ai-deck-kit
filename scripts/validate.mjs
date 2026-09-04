@@ -53,6 +53,12 @@ for (const required of [
   // The diagram override in the fixture is only regenerable while its source IR ships with it.
   "engine/examples/showcase.deck/assets/diagrams/station-network.json",
   "engine/primitives/diagrams/diagram-ir-v1.schema.json",
+  // The CLI is unusable without these: the wrapper (`aideck` bin), its compiled entry (what the
+  // wrapper imports), and the resolver (`npm link`'s global bin target). A pack that silently
+  // dropped one would ship a CLI that fails on first run rather than at release time.
+  "engine/cli/index.mjs",
+  "engine/cli/dist/index.js",
+  "engine/cli/resolver.mjs",
 ]) {
   if (!packedFiles.has(required)) {
     console.error(`Release package is missing schema authority: ${required}`);
