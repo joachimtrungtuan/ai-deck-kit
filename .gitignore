@@ -36,6 +36,8 @@ yarn-error.log*
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
+# Engine lockfile is intentionally tracked: consumer installs must be deterministic.
+!/engine/package-lock.json
 
 # semantic-release
 .nyc_output

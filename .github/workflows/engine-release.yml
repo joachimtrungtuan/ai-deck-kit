@@ -15,8 +15,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: engine/package-lock.json
       - name: Install engine dependencies
-        run: npm install --prefix engine --no-audit --no-fund
+        run: npm ci --prefix engine --no-audit --no-fund
       - name: Validate release
         run: npm run lint && npm run typecheck && npm run validate
       - name: Pack distributable

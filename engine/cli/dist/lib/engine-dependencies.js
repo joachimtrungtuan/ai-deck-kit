@@ -16,14 +16,14 @@ export function installEngineDependencies(engineRoot) {
         return;
     console.log("");
     console.log("Installing the toolkit's components. This can take a minute.");
-    const result = spawnSync("npm", ["install", "--prefix", engineRoot, "--no-audit", "--no-fund"], { stdio: "inherit" });
+    const result = spawnSync("npm", ["ci", "--prefix", engineRoot, "--no-audit", "--no-fund"], { stdio: "inherit" });
     if (result.status !== 0) {
         throw new Error([
             "Could not install the toolkit's components.",
             "",
             "  - Check that you are connected to the internet.",
             "  - If you are behind a company proxy or VPN, that is the usual cause.",
-            "  - Then run the install command again.",
+            "  - Then run the same command again — it picks up from here.",
         ].join("\n"));
     }
 }
