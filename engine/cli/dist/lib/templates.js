@@ -3,6 +3,22 @@ import { join, relative, resolve } from "node:path";
 import { readJson, writeJson, writeText } from "./fs.js";
 import { fontCatalogNames, unknownFontFamilies } from "./font-catalog.js";
 import { writeTemplateSchemaGuidance } from "./schema-guidance.js";
+/**
+ * Every element animation the engine implements as `primitive-anim-*` CSS. The engine owns all of
+ * them and resolves motion through literal fallbacks, so this is the coverage any bundle gets.
+ */
+export const elementAnimationCatalogV1 = ["none", "fade", "gentle-rise", "soft-scale", "masked-reveal", "staggered-list", "image-drift", "line-draw", "spotlight", "morph"];
+/**
+ * `supportedAnimations` postdates the bundles already in the wild. Such a template never declared
+ * coverage, but the engine animates it all the same, so treat the absent field as "all of them"
+ * rather than refusing to load the bundle. New templates still declare it: the scaffold seeds the
+ * field and the template-authoring validator requires it.
+ */
+function withDeclaredAnimations(manifest) {
+    if (manifest.supportedAnimations !== undefined)
+        return manifest;
+    return { ...manifest, supportedAnimations: [...elementAnimationCatalogV1] };
+}
 /** User-authored templates. The only place a template is ever edited. */
 export function projectTemplatesRoot(workspace) {
     return join(workspace.root, "templates");
@@ -24,7 +40,7 @@ export function findTemplate(workspace, name) {
     for (const [origin, root] of candidates) {
         const manifestPath = join(root, "template-manifest.json");
         if (existsSync(manifestPath))
-            return { root, manifest: readJson(manifestPath), origin };
+            return { root, manifest: withDeclaredAnimations(readJson(manifestPath)), origin };
     }
     return undefined;
 }
@@ -101,11 +117,12 @@ export function validatePreviewProps(root) {
     return [];
 }
 /**
- * The engine's element animations resolve --deck-motion-base and --deck-motion-ease (plus the
- * optional --deck-motion-slow tier) and ship no template-side CSS. A bridge that points at a token
- * the bundle never defines makes the whole `animation` declaration invalid at computed-value time,
- * so every animation degrades to none while the manifest still advertises them. That failure is
- * invisible in a manifest check, so it is caught here against the bundle's own CSS.
+ * The engine's element animations read --deck-motion-base and --deck-motion-ease through literal
+ * fallbacks, so a bundle defining neither still animates and is not a load failure. What does break
+ * is a bridge that points at a token nothing defines: that makes the whole `animation` declaration
+ * invalid at computed-value time, so every animation degrades to none while the manifest still
+ * advertises them. That failure is invisible in a manifest check, so it is caught here against the
+ * bundle's own CSS. The template-authoring validator additionally asks authors to define the tokens.
  *
  * This is a textual check, not a cascade one: a token defined under a selector the deck never
  * matches, or inside an at-rule such as @media print, still reads as defined here.
@@ -119,10 +136,6 @@ export function validateMotionTokens(root) {
         .join("\n");
     const errors = [];
     const defined = new Set(Array.from(css.matchAll(/(--[a-z0-9-]+)\s*:/gi), (match) => match[1]));
-    for (const token of ["--deck-motion-base", "--deck-motion-ease"]) {
-        if (!defined.has(token))
-            errors.push(`Missing motion token ${token}: the engine cannot animate a template that does not define it.`);
-    }
     for (const [, token, value] of css.matchAll(/(--deck-motion-[a-z-]+)\s*:\s*([^;}]+)/gi)) {
         const references = Array.from(value.matchAll(/var\(\s*(--[a-z0-9-]+)\s*(,\s*var\(|,|\))/gi));
         if (references.length === 0)
@@ -141,7 +154,7 @@ export function validateMotionTokens(root) {
 }
 export function validateTemplateManifest(manifest) {
     const errors = [];
-    for (const field of ["name", "displayName", "templateVersion", "contentSchemaVersion", "slideTypeCatalog", "runtime", "iconFamily", "defaultAnimation", "supportedAnimations", "supportedSlideTypes"]) {
+    for (const field of ["name", "displayName", "templateVersion", "contentSchemaVersion", "slideTypeCatalog", "runtime", "iconFamily", "defaultAnimation", "supportedSlideTypes"]) {
         if (manifest[field] === undefined || manifest[field] === "")
             errors.push(`Missing manifest field: ${field}`);
     }
@@ -162,7 +175,7 @@ export function validateTemplateManifest(manifest) {
     }
     if (!Array.isArray(manifest.supportedSlideTypes) || manifest.supportedSlideTypes.length === 0)
         errors.push("supportedSlideTypes must include at least one slide type.");
-    if (!Array.isArray(manifest.supportedAnimations) || manifest.supportedAnimations.length === 0)
+    if (manifest.supportedAnimations !== undefined && (!Array.isArray(manifest.supportedAnimations) || manifest.supportedAnimations.length === 0))
         errors.push("supportedAnimations must include at least one animation.");
     if (manifest.layoutVariants !== undefined) {
         if (!manifest.layoutVariants || Array.isArray(manifest.layoutVariants) || typeof manifest.layoutVariants !== "object") {
@@ -208,7 +221,7 @@ export function createTemplate(workspace, name) {
         runtime: ["react", "static-html"],
         iconFamily: "phosphor-react",
         defaultAnimation: "gentle-rise",
-        supportedAnimations: ["none", "fade", "gentle-rise", "soft-scale", "masked-reveal", "staggered-list", "image-drift", "line-draw", "spotlight", "morph"],
+        supportedAnimations: [...elementAnimationCatalogV1],
         defaultTransition: "none",
         fonts: ["inter", "jetbrains-mono"],
         supportedSlideTypes: ["title", "section-divider", "closing", "text-statement"],

@@ -32,6 +32,23 @@ export type TemplateManifest = {
   [key: string]: unknown;
 };
 
+/**
+ * Every element animation the engine implements as `primitive-anim-*` CSS. The engine owns all of
+ * them and resolves motion through literal fallbacks, so this is the coverage any bundle gets.
+ */
+export const elementAnimationCatalogV1 = ["none", "fade", "gentle-rise", "soft-scale", "masked-reveal", "staggered-list", "image-drift", "line-draw", "spotlight", "morph"];
+
+/**
+ * `supportedAnimations` postdates the bundles already in the wild. Such a template never declared
+ * coverage, but the engine animates it all the same, so treat the absent field as "all of them"
+ * rather than refusing to load the bundle. New templates still declare it: the scaffold seeds the
+ * field and the template-authoring validator requires it.
+ */
+function withDeclaredAnimations(manifest: TemplateManifest): TemplateManifest {
+  if (manifest.supportedAnimations !== undefined) return manifest;
+  return { ...manifest, supportedAnimations: [...elementAnimationCatalogV1] };
+}
+
 /** User-authored templates. The only place a template is ever edited. */
 export function projectTemplatesRoot(workspace: Workspace): string {
   return join(workspace.root, "templates");
@@ -54,7 +71,7 @@ export function findTemplate(workspace: Workspace, name: string): ResolvedTempla
   ];
   for (const [origin, root] of candidates) {
     const manifestPath = join(root, "template-manifest.json");
-    if (existsSync(manifestPath)) return { root, manifest: readJson<TemplateManifest>(manifestPath), origin };
+    if (existsSync(manifestPath)) return { root, manifest: withDeclaredAnimations(readJson<TemplateManifest>(manifestPath)), origin };
   }
   return undefined;
 }
@@ -128,11 +145,12 @@ export function validatePreviewProps(root: string): string[] {
 }
 
 /**
- * The engine's element animations resolve --deck-motion-base and --deck-motion-ease (plus the
- * optional --deck-motion-slow tier) and ship no template-side CSS. A bridge that points at a token
- * the bundle never defines makes the whole `animation` declaration invalid at computed-value time,
- * so every animation degrades to none while the manifest still advertises them. That failure is
- * invisible in a manifest check, so it is caught here against the bundle's own CSS.
+ * The engine's element animations read --deck-motion-base and --deck-motion-ease through literal
+ * fallbacks, so a bundle defining neither still animates and is not a load failure. What does break
+ * is a bridge that points at a token nothing defines: that makes the whole `animation` declaration
+ * invalid at computed-value time, so every animation degrades to none while the manifest still
+ * advertises them. That failure is invisible in a manifest check, so it is caught here against the
+ * bundle's own CSS. The template-authoring validator additionally asks authors to define the tokens.
  *
  * This is a textual check, not a cascade one: a token defined under a selector the deck never
  * matches, or inside an at-rule such as @media print, still reads as defined here.
@@ -145,9 +163,6 @@ export function validateMotionTokens(root: string): string[] {
     .join("\n");
   const errors: string[] = [];
   const defined = new Set(Array.from(css.matchAll(/(--[a-z0-9-]+)\s*:/gi), (match) => match[1]));
-  for (const token of ["--deck-motion-base", "--deck-motion-ease"]) {
-    if (!defined.has(token)) errors.push(`Missing motion token ${token}: the engine cannot animate a template that does not define it.`);
-  }
   for (const [, token, value] of css.matchAll(/(--deck-motion-[a-z-]+)\s*:\s*([^;}]+)/gi)) {
     const references = Array.from(value.matchAll(/var\(\s*(--[a-z0-9-]+)\s*(,\s*var\(|,|\))/gi));
     if (references.length === 0) continue;
@@ -164,7 +179,7 @@ export function validateMotionTokens(root: string): string[] {
 
 export function validateTemplateManifest(manifest: TemplateManifest): string[] {
   const errors: string[] = [];
-  for (const field of ["name", "displayName", "templateVersion", "contentSchemaVersion", "slideTypeCatalog", "runtime", "iconFamily", "defaultAnimation", "supportedAnimations", "supportedSlideTypes"] as const) {
+  for (const field of ["name", "displayName", "templateVersion", "contentSchemaVersion", "slideTypeCatalog", "runtime", "iconFamily", "defaultAnimation", "supportedSlideTypes"] as const) {
     if (manifest[field] === undefined || manifest[field] === "") errors.push(`Missing manifest field: ${field}`);
   }
   if (manifest.name && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(manifest.name)) errors.push("name must be kebab-case.");
@@ -178,7 +193,7 @@ export function validateTemplateManifest(manifest: TemplateManifest): string[] {
     }
   }
   if (!Array.isArray(manifest.supportedSlideTypes) || manifest.supportedSlideTypes.length === 0) errors.push("supportedSlideTypes must include at least one slide type.");
-  if (!Array.isArray(manifest.supportedAnimations) || manifest.supportedAnimations.length === 0) errors.push("supportedAnimations must include at least one animation.");
+  if (manifest.supportedAnimations !== undefined && (!Array.isArray(manifest.supportedAnimations) || manifest.supportedAnimations.length === 0)) errors.push("supportedAnimations must include at least one animation.");
   if (manifest.layoutVariants !== undefined) {
     if (!manifest.layoutVariants || Array.isArray(manifest.layoutVariants) || typeof manifest.layoutVariants !== "object") {
       errors.push("layoutVariants must be an object keyed by supported slide type.");
@@ -217,7 +232,7 @@ export function createTemplate(workspace: Workspace, name: string): string {
     runtime: ["react", "static-html"],
     iconFamily: "phosphor-react",
     defaultAnimation: "gentle-rise",
-    supportedAnimations: ["none", "fade", "gentle-rise", "soft-scale", "masked-reveal", "staggered-list", "image-drift", "line-draw", "spotlight", "morph"],
+    supportedAnimations: [...elementAnimationCatalogV1],
     defaultTransition: "none",
     fonts: ["inter", "jetbrains-mono"],
     supportedSlideTypes: ["title", "section-divider", "closing", "text-statement"],

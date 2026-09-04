@@ -7,7 +7,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { buildServeViteArgs, parseServeArgs } from "../commands/output.ts";
-import { createTemplate, listTemplates, migrateLegacyRegisteredTemplates, resolveTemplate, validateMotionTokens, validateTemplateManifest, type TemplateManifest } from "../lib/templates.ts";
+import { createTemplate, elementAnimationCatalogV1, listTemplates, migrateLegacyRegisteredTemplates, resolveTemplate, validateMotionTokens, validateTemplateBundle, validateTemplateManifest, type TemplateManifest } from "../lib/templates.ts";
 import type { Workspace } from "../lib/types.ts";
 import { resolveFontImports } from "../lib/font-catalog.ts";
 import { inlineDeckAssets, resolveGeneratedTemplateImport, templatePreviewSlideId } from "../../preview-app/vite-deck-plugin.ts";
@@ -482,14 +482,53 @@ test("new template scaffolds declare and scope their preview deck class", () => 
   assert.match(guidance, /never\nchange only a version field/);
 });
 
-test("motion token validation rejects the two ways a template silently loses animation", () => {
+// Templates in the wild predate both `supportedAnimations` and the --deck-motion-* tokens. Upgrading
+// the engine leaves those bundles exactly where they are, so the new engine has to keep loading them
+// or the upgrade breaks every command that renders or copies a template.
+test("a template authored before supportedAnimations and the motion tokens still loads", () => {
+  const root = mkdtempSync(join(tmpdir(), "aideck-legacy-template-"));
+  mkdirSync(join(root, "layouts"), { recursive: true });
+  writeFileSync(join(root, "template-manifest.json"), JSON.stringify({
+    name: "legacy", displayName: "Legacy", templateVersion: "2.1.5", contentSchemaVersion: "2.0.0",
+    slideTypeCatalog: "v1", runtime: ["react"], iconFamily: "phosphor-react",
+    defaultAnimation: "gentle-rise", supportedSlideTypes: ["title"],
+  }));
+  writeFileSync(join(root, "design-system.css"), ".legacy-deck { color: red }\n");
+  writeFileSync(join(root, "icon-policy.md"), "# Icon policy\n");
+  writeFileSync(join(root, "layouts", "layout-index.json"), JSON.stringify({ title: { component: "T", source: "title.tsx" } }));
+  writeFileSync(join(root, "layouts", "title.tsx"), "export function T() { return null; }\n");
+
+  assert.deepEqual(validateTemplateBundle(root), []);
+  rmSync(root, { recursive: true, force: true });
+});
+
+// An absent declaration means the author never narrowed the set, and the engine implements them all.
+test("a manifest without supportedAnimations reads as the full element-animation catalog", () => {
+  const workspace = fixtureWorkspace();
+  const root = join(workspace.root, "templates", "legacy.template");
+  mkdirSync(join(root, "layouts"), { recursive: true });
+  writeFileSync(join(root, "template-manifest.json"), JSON.stringify({
+    name: "legacy", displayName: "Legacy", templateVersion: "2.1.5", contentSchemaVersion: "2.0.0",
+    slideTypeCatalog: "v1", runtime: ["react"], iconFamily: "phosphor-react",
+    defaultAnimation: "gentle-rise", supportedSlideTypes: ["title"],
+  }));
+  writeFileSync(join(root, "design-system.css"), ".legacy-deck { color: red }\n");
+  writeFileSync(join(root, "icon-policy.md"), "# Icon policy\n");
+  writeFileSync(join(root, "layouts", "layout-index.json"), JSON.stringify({ title: { component: "T", source: "title.tsx" } }));
+  writeFileSync(join(root, "layouts", "title.tsx"), "export function T() { return null; }\n");
+
+  assert.deepEqual(resolveTemplate(workspace, "legacy").manifest.supportedAnimations, elementAnimationCatalogV1);
+  rmSync(workspace.root, { recursive: true, force: true });
+});
+
+test("motion token validation rejects the way a template silently loses animation", () => {
   const root = mkdtempSync(join(tmpdir(), "aideck-motion-test-"));
 
-  // A template that defines no motion tokens: the engine's var() fallbacks keep it animating,
-  // but the bundle is still misdeclared and must not ship that way.
+  // A template that defines no motion tokens still animates on the engine's literal fallbacks, so
+  // loading it is not a failure. Asking authors to declare the tokens belongs to the authoring
+  // validator; refusing to load the bundle here only breaks templates written before the field.
   writeFileSync(join(root, "design-system.css"), ".sample-deck { color: red }\n");
-  assert.match(validateMotionTokens(root).join("\n"), /Missing motion token --deck-motion-base/);
-  assert.match(validateMotionTokens(root).join("\n"), /Missing motion token --deck-motion-ease/);
+  assert.deepEqual(validateMotionTokens(root), []);
 
   // A bridge pointing at tokens no CSS defines: the declaration is invalid at computed-value
   // time, so `animation` degrades to none with nothing in the console to say so.

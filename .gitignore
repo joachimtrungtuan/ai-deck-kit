@@ -128,3 +128,6 @@ engine/storybook-static/
 # install time. Tracked despite the blanket dist/ rule above.
 !/engine/cli/dist/
 !/engine/cli/dist/**
+
+# Scratch copies of external templates used for compatibility checks; never part of the engine.
+tmp-compat-check/

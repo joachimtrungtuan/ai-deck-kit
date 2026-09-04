@@ -6,7 +6,7 @@ import { replaceTree, readJson, writeJson } from "../lib/fs.js";
 import { installEngineDependencies } from "../lib/engine-dependencies.js";
 import { describeEngineDrift, engineDrift, hasEngineDrift, writeEngineIntegrityManifest } from "../lib/engine-integrity.js";
 import { offerProjectAgentRules } from "../lib/project-agent-rules.js";
-import { migrateLegacyRegisteredTemplates } from "../lib/templates.js";
+import { listTemplates, migrateLegacyRegisteredTemplates, validateTemplateBundle } from "../lib/templates.js";
 import { rewireProjectAgentHomes } from "./wire-skills.js";
 const ENGINE_SOURCE_ENV = "AIDECK_" + "ENGINE_SOURCE";
 const DISTRIBUTION_ROOT_ENV = "AIDECK_" + "DISTRIBUTION_ROOT";
@@ -37,7 +37,8 @@ export function upgradeCommand(workspace, args, afterUpgrade) {
     // The new engine ships its own package.json; its components must be installed or preview breaks.
     installEngineDependencies(workspace.engineRoot);
     writeEngineIntegrityManifest(workspace.engineRoot);
-    console.log(`Upgraded engine to ${sourceVersion}; your decks and templates were untouched.`);
+    console.log(`Upgraded engine to ${sourceVersion}. Your decks and templates were left as they are.`);
+    reportTemplateCompatibility(workspace);
     // Asked here too, so projects installed before the boundary rules existed pick them up, and a
     // revised block reaches everyone. Without a TTY only an existing block is refreshed.
     offerProjectAgentRules(workspace.root, relative(workspace.root, workspace.engineRoot), false);
@@ -45,6 +46,26 @@ export function upgradeCommand(workspace, args, afterUpgrade) {
     // upgrade refreshes everything an installed project runs rather than leaving it half-old.
     rewireProjectAgentHomes(workspace.root, workspace.engineRoot);
     afterUpgrade();
+}
+/**
+ * Replacing the engine leaves every template exactly where it was, so a bundle authored against an
+ * older engine keeps working only as far as the new one still accepts it. Name the ones that no
+ * longer load here, rather than letting the first failure surface from an unrelated command later.
+ */
+function reportTemplateCompatibility(workspace) {
+    const broken = listTemplates(workspace)
+        .filter((entry) => entry.origin === "project")
+        .map((entry) => ({ name: entry.name, errors: validateTemplateBundle(entry.root, entry.manifest) }))
+        .filter((entry) => entry.errors.length > 0);
+    if (!broken.length)
+        return;
+    console.log("");
+    console.log("These templates no longer load and need attention before you can build with them:");
+    for (const { name, errors } of broken) {
+        console.log(`  ${name}`);
+        errors.forEach((error) => console.log(`    - ${error}`));
+    }
+    console.log("");
 }
 /**
  * Announce edits the replacement is about to destroy, then continue. Blocking would strand a user
