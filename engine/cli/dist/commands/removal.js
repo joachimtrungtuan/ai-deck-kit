@@ -7,6 +7,7 @@ import { deckBundles, deckDrift, retemplateDeck } from "../lib/deck-template-syn
 import { installEngineDependencies } from "../lib/engine-dependencies.js";
 import { projectTemplatesRoot, resolveTemplate } from "../lib/templates.js";
 import { findWorkspace } from "../lib/workspace.js";
+import { unwireSkillsFromProject } from "./wire-skills.js";
 export const removalHelp = `Removal commands:
   remove deck <slug> --yes                        Delete one deck bundle
   remove template <name> --reassign <name> --yes  Delete a template, moving its decks first
@@ -92,6 +93,7 @@ function uninstallCommand(workspace, options) {
     if (!confirmed(options))
         return console.log("Nothing was removed. Add --yes to confirm.");
     present.forEach((target) => rmSync(target, { recursive: true, force: true }));
+    unwireSkillsFromProject(workspace.root, workspace.engineRoot);
     console.log("Removed AI Deck Kit from this project.");
     if (!purge)
         console.log("Reinstall over your existing work with: npx github:joachimtrungtuan/ai-deck-kit init --here");

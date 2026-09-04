@@ -6,15 +6,19 @@
 // disappears. This installs a PreToolUse hook into a `.claude` home so the attempt fails at the
 // moment it is made, with the supported route in the error text. Claude-specific by nature; the
 // integrity manifest (`engine-integrity.ts`) and `aideck verify` are the runtime-agnostic half.
-import { installClaudeHook, isClaudeHookRegistered } from "./claude-hooks.js";
+import { installClaudeHook, isClaudeHookRegistered, uninstallClaudeHook } from "./claude-hooks.js";
 const HOOK_FILE = "aideck-engine-guard.mjs";
 const WRITE_TOOL_MATCHER = "Write|Edit|MultiEdit|NotebookEdit";
 /** Write the guard script and register it as a `PreToolUse` hook in `<claudeHome>/settings.json`. */
-export function installClaudeEngineGuard(claudeHome) {
-    return installClaudeHook({ claudeHome, event: "PreToolUse", file: HOOK_FILE, script: guardScript(), matcher: WRITE_TOOL_MATCHER });
+export function installClaudeEngineGuard(claudeHome, useProjectDirVar) {
+    return installClaudeHook({ claudeHome, event: "PreToolUse", file: HOOK_FILE, script: guardScript(), matcher: WRITE_TOOL_MATCHER, useProjectDirVar });
 }
 export function claudeEngineGuardRegistered(claudeHome) {
     return isClaudeHookRegistered(claudeHome, "PreToolUse", HOOK_FILE);
+}
+/** Remove the guard's `settings.json` registration and delete its script. */
+export function uninstallClaudeEngineGuard(claudeHome) {
+    return uninstallClaudeHook(claudeHome, "PreToolUse", HOOK_FILE);
 }
 /**
  * The guard resolves the workspace from the file being edited rather than from a path baked in at

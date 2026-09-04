@@ -13,7 +13,8 @@ export const outputHelp = `Output commands:
   export html <deck-id>               Build standalone HTML through the existing runtime
   export pdf <deck-id>                Build HTML, then the flattened PDF
   pack <deck> [--out <zip>]           Create a portable zip bundle
-  unpack <zip> [--out|--to <dir>]     Restore a .deck bundle`;
+  unpack <zip> [--out|--to <dir>] [--force]
+                                       Restore a .deck bundle`;
 
 export function runOutput(args: string[]): void {
   if (!args.length || args.includes("--help")) return console.log(outputHelp);
@@ -21,9 +22,34 @@ export function runOutput(args: string[]): void {
   const [command, format, deck] = args;
   if (command === "serve") return runServe(workspace, args);
   if (command === "export" && (format === "html" || format === "pdf")) return runExport(workspace, format, deck);
-  if (command === "pack") return runPack(workspace, format, valueAfter(args, "--out"));
-  if (command === "unpack") return runUnpack(workspace, format, valueAfter(args, "--out") ?? valueAfter(args, "--to"));
+  if (command === "pack") {
+    const { positionals, values } = parseArgsWithOptions(args.slice(1), ["--out"]);
+    return runPack(workspace, positionals[0], values.get("--out"));
+  }
+  if (command === "unpack") {
+    const { positionals, values } = parseArgsWithOptions(args.slice(1), ["--out", "--to"]);
+    return runUnpack(workspace, positionals[0], values.get("--out") ?? values.get("--to"), args.includes("--force"));
+  }
   throw new Error("Unknown output command. Run aideck --help.");
+}
+
+/** Splits `--flag value` pairs out from positional arguments, regardless of the order they appear in. */
+function parseArgsWithOptions(args: string[], options: string[]): { positionals: string[]; values: Map<string, string> } {
+  const positionals: string[] = [];
+  const values = new Map<string, string>();
+  for (let index = 0; index < args.length; index += 1) {
+    const token = args[index];
+    if (options.includes(token)) {
+      const value = args[index + 1];
+      if (!value) throw new Error(`${token} requires a value.`);
+      values.set(token, value);
+      index += 1;
+      continue;
+    }
+    if (token === "--force") continue;
+    positionals.push(token);
+  }
+  return { positionals, values };
 }
 
 function runServe(workspace: ReturnType<typeof findWorkspace>, args: string[]): void {
@@ -178,21 +204,28 @@ function runPack(workspace: ReturnType<typeof findWorkspace>, deck: string | und
   console.log(`Packed deck: ${target}`);
 }
 
-function runUnpack(workspace: ReturnType<typeof findWorkspace>, archive: string | undefined, output: string | undefined): void {
-  if (!archive) throw new Error("Usage: aideck unpack <zip> [--out|--to <dir>]");
+function runUnpack(workspace: ReturnType<typeof findWorkspace>, archive: string | undefined, output: string | undefined, force: boolean): void {
+  if (!archive) throw new Error("Usage: aideck unpack <zip> [--out|--to <dir>] [--force]");
   const target = resolve(workspace.root, output ?? workspace.decksRoot);
   const archivePath = resolve(workspace.root, archive);
   const entries = spawnSync("unzip", ["-Z1", archivePath], { encoding: "utf8" });
   if (entries.status !== 0) throw new Error(`Could not inspect zip bundle: ${archivePath}`);
-  const unsafeEntry = (entries.stdout ?? "").split("\n").find((entry) => entry.startsWith("/") || entry.split("/").includes(".."));
+  const entryNames = (entries.stdout ?? "").split("\n").filter(Boolean);
+  const unsafeEntry = entryNames.find((entry) => entry.startsWith("/") || entry.split("/").includes(".."));
   if (unsafeEntry) throw new Error(`Refusing unsafe zip entry: ${unsafeEntry}`);
+  // zipinfo's verbose listing leads each entry with its permission bits; a symlink's starts with "l".
+  // Extracting one could point anywhere on disk once followed, so the archive is rejected outright.
+  const listing = spawnSync("unzip", ["-Z", archivePath], { encoding: "utf8" });
+  if (listing.status !== 0) throw new Error(`Could not inspect zip bundle: ${archivePath}`);
+  const symlinkEntry = (listing.stdout ?? "").split("\n").find((line) => /^l/.test(line.trim()));
+  if (symlinkEntry) throw new Error(`Refusing zip bundle containing a symlink entry: ${symlinkEntry.trim()}`);
+  const bundleNames = new Set(entryNames.map((entry) => entry.split("/")[0]).filter(Boolean));
+  const collisions = [...bundleNames].filter((name) => existsSync(join(target, name)));
+  if (collisions.length && !force) {
+    throw new Error(`Refusing to overwrite existing bundle(s) in ${target}: ${collisions.join(", ")}. Re-run with --force to overwrite.`);
+  }
   mkdirSync(target, { recursive: true });
-  const result = spawnSync("unzip", ["-q", archivePath, "-d", target], { stdio: "inherit" });
+  const result = spawnSync("unzip", [force ? "-oq" : "-q", archivePath, "-d", target], { stdio: "inherit" });
   if (result.status !== 0) throw new Error("Could not unpack zip bundle.");
   console.log(`Unpacked bundle: ${target}`);
-}
-
-function valueAfter(args: string[], option: string): string | undefined {
-  const index = args.indexOf(option);
-  return index === -1 ? undefined : args[index + 1];
 }

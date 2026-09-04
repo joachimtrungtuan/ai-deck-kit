@@ -21,32 +21,32 @@ import type { Workspace } from "../lib/types.ts";
 
 const ENGINE_ROOT = join(import.meta.dirname, "..", "..");
 
-test("a workspace whose edits all landed in the right package verifies", () => {
+test("a workspace whose edits all landed in the right package verifies", async () => {
   const workspace = fixtureWorkspace();
   writeTemplate(join(workspace.root, "templates", "sample.template"));
   createDeck(workspace, "talk", "sample");
 
-  const report = verifyWorkspace(workspace);
+  const report = await verifyWorkspace(workspace);
   assert.deepEqual(report.errors, []);
   assert.equal(report.templates, 1);
   assert.equal(report.decks, 1);
 });
 
-test("a template edited inside a deck's frozen copy is named as a cross-edit", () => {
+test("a template edited inside a deck's frozen copy is named as a cross-edit", async () => {
   const workspace = fixtureWorkspace();
   writeTemplate(join(workspace.root, "templates", "sample.template"));
   const deckRoot = createDeck(workspace, "talk", "sample");
   // The tempting shortcut: change the layout where the deck renders from.
   writeFileSync(join(deckRoot, "template", "layouts", "title.tsx"), "export function SampleTitle() { return null; } // tweaked\n");
 
-  const report = verifyWorkspace(workspace);
+  const report = await verifyWorkspace(workspace);
   assert.equal(report.errors.length, 1);
   assert.match(report.errors[0], /talk\.deck\/template\/layouts\/title\.tsx/);
   assert.match(report.errors[0], /templates\/sample\.template/);
   assert.match(report.errors[0], /aideck deck retemplate talk/);
 });
 
-test("a snapshot version bumped inside the deck is refused, not reported as drift", () => {
+test("a snapshot version bumped inside the deck is refused, not reported as drift", async () => {
   const workspace = fixtureWorkspace();
   writeTemplate(join(workspace.root, "templates", "sample.template"));
   const deckRoot = createDeck(workspace, "talk", "sample");
@@ -54,43 +54,43 @@ test("a snapshot version bumped inside the deck is refused, not reported as drif
   bumpTemplate(join(deckRoot, "template"), "1.1.0");
   recordDeckTemplateVersion(deckRoot, "1.1.0");
 
-  const report = verifyWorkspace(workspace);
+  const report = await verifyWorkspace(workspace);
   assert.deepEqual(report.notes, []);
   assert.equal(report.errors.length, 1);
   assert.match(report.errors[0], /never inside a deck/);
 });
 
-test("files loose beside the bundles are reported", () => {
+test("files loose beside the bundles are reported", async () => {
   const workspace = fixtureWorkspace();
   writeTemplate(join(workspace.root, "templates", "sample.template"));
   createDeck(workspace, "talk", "sample");
   writeFileSync(join(workspace.root, "templates", "hero.tsx"), "export function Hero() { return null; }\n");
   writeFileSync(join(workspace.decksRoot, "outline.md"), "# Outline\n");
 
-  const errors = verifyWorkspace(workspace).errors;
+  const errors = (await verifyWorkspace(workspace)).errors;
   assert.equal(errors.length, 2);
   assert.match(errors[0], /templates\/: hero\.tsx/);
   assert.match(errors[1], /decks\/: outline\.md/);
 });
 
-test("an edited engine is reported once an installer has recorded one", () => {
+test("an edited engine is reported once an installer has recorded one", async () => {
   const workspace = fixtureWorkspace();
   writeTemplate(join(workspace.engineRoot, "templates", "sample.template"));
   writeEngineIntegrityManifest(workspace.engineRoot);
   writeFileSync(join(workspace.engineRoot, "templates", "sample.template", "design-system.css"), ".sample-deck { color: red; --deck-motion-ease: cubic-bezier(0.22, 1, 0.36, 1); --deck-motion-base: 480ms; }\n");
 
-  const errors = verifyWorkspace(workspace).errors;
+  const errors = (await verifyWorkspace(workspace)).errors;
   assert.equal(errors.length, 1);
   assert.match(errors[0], /installed engine has been edited/);
   assert.match(errors[0], /design-system\.css/);
 });
 
-test("an engine with no integrity manifest is not checked — that is the kit's own repository", () => {
+test("an engine with no integrity manifest is not checked — that is the kit's own repository", async () => {
   const workspace = fixtureWorkspace();
   writeTemplate(join(workspace.engineRoot, "templates", "sample.template"));
   writeFileSync(join(workspace.engineRoot, "templates", "sample.template", "design-system.css"), ".sample-deck { color: red; --deck-motion-ease: cubic-bezier(0.22, 1, 0.36, 1); --deck-motion-base: 480ms; }\n");
 
-  assert.deepEqual(verifyWorkspace(workspace).errors, []);
+  assert.deepEqual((await verifyWorkspace(workspace)).errors, []);
 });
 
 test("a layout that stopped parsing fails the template check", () => {

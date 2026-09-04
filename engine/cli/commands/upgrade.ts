@@ -3,8 +3,8 @@ import { join, relative, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { replaceTree, readJson, writeJson } from "../lib/fs.ts";
-import { installEngineDependencies } from "../lib/engine-dependencies.ts";
-import { describeEngineDrift, engineDrift, hasEngineDrift, writeEngineIntegrityManifest } from "../lib/engine-integrity.ts";
+import { installEngineDependencies, previewRuntimeReady } from "../lib/engine-dependencies.ts";
+import { describeEngineDrift, engineDrift, engineIntegrityManifestPath, hasEngineDrift, writeEngineIntegrityManifest } from "../lib/engine-integrity.ts";
 import { offerProjectAgentRules } from "../lib/project-agent-rules.ts";
 import { listTemplates, migrateLegacyRegisteredTemplates, validateTemplateBundle } from "../lib/templates.ts";
 import { rewireProjectAgentHomes } from "./wire-skills.ts";
@@ -15,7 +15,7 @@ const DISTRIBUTION_ROOT_ENV = "AIDECK_" + "DISTRIBUTION_ROOT";
 const PACKAGE_SPEC_ENV = "AIDECK_" + "PACKAGE_SPEC";
 const GITHUB_REPOSITORY_ENV = "AIDECK_" + "GITHUB_REPOSITORY";
 
-export function upgradeCommand(workspace: Workspace, args: string[], afterUpgrade: () => void): void {
+export async function upgradeCommand(workspace: Workspace, args: string[], afterUpgrade: () => void | Promise<void>): Promise<void> {
   const requestedVersion = option(args, "--to");
   const sourceOption = option(args, "--source");
   const sourceEngine = resolveSourceEngine(workspace, requestedVersion, sourceOption);
@@ -23,17 +23,26 @@ export function upgradeCommand(workspace: Workspace, args: string[], afterUpgrad
   if (!sourceVersion) throw new Error(`Engine source has no engine.version.json: ${sourceEngine}`);
   if (requestedVersion && requestedVersion !== sourceVersion) throw new Error(`Requested ${requestedVersion}, but source provides ${sourceVersion}.`);
   assertUpgradeScope(workspace);
-  if (resolve(sourceEngine) === resolve(workspace.engineRoot)) {
+  const alreadyOnSource = resolve(sourceEngine) === resolve(workspace.engineRoot);
+  // Deps present and the integrity manifest written means a previous run finished; nothing to do.
+  // Either can be missing after a run that replaced the tree but died before the install completed —
+  // that is resumed below rather than reported as done.
+  const engineComplete = previewRuntimeReady(workspace.engineRoot) && existsSync(engineIntegrityManifestPath(workspace.engineRoot));
+  if (alreadyOnSource && engineComplete) {
     console.log(`Engine already uses bundled version ${sourceVersion}; decks were untouched.`);
     return;
   }
-  // Templates the user authored under the old layout still sit in the engine root. Move them to the
-  // project before the engine tree is replaced, or the upgrade would take them with it.
-  const rescued = migrateLegacyRegisteredTemplates(workspace, sourceEngine);
-  if (rescued.length) console.log(`Moved your templates out of the engine into ./templates: ${rescued.join(", ")}`);
-  warnAboutEngineEdits(workspace.engineRoot);
-  replaceTree(sourceEngine, workspace.engineRoot);
-  writeJson(workspace.pointerPath, { ...workspace.pointer, engineVersion: sourceVersion });
+  if (alreadyOnSource) {
+    console.log(`Resuming an engine install that did not finish for version ${sourceVersion}.`);
+  } else {
+    // Templates the user authored under the old layout still sit in the engine root. Move them to the
+    // project before the engine tree is replaced, or the upgrade would take them with it.
+    const rescued = migrateLegacyRegisteredTemplates(workspace, sourceEngine);
+    if (rescued.length) console.log(`Moved your templates out of the engine into ./templates: ${rescued.join(", ")}`);
+    warnAboutEngineEdits(workspace.engineRoot);
+    replaceTree(sourceEngine, workspace.engineRoot);
+    writeJson(workspace.pointerPath, { ...workspace.pointer, engineVersion: sourceVersion });
+  }
   // The new engine ships its own package.json; its components must be installed or preview breaks.
   installEngineDependencies(workspace.engineRoot);
   writeEngineIntegrityManifest(workspace.engineRoot);
@@ -45,7 +54,7 @@ export function upgradeCommand(workspace: Workspace, args: string[], afterUpgrad
   // Skill links and the safeguard scripts both point into the engine tree just replaced, so one
   // upgrade refreshes everything an installed project runs rather than leaving it half-old.
   rewireProjectAgentHomes(workspace.root, workspace.engineRoot);
-  afterUpgrade();
+  await afterUpgrade();
 }
 
 /**

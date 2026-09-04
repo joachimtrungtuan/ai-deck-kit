@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { readJson, writeJson } from "../lib/fs.ts";
 import { checkPrerequisites, formatPrerequisiteReport, hasFailures } from "../lib/prerequisites.ts";
 import { deckBundles, deckDrift, describeDrift } from "../lib/deck-template-sync.ts";
@@ -19,7 +19,7 @@ export const coreHelp = `Core commands:
   config [--set key=value]         Read or update ai-deck-kit.json
   list                             List decks in the resolved workspace`;
 
-export function runCore(args: string[]): void {
+export async function runCore(args: string[]): Promise<void> {
   const command = args[0] ?? "help";
   if (args.includes("--help") || command === "help") {
     console.log(coreHelp);
@@ -39,13 +39,13 @@ export function runCore(args: string[]): void {
  * Everything `verify` checks, plus the state of the machine it runs on. The split exists because the
  * agent verifier hook runs `verify` after every editing pass and must not pay for prerequisite probes.
  */
-function doctorCommand(workspace: Workspace): void {
-  const prerequisites = checkPrerequisites();
+async function doctorCommand(workspace: Workspace): Promise<void> {
+  const prerequisites = checkPrerequisites({ git: "soft" });
   console.log(formatPrerequisiteReport(prerequisites));
   console.log("");
   const rescued = migrateLegacyRegisteredTemplates(workspace);
   if (rescued.length) console.log(`Moved your templates out of the engine into ./templates: ${rescued.join(", ")}\n`);
-  const report = verifyWorkspace(workspace);
+  const report = await verifyWorkspace(workspace);
   for (const entry of inspectSchemaGuidance(workspace)) {
     if (entry.state === "current") continue;
     report.errors.push(
@@ -69,9 +69,18 @@ function configCommand(workspace: Workspace, args: string[]): void {
   if (separator < 1) throw new Error("config --set expects key=value.");
   const key = set.slice(0, separator);
   if (!(key in workspace.pointer)) throw new Error(`Unknown config key: ${key}`);
-  const pointer = { ...workspace.pointer, [key]: set.slice(separator + 1) };
+  const value = set.slice(separator + 1);
+  if ((key === "engineRoot" || key === "decksRoot") && !isWithinProjectRoot(workspace.root, value)) {
+    throw new Error(`config --set ${key} must resolve inside the project root: ${workspace.root}`);
+  }
+  const pointer = { ...workspace.pointer, [key]: value };
   writeJson(workspace.pointerPath, pointer);
   console.log(`Updated ${key}.`);
+}
+
+function isWithinProjectRoot(root: string, candidate: string): boolean {
+  const relativePath = relative(root, resolve(root, candidate));
+  return relativePath === "" || (!relativePath.startsWith("..") && !relativePath.startsWith("/"));
 }
 
 function listCommand(workspace: Workspace): void {

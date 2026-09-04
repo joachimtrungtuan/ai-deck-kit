@@ -1,8 +1,8 @@
 import { existsSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import { copyTree, readJson } from "../lib/fs.ts";
-import { installEngineDependencies } from "../lib/engine-dependencies.ts";
-import { writeEngineIntegrityManifest } from "../lib/engine-integrity.ts";
+import { installEngineDependencies, previewRuntimeReady } from "../lib/engine-dependencies.ts";
+import { engineIntegrityManifestPath, writeEngineIntegrityManifest } from "../lib/engine-integrity.ts";
 import { engineRoot } from "../lib/engine-root.ts";
 import { ensureWorkspaceDirs, writePointer } from "../lib/workspace.ts";
 import { checkPrerequisites, formatPrerequisiteReport, hasFailures } from "../lib/prerequisites.ts";
@@ -26,10 +26,50 @@ export function initCommand(args: string[]): void {
   runPreflight(args.includes("--skip-checks"));
 
   const projectRoot = resolve(process.cwd());
-  const targetEngine = resolve(projectRoot, subfolder ?? "engine");
-  if (!isWithin(projectRoot, targetEngine) || targetEngine === projectRoot) throw new Error("init --dir must point to a subfolder of the current project.");
   const pointerPath = resolve(projectRoot, "ai-deck-kit.json");
-  if (existsSync(pointerPath)) throw new Error(`Workspace already initialized: ${pointerPath}`);
+  const resumable = existsSync(pointerPath) ? resumableWorkspace(pointerPath, projectRoot) : undefined;
+  if (existsSync(pointerPath) && !resumable) throw new Error(`Workspace already initialized: ${pointerPath}`);
+
+  const workspace = resumable ?? initializeFresh(projectRoot, pointerPath, subfolder ?? "engine");
+  if (resumable) {
+    console.log("");
+    console.log(`Resuming an install that did not finish in: ${projectRoot}`);
+  }
+
+  ensureWorkspaceDirs(workspace);
+  installEngineDependencies(workspace.engineRoot);
+  // Record what was installed so `doctor` can name any later edit to the engine before an upgrade
+  // silently replaces it. Written only by the installer, so the kit's own repository has none.
+  writeEngineIntegrityManifest(workspace.engineRoot);
+
+  console.log("");
+  console.log(`Set up AI Deck Kit in: ${projectRoot}`);
+  const planted: [string, string][] = [
+    [relative(projectRoot, workspace.engineRoot), "the toolkit itself — upgradable, leave it alone"],
+    [relative(projectRoot, workspace.decksRoot), "your presentations live here"],
+    ["templates", "your own designs live here"],
+  ];
+  const column = Math.max(...planted.map(([path]) => path.length)) + 2;
+  planted.forEach(([path, purpose]) => console.log(`  ${path.padEnd(column)}(${purpose})`));
+
+  const gitignore = ensureProjectGitignore(projectRoot, relative(projectRoot, workspace.engineRoot));
+  if (gitignore !== "unchanged") {
+    console.log("");
+    console.log(`${gitignore === "created" ? "Created" : "Updated"} .gitignore so the installed engine stays out of your repository.`);
+    console.log("Your decks and ai-deck-kit.json are not ignored — commit them as usual.");
+  }
+
+  offerProjectAgentRules(projectRoot, relative(projectRoot, workspace.engineRoot), true);
+  writeProjectWrapper(projectRoot, workspace.engineRoot);
+  wireSkillsInteractively(projectRoot, workspace.engineRoot, undefined, args.includes("--safeguards"));
+  registerIfWanted();
+  printNextSteps();
+}
+
+/** Copies the engine tree and writes the pointer for a project that has never been initialized. */
+function initializeFresh(projectRoot: string, pointerPath: string, subfolder: string): Workspace {
+  const targetEngine = resolve(projectRoot, subfolder);
+  if (!isWithin(projectRoot, targetEngine) || targetEngine === projectRoot) throw new Error("init --dir must point to a subfolder of the current project.");
 
   const distributionRoot = process.env[DISTRIBUTION_ROOT_ENV] ? resolve(process.env[DISTRIBUTION_ROOT_ENV]!) : engineRoot();
   const sourceEngine = existsSync(resolve(distributionRoot, "engine.version.json")) ? distributionRoot : resolve(distributionRoot, "engine");
@@ -42,34 +82,21 @@ export function initCommand(args: string[]): void {
   };
   const workspace = { root: projectRoot, pointerPath, pointer, engineRoot: targetEngine, decksRoot: resolve(projectRoot, "decks") } as Workspace;
   writePointer(projectRoot, pointer);
-  ensureWorkspaceDirs(workspace);
-  installEngineDependencies(targetEngine);
-  // Record what was installed so `doctor` can name any later edit to the engine before an upgrade
-  // silently replaces it. Written only by the installer, so the kit's own repository has none.
-  writeEngineIntegrityManifest(targetEngine);
+  return workspace;
+}
 
-  console.log("");
-  console.log(`Set up AI Deck Kit in: ${projectRoot}`);
-  const planted: [string, string][] = [
-    [relative(projectRoot, targetEngine), "the toolkit itself — upgradable, leave it alone"],
-    [relative(projectRoot, workspace.decksRoot), "your presentations live here"],
-    ["templates", "your own designs live here"],
-  ];
-  const column = Math.max(...planted.map(([path]) => path.length)) + 2;
-  planted.forEach(([path, purpose]) => console.log(`  ${path.padEnd(column)}(${purpose})`));
-
-  const gitignore = ensureProjectGitignore(projectRoot, relative(projectRoot, targetEngine));
-  if (gitignore !== "unchanged") {
-    console.log("");
-    console.log(`${gitignore === "created" ? "Created" : "Updated"} .gitignore so the installed engine stays out of your repository.`);
-    console.log("Your decks and ai-deck-kit.json are not ignored — commit them as usual.");
-  }
-
-  offerProjectAgentRules(projectRoot, relative(projectRoot, targetEngine), true);
-  writeProjectWrapper(projectRoot, targetEngine);
-  wireSkillsInteractively(projectRoot, targetEngine);
-  registerIfWanted();
-  printNextSteps();
+/**
+ * A pointer left by a previous `init` that failed before finishing — the engine tree copied but
+ * dependencies never installed, or dependencies installed but the integrity manifest never written.
+ * Resuming picks up right after the copy instead of erroring with "already initialized"; an install
+ * that looks complete (deps present and manifest written) is not resumable and keeps that error.
+ */
+function resumableWorkspace(pointerPath: string, projectRoot: string): Workspace | undefined {
+  const pointer = readJson<WorkspacePointer>(pointerPath);
+  const targetEngine = resolve(projectRoot, pointer.engineRoot);
+  if (!existsSync(targetEngine)) return undefined;
+  if (previewRuntimeReady(targetEngine) && existsSync(engineIntegrityManifestPath(targetEngine))) return undefined;
+  return { root: projectRoot, pointerPath, pointer, engineRoot: targetEngine, decksRoot: resolve(projectRoot, pointer.decksRoot) } as Workspace;
 }
 
 function runPreflight(skipChecks: boolean): void {

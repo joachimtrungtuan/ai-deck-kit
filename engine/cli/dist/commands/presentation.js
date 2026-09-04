@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
+import { valueAfter } from "../lib/cli-args.js";
 import { createDeck, parseSections, readDeck, setYamlField, slideContent, titleFromSlug, writeDeck } from "../lib/deck.js";
 import { resolveTemplate } from "../lib/templates.js";
 import { findWorkspace } from "../lib/workspace.js";
@@ -155,8 +156,4 @@ function writeRenumbered(loaded, prefix, sections) {
 function renumberHeading(section, index, id) {
     const number = String(index + 1).padStart(2, "0");
     return section.replace(/^## Slide\s+\d+(\s*\([^)]*\))?/, (_match, labelled) => (labelled ? `## Slide ${number} (${id})` : `## Slide ${number}`));
-}
-function valueAfter(args, option) {
-    const index = args.indexOf(option);
-    return index === -1 ? undefined : args[index + 1];
 }

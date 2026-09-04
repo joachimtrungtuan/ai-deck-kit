@@ -8,17 +8,22 @@
 //
 // It runs `aideck verify`, which is read-only and does no machine probing, and exits 2 on failure so
 // the agent has to fix what it broke before it can finish.
-import { installClaudeHook, isClaudeHookRegistered, type HookInstallResult } from "./claude-hooks.ts";
+import { installClaudeHook, isClaudeHookRegistered, uninstallClaudeHook, type HookInstallResult } from "./claude-hooks.ts";
 
 const HOOK_FILE = "aideck-verify.mjs";
 
 /** Write the verifier script and register it as a `Stop` hook in `<claudeHome>/settings.json`. */
-export function installClaudeVerifyHook(claudeHome: string): HookInstallResult {
-  return installClaudeHook({ claudeHome, event: "Stop", file: HOOK_FILE, script: verifyScript() });
+export function installClaudeVerifyHook(claudeHome: string, useProjectDirVar?: boolean): HookInstallResult {
+  return installClaudeHook({ claudeHome, event: "Stop", file: HOOK_FILE, script: verifyScript(), useProjectDirVar });
 }
 
 export function claudeVerifyHookRegistered(claudeHome: string): boolean {
   return isClaudeHookRegistered(claudeHome, "Stop", HOOK_FILE);
+}
+
+/** Remove the verifier's `settings.json` registration and delete its script. */
+export function uninstallClaudeVerifyHook(claudeHome: string): boolean {
+  return uninstallClaudeHook(claudeHome, "Stop", HOOK_FILE);
 }
 
 /**

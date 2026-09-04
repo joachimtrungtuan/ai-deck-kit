@@ -79,6 +79,27 @@ export function wireSkills(engineRoot, home) {
     }
     return { home: target, linked, skipped };
 }
+/**
+ * Remove every skill link `wireSkills` created in `<home>/skills/`, leaving anything else alone —
+ * a user's own real folder of the same name is never touched. Works even after the engine tree
+ * itself is gone (`aideck uninstall`), since a managed link is identified by where it points, not
+ * by that target existing.
+ */
+export function unwireSkills(engineRoot, home) {
+    const source = join(engineRoot, "skills");
+    const target = join(home.path, "skills");
+    if (!existsSync(target))
+        return [];
+    const removed = [];
+    for (const entry of readdirSync(target, { withFileTypes: true })) {
+        const skillTarget = join(target, entry.name);
+        if (!isManagedLink(skillTarget, join(source, entry.name)))
+            continue;
+        rmSync(skillTarget, { recursive: true, force: true });
+        removed.push(entry.name);
+    }
+    return removed;
+}
 /** True when the path is a symlink that already resolves to this engine's skill. */
 function isManagedLink(path, expectedSource) {
     try {

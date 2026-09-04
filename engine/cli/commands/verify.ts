@@ -3,10 +3,13 @@
 // `doctor` prints this after its prerequisite checks, and the agent verifier hook runs it at the end
 // of every editing pass. That second caller is why it stays read-only and free of subprocesses other
 // than the deck validator: it runs constantly, and anything slow or mutating here would be felt.
+// Per-deck content validation spawns one Node process per deck; they run concurrently (not serially)
+// so the wall-clock cost stays close to the slowest single deck rather than growing with deck count.
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { readJson } from "../lib/fs.ts";
+import { LEGACY_CONTENT_SCHEMA_VERSION } from "../lib/deck.ts";
 import { deckBundles, deckDrift, describeDrift, snapshotEdits } from "../lib/deck-template-sync.ts";
 import { describeEngineDrift, engineDrift, hasEngineDrift } from "../lib/engine-integrity.ts";
 import { previewRuntimeBinary, previewRuntimeReady } from "../lib/engine-dependencies.ts";
@@ -26,7 +29,7 @@ type EngineVersion = {
 /** How many changed files to name before summarising; keeps a bulk edit from flooding the caller. */
 const MAX_LISTED = 20;
 
-export function verifyWorkspace(workspace: Workspace): VerifyReport {
+export async function verifyWorkspace(workspace: Workspace): Promise<VerifyReport> {
   const errors: string[] = [];
   const notes: string[] = [];
   if (!existsSync(workspace.engineRoot)) errors.push(`Engine root missing: ${workspace.engineRoot}`);
@@ -38,13 +41,13 @@ export function verifyWorkspace(workspace: Workspace): VerifyReport {
   const version = checkEngineVersion(workspace, errors);
   const templates = checkTemplates(workspace, errors);
   const decks = deckBundles(workspace);
-  decks.forEach((bundle) => checkDeck(workspace, bundle, version, errors, notes));
+  await Promise.all(decks.map((bundle) => checkDeck(workspace, bundle, version, errors, notes)));
   checkStrays(workspace, errors);
   return { errors, notes, decks: decks.length, templates };
 }
 
-export function verifyCommand(workspace: Workspace): void {
-  const report = verifyWorkspace(workspace);
+export async function verifyCommand(workspace: Workspace): Promise<void> {
+  const report = await verifyWorkspace(workspace);
   printVerifyReport(report);
   if (report.errors.length) process.exitCode = 1;
 }
@@ -116,13 +119,13 @@ function checkTemplates(workspace: Workspace, errors: string[]): number {
   return bundles.length;
 }
 
-function checkDeck(workspace: Workspace, bundle: string, version: EngineVersion, errors: string[], notes: string[]): void {
+async function checkDeck(workspace: Workspace, bundle: string, version: EngineVersion, errors: string[], notes: string[]): Promise<void> {
   const deckRoot = join(workspace.decksRoot, bundle);
   try {
     const manifest = readJson<{ slug: string; template?: { set?: string; version?: string }; contentSchemaVersion?: string; slideTypeCatalog?: string }>(join(deckRoot, "deck.json"));
     if (!manifest.slug || !manifest.template?.set || !manifest.template.version) errors.push(`${bundle}: incomplete deck manifest.`);
     if (!existsSync(join(deckRoot, "content.md"))) errors.push(`${bundle}: content.md missing.`);
-    const contentSchemaVersion = manifest.contentSchemaVersion ?? "1.0.0";
+    const contentSchemaVersion = manifest.contentSchemaVersion ?? LEGACY_CONTENT_SCHEMA_VERSION;
     const versionMatch = /^(\d+)\.\d+\.\d+$/.exec(contentSchemaVersion);
     const contentSchemaMajor = versionMatch ? Number(versionMatch[1]) : Number.NaN;
     if (version.supportedContentSchemaMajors && (!Number.isInteger(contentSchemaMajor) || !version.supportedContentSchemaMajors.includes(contentSchemaMajor))) {
@@ -134,7 +137,7 @@ function checkDeck(workspace: Workspace, bundle: string, version: EngineVersion,
       errors.push(`${bundle}: unsupported slide-type catalog ${manifest.slideTypeCatalog}.`);
     }
     if (manifest.template?.set) checkDeckTemplate(workspace, bundle, errors, notes);
-    checkDeckContent(workspace, deckRoot, bundle, errors);
+    await checkDeckContent(workspace, deckRoot, bundle, errors);
   } catch (error) {
     errors.push(`${bundle}: ${message(error)}`);
   }
@@ -182,13 +185,24 @@ function checkDeckTemplate(workspace: Workspace, bundle: string, errors: string[
 }
 
 /** The canonical content validator, run per deck. Its own output is the error text. */
-function checkDeckContent(workspace: Workspace, deckRoot: string, bundle: string, errors: string[]): void {
+async function checkDeckContent(workspace: Workspace, deckRoot: string, bundle: string, errors: string[]): Promise<void> {
   const script = join(workspace.engineRoot, "skills", "presentation-crafting", "scripts", "validate-slide-content.mjs");
   if (!existsSync(script) || !existsSync(join(deckRoot, "content.md"))) return;
-  const result = spawnSync(process.execPath, [script, deckRoot], { encoding: "utf8" });
+  const result = await runValidator(script, deckRoot);
   if (result.status === 0) return;
-  const output = `${result.stdout ?? ""}${result.stderr ?? ""}`.trim();
+  const output = `${result.stdout}${result.stderr}`.trim();
   errors.push([`${bundle}: content validation failed.`, ...listed(output.split("\n")).map((line) => `    ${line}`)].join("\n"));
+}
+
+function runValidator(script: string, deckRoot: string): Promise<{ status: number | null; stdout: string; stderr: string }> {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [script, deckRoot], { stdio: ["ignore", "pipe", "pipe"] });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (chunk) => (stdout += chunk));
+    child.stderr.on("data", (chunk) => (stderr += chunk));
+    child.on("close", (status) => resolve({ status, stdout, stderr }));
+  });
 }
 
 /** Loose files beside the bundles: a template or deck edit that landed outside any package. */

@@ -4,7 +4,7 @@
 // (`claude-verify-hook.ts`). Both write a script into `<claudeHome>/hooks/` and add one entry to
 // `settings.json`; the settings file belongs to the user, so an existing registration is left alone
 // and unrelated hooks are preserved.
-import { existsSync } from "node:fs";
+import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { readJson, writeJson, writeText } from "./fs.ts";
 
@@ -12,12 +12,25 @@ type HookEntry = { type?: string; command?: string };
 type HookMatcher = { matcher?: string; hooks?: HookEntry[] };
 type ClaudeSettings = { hooks?: Record<string, HookMatcher[]>; [key: string]: unknown };
 
-export type HookInstall = { claudeHome: string; event: string; file: string; script: string; matcher?: string };
+export type HookInstall = {
+  claudeHome: string;
+  event: string;
+  file: string;
+  script: string;
+  matcher?: string;
+  /**
+   * True when `claudeHome` is `<projectRoot>/.claude` — the command can then reference
+   * `$CLAUDE_PROJECT_DIR`, which Claude Code sets to the project's actual location at run time,
+   * instead of baking in this machine's absolute path. A home found further up serves whatever
+   * project happens to invoke it, so it keeps the absolute path.
+   */
+  useProjectDirVar?: boolean;
+};
 
 export type HookInstallResult = { status: "installed" | "unchanged"; hookPath: string; settingsPath: string };
 
 /** The script is always rewritten so an upgraded kit ships its current version; only the registration is idempotent. */
-export function installClaudeHook({ claudeHome, event, file, script, matcher }: HookInstall): HookInstallResult {
+export function installClaudeHook({ claudeHome, event, file, script, matcher, useProjectDirVar }: HookInstall): HookInstallResult {
   const hookPath = join(claudeHome, "hooks", file);
   const settingsPath = join(claudeHome, "settings.json");
   writeText(hookPath, script);
@@ -25,22 +38,64 @@ export function installClaudeHook({ claudeHome, event, file, script, matcher }: 
   const settings: ClaudeSettings = existsSync(settingsPath) ? readJson<ClaudeSettings>(settingsPath) : {};
   const hooks = settings.hooks ?? {};
   const registered = hooks[event] ?? [];
-  const command = `node "${hookPath}"`;
-  if (registered.some((entry) => entry.hooks?.some((hook) => hook.command === command))) {
+  const command = useProjectDirVar ? `node "$CLAUDE_PROJECT_DIR/.claude/hooks/${file}"` : `node "${hookPath}"`;
+  const entry: HookMatcher = matcher ? { matcher, hooks: [{ type: "command", command }] } : { hooks: [{ type: "command", command }] };
+
+  // A prior registration of this hook file — the current command, or a stale one left by an older
+  // install or a different machine path — is replaced in place instead of duplicated.
+  const withoutStale = registered.filter((existing) => !referencesHookFile(existing, file));
+  const removedCount = registered.length - withoutStale.length;
+  const unchanged = removedCount === 1 && registered.some((existing) => sameEntry(existing, entry));
+  if (unchanged) {
     return { status: "unchanged", hookPath, settingsPath };
   }
-  const entry: HookMatcher = matcher ? { matcher, hooks: [{ type: "command", command }] } : { hooks: [{ type: "command", command }] };
-  writeJson(settingsPath, { ...settings, hooks: { ...hooks, [event]: [...registered, entry] } });
+  writeJson(settingsPath, { ...settings, hooks: { ...hooks, [event]: [...withoutStale, entry] } });
   return { status: "installed", hookPath, settingsPath };
 }
 
 /**
- * Whether this home already runs the hook. Consent was given once; a registration found here means
- * the script can be refreshed by a later upgrade without asking again.
+ * Whether this home already runs the hook, on this path or any other — matched by hook filename so
+ * a registration surviving from a different machine still counts. Consent was given once; a
+ * registration found here means the script can be refreshed by a later upgrade without asking again.
  */
 export function isClaudeHookRegistered(claudeHome: string, event: string, file: string): boolean {
   const settingsPath = join(claudeHome, "settings.json");
   if (!existsSync(settingsPath)) return false;
-  const command = `node "${join(claudeHome, "hooks", file)}"`;
-  return (readJson<ClaudeSettings>(settingsPath).hooks?.[event] ?? []).some((entry) => entry.hooks?.some((hook) => hook.command === command));
+  return (readJson<ClaudeSettings>(settingsPath).hooks?.[event] ?? []).some((entry) => referencesHookFile(entry, file));
+}
+
+/**
+ * Undo `installClaudeHook`: drop the file's entry from `settings.json` (removing the event key
+ * entirely once empty) and delete the script. A settings file with no registration for this file,
+ * or none at all, is left untouched — there is nothing to undo.
+ */
+export function uninstallClaudeHook(claudeHome: string, event: string, file: string): boolean {
+  const hookPath = join(claudeHome, "hooks", file);
+  const settingsPath = join(claudeHome, "settings.json");
+  let changed = false;
+  if (existsSync(settingsPath)) {
+    const settings: ClaudeSettings = readJson<ClaudeSettings>(settingsPath);
+    const registered = settings.hooks?.[event] ?? [];
+    const withoutStale = registered.filter((existing) => !referencesHookFile(existing, file));
+    if (withoutStale.length !== registered.length) {
+      const hooks = { ...settings.hooks };
+      if (withoutStale.length) hooks[event] = withoutStale;
+      else delete hooks[event];
+      writeJson(settingsPath, { ...settings, hooks });
+      changed = true;
+    }
+  }
+  if (existsSync(hookPath)) {
+    rmSync(hookPath);
+    changed = true;
+  }
+  return changed;
+}
+
+function referencesHookFile(entry: HookMatcher, file: string): boolean {
+  return entry.hooks?.some((hook) => typeof hook.command === "string" && hook.command.endsWith(`/hooks/${file}"`)) ?? false;
+}
+
+function sameEntry(a: HookMatcher, b: HookMatcher): boolean {
+  return a.matcher === b.matcher && JSON.stringify(a.hooks) === JSON.stringify(b.hooks);
 }

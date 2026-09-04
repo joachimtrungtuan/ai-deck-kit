@@ -7,6 +7,7 @@ import { deckBundles, deckDrift, retemplateDeck } from "../lib/deck-template-syn
 import { installEngineDependencies } from "../lib/engine-dependencies.ts";
 import { projectTemplatesRoot, resolveTemplate } from "../lib/templates.ts";
 import { findWorkspace } from "../lib/workspace.ts";
+import { unwireSkillsFromProject } from "./wire-skills.ts";
 import type { Workspace } from "../lib/types.ts";
 
 export const removalHelp = `Removal commands:
@@ -86,6 +87,7 @@ function uninstallCommand(workspace: Workspace, options: string[]): void {
   }
   if (!confirmed(options)) return console.log("Nothing was removed. Add --yes to confirm.");
   present.forEach((target) => rmSync(target, { recursive: true, force: true }));
+  unwireSkillsFromProject(workspace.root, workspace.engineRoot);
   console.log("Removed AI Deck Kit from this project.");
   if (!purge) console.log("Reinstall over your existing work with: npx github:joachimtrungtuan/ai-deck-kit init --here");
 }

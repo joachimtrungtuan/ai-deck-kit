@@ -1,3 +1,4 @@
+import { valueAfter } from "../lib/cli-args.ts";
 import { deckPath, readDeck } from "../lib/deck.ts";
 import { deckBundles, deckDrift, describeDrift, retemplateDeck } from "../lib/deck-template-sync.ts";
 import { resolveTemplate } from "../lib/templates.ts";
@@ -54,12 +55,4 @@ function retemplateCommand(workspace: Workspace, args: string[]): void {
 function bundleFor(workspace: Workspace, slug: string): string {
   const root = deckPath(workspace, slug);
   return root.split("/").at(-1)!;
-}
-
-function valueAfter(args: string[], option: string): string | undefined {
-  const index = args.indexOf(option);
-  if (index === -1) return undefined;
-  const value = args[index + 1];
-  if (!value || value.startsWith("--")) throw new Error(`${option} requires a value.`);
-  return value;
 }

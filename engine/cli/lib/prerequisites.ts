@@ -7,8 +7,10 @@
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 
-// The CLI entrypoint runs TypeScript sources through --experimental-strip-types,
-// which landed in 22.6.0.
+// This repo's own scripts and tests run TypeScript sources directly through
+// --experimental-strip-types (landed in 22.6.0). The installed CLI runs precompiled
+// JS (cli/dist/index.js) and needs no such flag, but this is kept as the one
+// supported floor across both paths.
 const MINIMUM_NODE = [22, 6, 0] as const;
 
 export type PrerequisiteCheck = {
@@ -21,10 +23,17 @@ export type PrerequisiteCheck = {
 
 export type PrerequisiteReport = { hard: PrerequisiteCheck[]; soft: PrerequisiteCheck[] };
 
-export function checkPrerequisites(): PrerequisiteReport {
+/**
+ * `git` only blocks work that fetches from GitHub — `init` (first install) and `upgrade` (a new
+ * engine version). `doctor` runs against an already-installed workspace and needs it for neither,
+ * so a missing `git` there is worth flagging but must not fail the report.
+ */
+export function checkPrerequisites(options: { git?: "hard" | "soft" } = {}): PrerequisiteReport {
+  const gitMode = options.git ?? "hard";
+  const git = checkCommand("git", "downloading the kit from GitHub (init) or a new engine version (upgrade)", gitRemedy());
   return {
-    hard: [checkPlatform(), checkNode(), checkCommand("npm", "installing engine dependencies", npmRemedy()), checkCommand("git", "downloading the kit from GitHub", gitRemedy())],
-    soft: [checkArchiveTools(), checkChrome(), checkImageMagick()],
+    hard: [checkPlatform(), checkNode(), checkCommand("npm", "installing engine dependencies", npmRemedy()), ...(gitMode === "hard" ? [git] : [])],
+    soft: [...(gitMode === "soft" ? [git] : []), checkArchiveTools(), checkChrome(), checkImageMagick()],
   };
 }
 

@@ -14,28 +14,28 @@ import type { Workspace } from "../lib/types.ts";
 
 const projectRoot = fileURLToPath(new URL("../../..", import.meta.url));
 
-test("a deck using its own template's named catalog profile is not flagged unsupported", () => {
+test("a deck using its own template's named catalog profile is not flagged unsupported", async () => {
   const workspace = fixtureWorkspace();
   writeTemplate(join(workspace.root, "templates", "clarity-courseware.template"), "clarity-courseware", "clarity-courseware-v1");
   createDeck(workspace, "lesson", "clarity-courseware");
 
-  const report = verifyWorkspace(workspace);
+  const report = await verifyWorkspace(workspace);
   assert.ok(
     !report.errors.some((error) => /unsupported slide-type catalog/.test(error)),
     `expected no catalog error, got: ${JSON.stringify(report.errors)}`,
   );
 });
 
-test("a catalog name that does not match the deck's own template is still rejected", () => {
+test("a catalog name that does not match the deck's own template is still rejected", async () => {
   const workspace = fixtureWorkspace();
   writeTemplate(join(workspace.root, "templates", "sample.template"), "sample", "someone-elses-v1");
   createDeck(workspace, "talk", "sample");
 
-  const report = verifyWorkspace(workspace);
+  const report = await verifyWorkspace(workspace);
   assert.ok(report.errors.some((error) => /unsupported slide-type catalog someone-elses-v1/.test(error)));
 });
 
-test("content schema verification rejects malformed versions", () => {
+test("content schema verification rejects malformed versions", async () => {
   const workspace = fixtureWorkspace();
   writeTemplate(join(workspace.root, "templates", "sample.template"), "sample", "v1");
   const deckRoot = createDeck(workspace, "talk", "sample");
@@ -44,11 +44,11 @@ test("content schema verification rejects malformed versions", () => {
   manifest.contentSchemaVersion = "1abc.0.0";
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
-  const report = verifyWorkspace(workspace);
+  const report = await verifyWorkspace(workspace);
   assert.ok(report.errors.some((error) => /talk\.deck: unsupported content schema 1abc\.0\.0/.test(error)));
 });
 
-test("verify accepts v2 decks created from both shipped templates", () => {
+test("verify accepts v2 decks created from both shipped templates", async () => {
   const root = mkdtempSync(join(tmpdir(), "aideck-shipped-v2-catalog-test-"));
   const workspace: Workspace = {
     root,
@@ -61,7 +61,7 @@ test("verify accepts v2 decks created from both shipped templates", () => {
     mkdirSync(workspace.decksRoot, { recursive: true });
     for (const template of ["linear-dark", "swiss-modern"]) createDeck(workspace, `${template}-v2`, template);
 
-    const report = verifyWorkspace(workspace);
+    const report = await verifyWorkspace(workspace);
     assert.deepEqual(report.errors, []);
   } finally {
     rmSync(root, { recursive: true, force: true });

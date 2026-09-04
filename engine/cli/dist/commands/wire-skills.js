@@ -2,29 +2,40 @@
 //
 // Split from init because it is also worth running on its own: after adding a
 // second agent, after moving the project, or when the install was told to skip.
-import { relative } from "node:path";
-import { findAgentHomes, resolveAgentHome, wireSkills } from "../lib/agent-skills.js";
-import { claudeEngineGuardRegistered, installClaudeEngineGuard } from "../lib/claude-engine-guard.js";
-import { claudeVerifyHookRegistered, installClaudeVerifyHook } from "../lib/claude-verify-hook.js";
+import { join, relative } from "node:path";
+import { findAgentHomes, resolveAgentHome, unwireSkills, wireSkills } from "../lib/agent-skills.js";
+import { claudeEngineGuardRegistered, installClaudeEngineGuard, uninstallClaudeEngineGuard } from "../lib/claude-engine-guard.js";
+import { claudeVerifyHookRegistered, installClaudeVerifyHook, uninstallClaudeVerifyHook } from "../lib/claude-verify-hook.js";
 import { isInteractive, promptChoice, promptLine } from "../lib/prompt.js";
+import { removeProjectAgentRules } from "../lib/project-agent-rules.js";
+import { removeProjectGitignore } from "../lib/project-gitignore.js";
 import { findWorkspace } from "../lib/workspace.js";
 export const skillsHelp = `Skill commands:
-  skills wire [--to <path>]        Link engine skills into an agent folder (.claude, .agents)`;
+  skills wire [--to <path>] [--safeguards]   Link engine skills into an agent folder (.claude, .agents)
+                                              --safeguards installs the Claude write-guard and verify
+                                              hooks non-interactively instead of asking or skipping
+  skills unwire [--to <path>]                Undo 'wire': remove the skill links this toolkit created,
+                                              its Claude safeguard hooks, and the boundary notes in
+                                              AGENTS.md / CLAUDE.md / .gitignore`;
 export function runSkills(args) {
-    if (!args.length || args.includes("--help") || args[0] !== "wire")
+    if (args.includes("--help") || !["wire", "unwire"].includes(args[0]))
         return console.log(skillsHelp);
     const workspace = findWorkspace();
     const explicit = valueAfter(args, "--to");
-    wireSkillsInteractively(workspace.root, workspace.engineRoot, explicit);
+    if (args[0] === "wire")
+        return wireSkillsInteractively(workspace.root, workspace.engineRoot, explicit, args.includes("--safeguards"));
+    unwireSkillsFromProject(workspace.root, workspace.engineRoot, explicit);
 }
 /**
  * Choose an agent folder and link the skills into it.
  * `explicitPath` skips the questions. Without a TTY nothing is written unless a
  * home sits at the project root, so automated installs stay predictable.
+ * `safeguardsRequested` installs the Claude safeguards without asking, for a non-interactive
+ * install that still wants them — see `offerClaudeSafeguards`.
  */
-export function wireSkillsInteractively(projectRoot, engineRoot, explicitPath) {
+export function wireSkillsInteractively(projectRoot, engineRoot, explicitPath, safeguardsRequested = false) {
     if (explicitPath)
-        return report(engineRoot, resolveAgentHome(explicitPath, projectRoot));
+        return report(projectRoot, engineRoot, resolveAgentHome(explicitPath, projectRoot), safeguardsRequested);
     const homes = findAgentHomes(projectRoot);
     const atProjectRoot = homes.filter((home) => home.distance === 0);
     if (!isInteractive()) {
@@ -34,11 +45,11 @@ export function wireSkillsInteractively(projectRoot, engineRoot, explicitPath) {
             console.log("Run 'aideck skills wire' later to connect them.");
             return;
         }
-        atProjectRoot.forEach((home) => report(engineRoot, home));
+        atProjectRoot.forEach((home) => report(projectRoot, engineRoot, home, safeguardsRequested));
         return;
     }
     if (atProjectRoot.length) {
-        atProjectRoot.forEach((home) => report(engineRoot, home));
+        atProjectRoot.forEach((home) => report(projectRoot, engineRoot, home, safeguardsRequested));
         return;
     }
     console.log("");
@@ -63,9 +74,9 @@ export function wireSkillsInteractively(projectRoot, engineRoot, explicitPath) {
             console.log("Nothing entered — skipped. Run 'aideck skills wire' later.");
             return;
         }
-        return report(engineRoot, resolveAgentHome(entered, projectRoot));
+        return report(projectRoot, engineRoot, resolveAgentHome(entered, projectRoot), safeguardsRequested);
     }
-    report(engineRoot, homes[0]);
+    report(projectRoot, engineRoot, homes[0], safeguardsRequested);
 }
 /**
  * Re-run the wiring for agent homes that sit at the project root. Called by `upgrade`: the engine
@@ -76,9 +87,46 @@ export function wireSkillsInteractively(projectRoot, engineRoot, explicitPath) {
 export function rewireProjectAgentHomes(projectRoot, engineRoot) {
     findAgentHomes(projectRoot)
         .filter((home) => home.distance === 0)
-        .forEach((home) => report(engineRoot, home));
+        .forEach((home) => report(projectRoot, engineRoot, home, false));
 }
-function report(engineRoot, home) {
+/**
+ * Undo everything `wire` did for this project: skill links and Claude safeguard hooks in each agent
+ * home (an explicit `--to` path, otherwise every home found at the project root — the same set a
+ * non-interactive `wire` would have used), plus the project-level boundary notes in
+ * AGENTS.md/CLAUDE.md and .gitignore. Safe to run even after `aideck uninstall` has already deleted
+ * the engine: a managed link is identified by where it points, not by that target still existing.
+ */
+export function unwireSkillsFromProject(projectRoot, engineRoot, explicitPath) {
+    const homes = explicitPath ? [resolveAgentHome(explicitPath, projectRoot)] : findAgentHomes(projectRoot).filter((home) => home.distance === 0);
+    if (!homes.length) {
+        console.log("");
+        console.log("No .claude or .agents folder found at this project root — nothing to unwire.");
+    }
+    homes.forEach((home) => unwireHome(projectRoot, engineRoot, home));
+    const rulesChanged = removeProjectAgentRules(projectRoot);
+    const gitignoreChanged = removeProjectGitignore(projectRoot);
+    if (rulesChanged.length || gitignoreChanged) {
+        console.log("");
+        rulesChanged.forEach((name) => console.log(`Removed the AI Deck Kit boundary section from ${name}.`));
+        if (gitignoreChanged)
+            console.log("Removed the AI Deck Kit block from .gitignore.");
+    }
+}
+function unwireHome(projectRoot, engineRoot, home) {
+    const removed = unwireSkills(engineRoot, home);
+    console.log("");
+    console.log(`Disconnected AI skills from ${home.path}`);
+    removed.forEach((name) => console.log(`  removed  ${name}`));
+    if (!removed.length)
+        console.log("  (nothing linked by this toolkit was found)");
+    if (home.name !== ".claude")
+        return;
+    const guardRemoved = uninstallClaudeEngineGuard(home.path);
+    const verifyRemoved = uninstallClaudeVerifyHook(home.path);
+    if (guardRemoved || verifyRemoved)
+        console.log(`Removed the write-guard and verify safeguards from ${join(home.path, "settings.json")}`);
+}
+function report(projectRoot, engineRoot, home, safeguardsRequested) {
     const result = wireSkills(engineRoot, home);
     console.log("");
     console.log(`Connected AI skills to ${home.path}`);
@@ -89,7 +137,7 @@ function report(engineRoot, home) {
         console.log(`Skipped entries above already exist in ${relative(process.cwd(), result.home) || result.home}.`);
         console.log("Remove or rename them, then run 'aideck skills wire' again to replace them.");
     }
-    offerClaudeSafeguards(home);
+    offerClaudeSafeguards(projectRoot, home, safeguardsRequested);
 }
 /**
  * Two Claude-specific safeguards: one refuses a write to a file the kit owns, the other checks the
@@ -98,22 +146,31 @@ function report(engineRoot, home) {
  *
  * They edit a settings file the user owns, so they are asked for and never installed silently. Once
  * a home already runs them, a later upgrade refreshes the scripts without asking again: consent was
- * given, and a stale script is worse than no script.
+ * given, and a stale script is worse than no script. `safeguardsRequested` (`--safeguards`) opts in
+ * without asking, for a non-interactive install that still wants them installed.
  */
-function offerClaudeSafeguards(home) {
+function offerClaudeSafeguards(projectRoot, home, safeguardsRequested) {
     if (home.name !== ".claude")
         return;
     const installed = claudeEngineGuardRegistered(home.path) && claudeVerifyHookRegistered(home.path);
-    if (!installed) {
-        if (!isInteractive())
+    if (!installed && !safeguardsRequested) {
+        if (!isInteractive()) {
+            console.log("");
+            console.log(`Skipped the toolkit's write-guard and verify safeguards for ${home.path} (no interactive prompt available).`);
+            console.log(`Run 'aideck skills wire --safeguards' to add them non-interactively.`);
             return;
+        }
         console.log("");
         const choice = promptChoice("Protect the toolkit from accidental edits?\n\nThis adds two rules to .claude/settings.json: one stops the agent writing inside\nthe engine folder, which upgrades replace wholesale; the other checks your designs\nand presentations after the agent finishes editing. Your files are never changed\nby either of them.", ["Yes — add the safeguards (recommended)", "No thanks"]);
         if (choice !== 0)
             return;
     }
-    const settingsPath = installClaudeEngineGuard(home.path).settingsPath;
-    installClaudeVerifyHook(home.path);
+    // Only the project's own root-level home can rely on $CLAUDE_PROJECT_DIR: Claude Code sets it to
+    // wherever it was launched from, which matches this home exactly. A home found further up may be
+    // shared by other projects launched elsewhere, so it keeps the absolute path baked in.
+    const useProjectDirVar = home.path === join(projectRoot, ".claude");
+    const settingsPath = installClaudeEngineGuard(home.path, useProjectDirVar).settingsPath;
+    installClaudeVerifyHook(home.path, useProjectDirVar);
     console.log(installed ? `Refreshed the safeguards in ${settingsPath}` : `Added the safeguards to ${settingsPath}`);
 }
 function shorten(path) {

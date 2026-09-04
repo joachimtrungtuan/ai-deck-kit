@@ -29,7 +29,16 @@ if (!pointer) {
   process.exit(1);
 }
 
-const engineRoot = resolve(directory, JSON.parse(readFileSync(pointer, "utf8")).engineRoot);
+let declared;
+try {
+  declared = JSON.parse(readFileSync(pointer, "utf8"));
+} catch (error) {
+  console.error(`Could not read ai-deck-kit.json at ${pointer}`);
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exit(1);
+}
+
+const engineRoot = resolve(directory, declared.engineRoot);
 const cli = join(engineRoot, "cli", "index.mjs");
 if (!existsSync(cli)) {
   console.error(`This project's engine is missing or incomplete: ${engineRoot}`);

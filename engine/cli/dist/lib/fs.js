@@ -18,14 +18,19 @@ export function writeText(file, value) {
     writeFileSync(temporary, value, "utf8");
     renameSync(temporary, file);
 }
-export function copyTree(source, destination, excluded = new Set([".build", "storybook-static"])) {
+// `excludedPaths` is relative to `source`, for names too generic to exclude everywhere a copyTree
+// call might see them (e.g. "dist" also names the committed `cli/dist` build this same function
+// must ship — only the Vite dev build under `preview-app/` is copy-time junk).
+export function copyTree(source, destination, excludedNames = new Set([".build", "storybook-static", ".DS_Store"]), excludedPaths = new Set(["preview-app/dist"])) {
     if (!existsSync(source))
         throw new Error(`Source does not exist: ${source}`);
     cpSync(source, destination, {
         recursive: true,
         filter: (entry) => {
             const name = entry.split("/").at(-1) ?? "";
-            return !excluded.has(name) && name !== "node_modules";
+            if (excludedNames.has(name) || name === "node_modules")
+                return false;
+            return !excludedPaths.has(relative(source, entry).split(sep).join("/"));
         },
     });
 }

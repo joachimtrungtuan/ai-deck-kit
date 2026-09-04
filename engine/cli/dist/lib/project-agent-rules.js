@@ -5,7 +5,7 @@
 // these two files are read at the start of every session, which is exactly when the boundary needs
 // to be known. Marker-delimited so the block can be refreshed on upgrade without touching a word
 // the user wrote around it.
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { writeText } from "./fs.js";
 import { isInteractive, promptChoice } from "./prompt.js";
@@ -70,6 +70,31 @@ function mergeBlock(existing, block) {
     if (start !== -1 && end > start)
         return `${existing.slice(0, start)}${block}${existing.slice(end + MARKER_END.length)}`;
     return `${existing.endsWith("\n") ? existing : `${existing}\n`}\n${block}\n`;
+}
+/**
+ * Undo `ensureProjectAgentRules`: drop the delimited region from each rules file that has one,
+ * leaving everything the user wrote around it untouched. A file with no block, or no file at all,
+ * is left alone. Returns the names of the files actually changed.
+ */
+export function removeProjectAgentRules(projectRoot) {
+    const changed = [];
+    for (const name of RULES_FILES) {
+        const path = join(projectRoot, name);
+        if (!existsSync(path))
+            continue;
+        const existing = readFileSync(path, "utf8");
+        const start = existing.indexOf(MARKER_START);
+        const end = existing.indexOf(MARKER_END);
+        if (start === -1 || end <= start)
+            continue;
+        // mergeBlock inserts one blank line before the block when appending; strip that too.
+        const before = existing.slice(0, start).replace(/\n+$/, "\n");
+        const after = existing.slice(end + MARKER_END.length).replace(/^\n+/, "");
+        const stripped = after ? `${before}${before ? "\n" : ""}${after}` : before;
+        writeFileSync(path, stripped);
+        changed.push(name);
+    }
+    return changed;
 }
 function boundaryBlock(engineDirectory) {
     return [

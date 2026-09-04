@@ -26,6 +26,9 @@ export function promptChoice(question, options, defaultIndex = 0) {
 }
 function readLineSync() {
     const buffer = Buffer.alloc(1);
+    // Fed one byte at a time so a multibyte character split across reads still decodes correctly:
+    // `stream: true` holds incomplete sequences internally and returns "" until the last byte arrives.
+    const decoder = new TextDecoder("utf-8");
     let line = "";
     while (true) {
         let bytes = 0;
@@ -33,20 +36,26 @@ function readLineSync() {
             bytes = readSync(0, buffer, 0, 1, null);
         }
         catch (error) {
-            // A non-blocking TTY returns EAGAIN before input is ready; keep waiting.
-            if (error.code === "EAGAIN")
+            // A non-blocking TTY returns EAGAIN before input is ready; sleep briefly rather than
+            // busy-spinning the CPU while waiting for a keypress.
+            if (error.code === "EAGAIN") {
+                sleepSync(5);
                 continue;
+            }
             if (error.code === "EOF")
                 break;
             throw error;
         }
         if (bytes === 0)
             break;
-        const character = buffer.toString("utf8");
+        const character = decoder.decode(buffer, { stream: true });
         if (character === "\n")
             break;
         if (character !== "\r")
             line += character;
     }
     return line;
+}
+function sleepSync(ms) {
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }

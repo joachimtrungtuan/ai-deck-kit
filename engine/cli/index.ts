@@ -46,7 +46,7 @@ ${generationHelp}
 
 ${outputHelp}`;
 
-export function main(argv = process.argv.slice(2)): void {
+export async function main(argv = process.argv.slice(2)): Promise<void> {
   const [command, ...args] = argv;
   if (!command || command === "--help" || command === "help") {
     console.log(help);
@@ -71,7 +71,7 @@ export function main(argv = process.argv.slice(2)): void {
 }
 
 try {
-  main();
+  await main();
 } catch (error) {
   console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
   process.exitCode = 1;
