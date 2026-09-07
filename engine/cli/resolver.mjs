@@ -37,6 +37,11 @@ try {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
 }
+if (typeof declared.engineRoot !== "string") {
+  console.error(`Could not read ai-deck-kit.json at ${pointer}`);
+  console.error('It has no "engineRoot" entry. Restore the file from version control, or reinstall the kit in this project.');
+  process.exit(1);
+}
 
 const engineRoot = resolve(directory, declared.engineRoot);
 const cli = join(engineRoot, "cli", "index.mjs");

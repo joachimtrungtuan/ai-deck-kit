@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { valueAfter } from "../lib/cli-args.ts";
 import { createDeck, parseSections, readDeck, setYamlField, slideContent, writeDeck } from "../lib/deck.ts";
 import type { DeckSlide } from "../lib/types.ts";
 import { findWorkspace } from "../lib/workspace.ts";
@@ -20,7 +21,6 @@ export function runGeneration(args: string[]): void {
   applyOutline(workspace, args[1], readFileSync(outlinePath, "utf8"));
   console.log(`Generated deterministic scaffold: ${root}`);
 }
-
 function applyOutline(workspace: ReturnType<typeof findWorkspace>, slug: string, outline: string): void {
   const headings = [...outline.matchAll(/^(#{1,2})\s+(.+)$/gm)].map((match) => ({ level: match[1].length, title: match[2].trim() })).filter((heading) => heading.title);
   if (!headings.length) throw new Error("Outline has no Markdown headings.");
@@ -45,9 +45,4 @@ function applyOutline(workspace: ReturnType<typeof findWorkspace>, slug: string,
   });
   loaded.manifest.generation = { source: "outline", params: { headings: slideHeadings.map((heading) => heading.title) } };
   writeDeck(loaded.root, loaded.manifest, `${sections.prefix}${sections.sections.join("\n\n")}\n`);
-}
-
-function valueAfter(args: string[], option: string): string | undefined {
-  const index = args.indexOf(option);
-  return index === -1 ? undefined : args[index + 1];
 }

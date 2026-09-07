@@ -2,6 +2,7 @@
 // workspace, every target is printed before it goes, and nothing is removed without --yes.
 import { existsSync, rmSync } from "node:fs";
 import { basename, join, relative, resolve } from "node:path";
+import { valueAfter } from "../lib/cli-args.js";
 import { deckPath } from "../lib/deck.js";
 import { deckBundles, deckDrift, retemplateDeck } from "../lib/deck-template-sync.js";
 import { installEngineDependencies } from "../lib/engine-dependencies.js";
@@ -119,13 +120,4 @@ function assertInsideProject(workspace, target) {
 }
 function confirmed(options) {
     return options.includes("--yes");
-}
-function valueAfter(args, option) {
-    const index = args.indexOf(option);
-    if (index === -1)
-        return undefined;
-    const value = args[index + 1];
-    if (!value || value.startsWith("--"))
-        throw new Error(`${option} requires a value.`);
-    return value;
 }

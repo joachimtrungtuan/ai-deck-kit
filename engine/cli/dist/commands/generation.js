@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { valueAfter } from "../lib/cli-args.js";
 import { createDeck, parseSections, readDeck, setYamlField, slideContent, writeDeck } from "../lib/deck.js";
 import { findWorkspace } from "../lib/workspace.js";
 export const generationHelp = `Generation commands:
@@ -44,8 +45,4 @@ function applyOutline(workspace, slug, outline) {
     });
     loaded.manifest.generation = { source: "outline", params: { headings: slideHeadings.map((heading) => heading.title) } };
     writeDeck(loaded.root, loaded.manifest, `${sections.prefix}${sections.sections.join("\n\n")}\n`);
-}
-function valueAfter(args, option) {
-    const index = args.indexOf(option);
-    return index === -1 ? undefined : args[index + 1];
 }

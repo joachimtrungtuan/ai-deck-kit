@@ -63,9 +63,7 @@ function initializeFresh(projectRoot, pointerPath, subfolder) {
     const targetEngine = resolve(projectRoot, subfolder);
     if (!isWithin(projectRoot, targetEngine) || targetEngine === projectRoot)
         throw new Error("init --dir must point to a subfolder of the current project.");
-    const distributionRoot = process.env[DISTRIBUTION_ROOT_ENV] ? resolve(process.env[DISTRIBUTION_ROOT_ENV]) : engineRoot();
-    const sourceEngine = existsSync(resolve(distributionRoot, "engine.version.json")) ? distributionRoot : resolve(distributionRoot, "engine");
-    copyTree(sourceEngine, targetEngine);
+    copyDistributionEngine(targetEngine);
     const engineVersion = readJson(resolve(targetEngine, "engine.version.json")).engineVersion;
     const pointer = {
         engineRoot: `./${relative(projectRoot, targetEngine) || "engine"}`,
@@ -76,18 +74,25 @@ function initializeFresh(projectRoot, pointerPath, subfolder) {
     writePointer(projectRoot, pointer);
     return workspace;
 }
+/** Copies the shipped engine tree into the project from the distribution this installer runs from. */
+function copyDistributionEngine(targetEngine) {
+    const distributionRoot = process.env[DISTRIBUTION_ROOT_ENV] ? resolve(process.env[DISTRIBUTION_ROOT_ENV]) : engineRoot();
+    const sourceEngine = existsSync(resolve(distributionRoot, "engine.version.json")) ? distributionRoot : resolve(distributionRoot, "engine");
+    copyTree(sourceEngine, targetEngine);
+}
 /**
  * A pointer left by a previous `init` that failed before finishing — the engine tree copied but
- * dependencies never installed, or dependencies installed but the integrity manifest never written.
- * Resuming picks up right after the copy instead of erroring with "already initialized"; an install
- * that looks complete (deps present and manifest written) is not resumable and keeps that error.
+ * dependencies never installed, or dependencies installed but the integrity manifest never written —
+ * or by an engine folder that was deleted by hand afterwards, which is copied again. Resuming picks
+ * up right after the copy instead of erroring with "already initialized"; an install that looks
+ * complete (deps present and manifest written) is not resumable and keeps that error.
  */
-function resumableWorkspace(pointerPath, projectRoot) {
+export function resumableWorkspace(pointerPath, projectRoot) {
     const pointer = readJson(pointerPath);
     const targetEngine = resolve(projectRoot, pointer.engineRoot);
     if (!existsSync(targetEngine))
-        return undefined;
-    if (previewRuntimeReady(targetEngine) && existsSync(engineIntegrityManifestPath(targetEngine)))
+        copyDistributionEngine(targetEngine);
+    else if (previewRuntimeReady(targetEngine) && existsSync(engineIntegrityManifestPath(targetEngine)))
         return undefined;
     return { root: projectRoot, pointerPath, pointer, engineRoot: targetEngine, decksRoot: resolve(projectRoot, pointer.decksRoot) };
 }

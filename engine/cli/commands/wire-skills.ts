@@ -3,6 +3,7 @@
 // Split from init because it is also worth running on its own: after adding a
 // second agent, after moving the project, or when the install was told to skip.
 import { join, relative } from "node:path";
+import { valueAfter } from "../lib/cli-args.ts";
 import { findAgentHomes, resolveAgentHome, unwireSkills, wireSkills, type AgentHome } from "../lib/agent-skills.ts";
 import { claudeEngineGuardRegistered, installClaudeEngineGuard, uninstallClaudeEngineGuard } from "../lib/claude-engine-guard.ts";
 import { claudeVerifyHookRegistered, installClaudeVerifyHook, uninstallClaudeVerifyHook } from "../lib/claude-verify-hook.ts";
@@ -26,7 +27,6 @@ export function runSkills(args: string[]): void {
   if (args[0] === "wire") return wireSkillsInteractively(workspace.root, workspace.engineRoot, explicit, args.includes("--safeguards"));
   unwireSkillsFromProject(workspace.root, workspace.engineRoot, explicit);
 }
-
 /**
  * Choose an agent folder and link the skills into it.
  * `explicitPath` skips the questions. Without a TTY nothing is written unless a
@@ -189,9 +189,4 @@ function offerClaudeSafeguards(projectRoot: string, home: AgentHome, safeguardsR
 function shorten(path: string): string {
   const home = process.env.HOME;
   return home && path.startsWith(home) ? path.replace(home, "~") : path;
-}
-
-function valueAfter(args: string[], option: string): string | undefined {
-  const index = args.indexOf(option);
-  return index === -1 ? undefined : args[index + 1];
 }

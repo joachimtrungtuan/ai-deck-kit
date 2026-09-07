@@ -2,6 +2,7 @@
 // workspace, every target is printed before it goes, and nothing is removed without --yes.
 import { existsSync, rmSync } from "node:fs";
 import { basename, join, relative, resolve } from "node:path";
+import { valueAfter } from "../lib/cli-args.ts";
 import { deckPath } from "../lib/deck.ts";
 import { deckBundles, deckDrift, retemplateDeck } from "../lib/deck-template-sync.ts";
 import { installEngineDependencies } from "../lib/engine-dependencies.ts";
@@ -28,7 +29,6 @@ export function runRemoval(args: string[]): void {
   if (target === "template") return removeTemplate(workspace, name, options);
   throw new Error("Usage: aideck remove deck|template <name> --yes");
 }
-
 function removeDeck(workspace: Workspace, slug: string | undefined, options: string[]): void {
   if (!slug) throw new Error("Usage: aideck remove deck <slug> --yes");
   const root = deckPath(workspace, slug);
@@ -111,12 +111,4 @@ function assertInsideProject(workspace: Workspace, target: string): string {
 
 function confirmed(options: string[]): boolean {
   return options.includes("--yes");
-}
-
-function valueAfter(args: string[], option: string): string | undefined {
-  const index = args.indexOf(option);
-  if (index === -1) return undefined;
-  const value = args[index + 1];
-  if (!value || value.startsWith("--")) throw new Error(`${option} requires a value.`);
-  return value;
 }
