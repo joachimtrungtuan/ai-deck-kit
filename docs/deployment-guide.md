@@ -35,11 +35,12 @@ npx github:joachimtrungtuan/ai-deck-kit init --dir tools/ai-deck-kit
 - An agent home **at the project root** is wired without prompting.
 - A home found **further up** triggers a three-way prompt: use that folder, type an explicit path, or skip.
 - Non-interactive runs (no TTY, or the non-interactive env flag) wire only a root-level home and otherwise skip with a pointer to `aideck skills wire`.
+- The Claude safeguard hooks need consent, so non-interactive runs skip them unless `--safeguards` is passed to `init` or `skills wire`.
 
 Links are relative symlinks, with a copy fallback where symlinks are unavailable. An existing real directory that the toolkit did not create is never replaced. Re-running is idempotent:
 
 ```sh
-aideck skills wire [--to <path>]
+aideck skills wire [--to <path>] [--safeguards]
 aideck skills unwire [--to <path>]
 ```
 

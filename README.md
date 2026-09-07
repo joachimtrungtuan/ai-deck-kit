@@ -167,6 +167,8 @@ Four things keep this honest:
   file the toolkit owns as it happens, the other runs `aideck verify` when the agent
   finishes editing and sends it back to fix anything it broke. Remove them any time,
   along with the skill links and boundary notes, with `aideck skills unwire`.
+  Without a terminal (an agent running the install) they are skipped unless you pass
+  `--safeguards` to `aideck init` or `aideck skills wire`.
 
 ---
 
@@ -186,6 +188,7 @@ You can do this at any later time:
 ```sh
 aideck skills wire                       # find the agent folder and ask
 aideck skills wire --to ../../.claude    # use exactly this folder
+aideck skills wire --safeguards         # add the Claude safeguard hooks without being asked
 aideck skills unwire                     # undo it: remove the links, hooks, and boundary notes
 ```
 
