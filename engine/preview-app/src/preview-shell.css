@@ -21,6 +21,11 @@ button {
   overflow: hidden;
 }
 
+.preview-shell.has-editor {
+  --editor-width: 280px;
+  grid-template-columns: var(--sidebar-width) 8px minmax(0, 1fr) 8px var(--editor-width);
+}
+
 .preview-sidebar {
   display: flex;
   height: 100dvh;
@@ -175,6 +180,19 @@ button {
 
 .preview-stage .fixed-slide-canvas {
   filter: drop-shadow(0 28px 40px rgb(0 0 0 / 34%));
+}
+
+.preview-editor {
+  border-left: 1px solid #3d3d38;
+  min-width: 0;
+  overflow: hidden;
+  padding: 24px;
+}
+
+.preview-editor p {
+  color: #a7a79f;
+  font-size: 14px;
+  margin: 0;
 }
 
 .preview-back-link {

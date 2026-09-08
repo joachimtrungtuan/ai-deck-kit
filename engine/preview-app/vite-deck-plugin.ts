@@ -1,6 +1,8 @@
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import type { Plugin } from "vite";
+import { parseDocument } from "yaml";
 import { resolveFontImports } from "../cli/lib/font-catalog.ts";
 
 const virtualId = "virtual:aideck-deck";
@@ -100,7 +102,109 @@ export function aideckDeckPlugin(
         return [module];
       }
     },
+    configureServer(server) {
+      if (!deckPath) return;
+      const contentPath = resolve(deckPath, "content.md");
+      server.middlewares.use("/__aideck/slide-yaml", async (request, response) => {
+        try {
+          if (request.method === "GET") {
+            const slideId = new URL(request.url ?? "", "http://localhost").searchParams.get("slideId");
+            if (!slideId) return respondJson(response, 400, { error: "slideId is required." });
+            const content = readFileSync(contentPath, "utf8");
+            const yaml = readSlideYamlBlock(content, slideId);
+            if (yaml === undefined) return respondJson(response, 404, { error: `Unknown slide id: ${slideId}` });
+            return respondJson(response, 200, { yaml, revision: contentRevision(content) });
+          }
+
+          if (request.method !== "POST") return respondJson(response, 405, { error: "Method not allowed." });
+          const body = await readJsonBody(request);
+          if (typeof body.slideId !== "string" || typeof body.yaml !== "string" || typeof body.revision !== "string") {
+            return respondJson(response, 400, { error: "slideId, yaml, and revision are required." });
+          }
+          const content = readFileSync(contentPath, "utf8");
+          if (contentRevision(content) !== body.revision) return respondJson(response, 409, { error: "content.md changed; re-read before saving." });
+          const yamlDocument = parseDocument(body.yaml);
+          if (yamlDocument.errors.length) return respondJson(response, 400, { error: "YAML is invalid." });
+          const nextContent = replaceSlideYamlBlock(content, body.slideId, body.yaml);
+          writeFileSync(contentPath, nextContent);
+          return respondJson(response, 200, { revision: contentRevision(nextContent) });
+        } catch (error) {
+          return respondJson(response, 400, { error: error instanceof Error ? error.message : "Could not update slide YAML." });
+        }
+      });
+    },
   };
+}
+
+type SlideYamlBlock = { bodyEnd: number; bodyStart: number; yaml: string };
+
+/** Returns the raw YAML fence body for a slide identified by its YAML id. */
+export function readSlideYamlBlock(content: string, slideId: string): string | undefined {
+  return findSlideYamlBlock(content, slideId)?.yaml;
+}
+
+/** Replaces only the YAML fence body for one slide, preserving all surrounding bytes. */
+export function replaceSlideYamlBlock(content: string, slideId: string, yamlBody: string): string {
+  const block = findSlideYamlBlock(content, slideId);
+  if (!block) {
+    const section = findSlideSection(content, slideId);
+    if (section) throw new Error(`Slide ${slideId} has no YAML fence.`);
+    throw new Error(`Unknown slide id: ${slideId}`);
+  }
+  return `${content.slice(0, block.bodyStart)}${yamlBody}${content.slice(block.bodyEnd)}`;
+}
+
+function findSlideYamlBlock(content: string, slideId: string): SlideYamlBlock | undefined {
+  const section = findSlideSection(content, slideId);
+  if (!section) return undefined;
+  const fence = /```ya?ml\r?\n([\s\S]*?)\r?\n```/.exec(section.text);
+  if (!fence || fence.index === undefined) return undefined;
+  const bodyStart = section.start + fence.index + fence[0].indexOf(fence[1]);
+  return { bodyStart, bodyEnd: bodyStart + fence[1].length, yaml: fence[1] };
+}
+
+function findSlideSection(content: string, slideId: string): { start: number; text: string } | undefined {
+  const headers = [...content.matchAll(/^## Slide\s+\d+.*$/gm)];
+  for (let index = 0; index < headers.length; index += 1) {
+    const start = headers[index].index ?? 0;
+    const text = content.slice(start, headers[index + 1]?.index ?? content.length);
+    const fence = /```ya?ml\r?\n([\s\S]*?)\r?\n```/.exec(text);
+    if (!fence && new RegExp(`^id:\\s*(?:${escapeRegExp(slideId)}|"${escapeRegExp(slideId)}"|'${escapeRegExp(slideId)}')\\s*$`, "m").test(text)) return { start, text };
+    if (!fence) continue;
+    const document = parseDocument(fence[1]);
+    if (!document.errors.length && document.get("id") === slideId) return { start, text };
+  }
+  return undefined;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function contentRevision(content: string): string {
+  return createHash("sha256").update(content).digest("hex");
+}
+
+function readJsonBody(request: NodeJS.ReadableStream): Promise<Record<string, unknown>> {
+  return new Promise((resolveBody, reject) => {
+    let raw = "";
+    request.setEncoding("utf8");
+    request.on("data", (chunk: string) => { raw += chunk; });
+    request.on("end", () => {
+      try {
+        resolveBody(JSON.parse(raw) as Record<string, unknown>);
+      } catch {
+        reject(new Error("Request body must be JSON."));
+      }
+    });
+    request.on("error", reject);
+  });
+}
+
+function respondJson(response: { end: (body: string) => void; setHeader: (name: string, value: string) => void; statusCode: number }, status: number, body: Record<string, string>): void {
+  response.statusCode = status;
+  response.setHeader("Content-Type", "application/json");
+  response.end(JSON.stringify(body));
 }
 
 export function resolveGeneratedTemplateImport(

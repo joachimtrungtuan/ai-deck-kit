@@ -4,16 +4,41 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } f
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { Readable } from "node:stream";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { buildServeViteArgs, parseServeArgs } from "../commands/output.ts";
 import { createTemplate, elementAnimationCatalogV1, listTemplates, migrateLegacyRegisteredTemplates, resolveTemplate, validateMotionTokens, validateTemplateBundle, validateTemplateManifest, type TemplateManifest } from "../lib/templates.ts";
 import type { Workspace } from "../lib/types.ts";
 import { resolveFontImports } from "../lib/font-catalog.ts";
-import { inlineDeckAssets, resolveGeneratedTemplateImport, templatePreviewSlideId } from "../../preview-app/vite-deck-plugin.ts";
+import { aideckDeckPlugin, inlineDeckAssets, readSlideYamlBlock, replaceSlideYamlBlock, resolveGeneratedTemplateImport, templatePreviewSlideId } from "../../preview-app/vite-deck-plugin.ts";
 
 const projectRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const cli = join(projectRoot, "engine", "cli", "index.mjs");
+
+type SlideYamlEndpoint = (request: Readable & { method?: string; url?: string }, response: { end: (body: string) => void; setHeader: () => void; statusCode: number }) => Promise<void>;
+
+function deckYamlEndpoint(deckRoot: string | undefined): SlideYamlEndpoint | undefined {
+  let endpoint: SlideYamlEndpoint | undefined;
+  const configured = aideckDeckPlugin(deckRoot).configureServer;
+  const configureServer = (typeof configured === "function" ? configured : configured?.handler) as ((server: unknown) => void) | undefined;
+  configureServer?.({
+    middlewares: { use: (path: string, handler: SlideYamlEndpoint) => {
+      if (path === "/__aideck/slide-yaml") endpoint = handler;
+    } },
+  } as never);
+  return endpoint;
+}
+
+async function callEndpoint(endpoint: SlideYamlEndpoint, method: string, url: string, body?: unknown): Promise<{ body: string; status: number }> {
+  const request = Readable.from(body === undefined ? [] : [JSON.stringify(body)]) as Readable & { method?: string; url?: string };
+  request.method = method;
+  request.url = url;
+  let responseBody = "";
+  const response = { end: (value: string) => { responseBody = value; }, setHeader: () => undefined, statusCode: 0 };
+  await endpoint(request, response);
+  return { body: responseBody, status: response.statusCode };
+}
 
 test("serve help documents template selection and headless mode", () => {
   const output = execFileSync(process.execPath, [cli, "--help"], { cwd: projectRoot, encoding: "utf8" });
@@ -98,6 +123,49 @@ test("inlineDeckAssets reports a clear error for a missing referenced asset", ()
   );
 });
 
+test("slide YAML helpers replace only the requested fence body", () => {
+  const content = `# Deck\n\n## Slide 01: First\n\n\`\`\`yaml\n# retained\nid: first\ntype: title\ntitle: Before\n\`\`\`\n\n### Speaker Notes\n\nKeep this.\n\n## Slide 02: Second\n\n\`\`\`yaml\nid: second\ntype: title\ntitle: Unchanged\n\`\`\`\n`;
+  const replacement = "# retained\nid: first\ntype: title\ntitle: After";
+
+  assert.equal(readSlideYamlBlock(content, "first"), "# retained\nid: first\ntype: title\ntitle: Before");
+  assert.equal(readSlideYamlBlock(content, "second"), "id: second\ntype: title\ntitle: Unchanged");
+  assert.equal(
+    replaceSlideYamlBlock(content, "first", replacement),
+    content.replace("# retained\nid: first\ntype: title\ntitle: Before", replacement),
+  );
+});
+
+test("slide YAML helpers reject missing ids and fence-less sections", () => {
+  const content = `## Slide 01: First\n\n\`\`\`yaml\nid: first\ntype: title\n\`\`\`\n\n## Slide 02: No Fence\n\nid: "second"\n`;
+
+  assert.equal(readSlideYamlBlock(content, "missing"), undefined);
+  assert.throws(() => replaceSlideYamlBlock(content, "missing", "id: missing"), /Unknown slide id/);
+  assert.throws(() => replaceSlideYamlBlock(content, "second", "id: second"), /has no YAML fence/);
+});
+
+test("deck preview middleware reads, writes, and protects raw slide YAML", async () => {
+  const root = mkdtempSync(join(tmpdir(), "aideck-slide-yaml-test-"));
+  const contentPath = join(root, "content.md");
+  writeFileSync(contentPath, `## Slide 01: First\n\n\`\`\`yaml\nid: first\ntype: title\ntitle: Before\n\`\`\`\n\n### Speaker Notes\n\nUntouched.\n`);
+  const endpoint = deckYamlEndpoint(root);
+  if (!endpoint) throw new Error("Deck middleware was not registered.");
+
+  const read = await callEndpoint(endpoint, "GET", "?slideId=first");
+  assert.equal(read.status, 200);
+  const loaded = JSON.parse(read.body) as { revision: string; yaml: string };
+  assert.match(loaded.yaml, /title: Before/);
+
+  const saved = await callEndpoint(endpoint, "POST", "", { slideId: "first", yaml: "id: first\ntype: title\ntitle: After", revision: loaded.revision });
+  assert.equal(saved.status, 200);
+  assert.equal(readFileSync(contentPath, "utf8"), `## Slide 01: First\n\n\`\`\`yaml\nid: first\ntype: title\ntitle: After\n\`\`\`\n\n### Speaker Notes\n\nUntouched.\n`);
+
+  const conflict = await callEndpoint(endpoint, "POST", "", { slideId: "first", yaml: "id: first", revision: loaded.revision });
+  assert.equal(conflict.status, 409);
+  const invalid = await callEndpoint(endpoint, "POST", "", { slideId: "first", yaml: "title: [", revision: JSON.parse(saved.body).revision });
+  assert.equal(invalid.status, 400);
+  assert.equal(deckYamlEndpoint(undefined), undefined);
+});
+
 test("template preview variant identities cannot collide with display-label delimiters", () => {
   assert.notEqual(
     templatePreviewSlideId("a", "b · c"),
@@ -107,13 +175,13 @@ test("template preview variant identities cannot collide with display-label deli
 
 test("serve uses the shared review shell for deck targets", () => {
   const source = readFileSync(join(projectRoot, "engine", "preview-app", "src", "main.tsx"), "utf8");
-  assert.match(source, /runtimeDeck\) return <PreviewApp source=\{runtimeDeck\}/);
+  assert.match(source, /runtimeDeck\) return <PreviewApp deckMode source=\{runtimeDeck\}/);
   assert.doesNotMatch(source, /runtimeDeck \? <DeckExport/);
 });
 
 test("bare serve uses a dedicated template gallery before opening the viewer", () => {
   const source = readFileSync(join(projectRoot, "engine", "preview-app", "src", "main.tsx"), "utf8");
-  assert.match(source, /if \(showGallery\) return <TemplateGallery sources=\{sources\}/);
+  assert.match(source, /params\.has\("gallery"\) \|\| \(!runtimeTemplate && !requestedTemplate\)/);
   assert.match(source, /<PreviewApp galleryHref="\?gallery" source=\{source\}/);
 });
 
@@ -286,9 +354,10 @@ test("live preview keyboard navigation mirrors export and listens inside the sli
   assert.match(previewSource, /const target = event\.target as HTMLElement \| null/);
   assert.match(previewSource, /target\.tagName === "INPUT" \|\| target\.tagName === "SELECT"/);
   assert.match(previewSource, /target\.closest\?\.\("\[data-agentation-root\]"\)/);
-  for (const key of ["ArrowRight", "ArrowDown", "PageDown", " ", "ArrowLeft", "ArrowUp", "PageUp", "Home", "End"]) {
-    assert.match(previewSource, new RegExp(`case "${key}":`));
-  }
+  assert.match(previewSource, /\["ArrowRight", "ArrowDown", "PageDown", " "\]\.includes\(event\.key\)/);
+  assert.match(previewSource, /\["ArrowLeft", "ArrowUp", "PageUp"\]\.includes\(event\.key\)/);
+  assert.match(previewSource, /event\.key === "Home"/);
+  assert.match(previewSource, /event\.key === "End"/);
   assert.match(previewSource, /const frameWindow = frameDocumentRef\.current\?\.defaultView \?\? null/);
   assert.match(previewSource, /window\.addEventListener\("keydown", onKeyDown\)/);
   assert.match(previewSource, /frameWindow\?\.addEventListener\("keydown", onKeyDown\)/);
@@ -297,22 +366,24 @@ test("live preview keyboard navigation mirrors export and listens inside the sli
 
 test("live preview sidebar supports persisted resize and collapse without changing export", () => {
   const previewSource = readFileSync(join(projectRoot, "engine", "preview-app", "src", "main.tsx"), "utf8");
+  const resizeSource = readFileSync(join(projectRoot, "engine", "preview-app", "src", "use-panel-resize.ts"), "utf8");
+  const resizerSource = readFileSync(join(projectRoot, "engine", "preview-app", "src", "panel-resizer.tsx"), "utf8");
+  const sidebarSource = readFileSync(join(projectRoot, "engine", "preview-app", "src", "slide-list-sidebar.tsx"), "utf8");
   const previewStyles = readFileSync(join(projectRoot, "engine", "preview-app", "src", "preview-shell.css"), "utf8");
   const exportSource = readFileSync(join(projectRoot, "engine", "preview-app", "src", "deck-export.tsx"), "utf8");
   const exportStyles = readFileSync(join(projectRoot, "engine", "preview-app", "src", "export-shell.css"), "utf8");
 
   assert.match(previewSource, /aideck\.preview\.sidebarWidth/);
   assert.match(previewSource, /aideck\.preview\.sidebarCollapsed/);
-  assert.match(previewSource, /clampSidebarWidth/);
-  assert.match(previewSource, /onPointerDown=\{startSidebarResize\}/);
-  assert.match(previewSource, /event\.key === " " \|\| event\.key === "Enter"/);
-  assert.match(previewSource, /window\.addEventListener\("pointercancel", cleanup\)/);
-  assert.match(previewSource, /resizeHandle\.setPointerCapture\(pointerId\)/);
-  assert.match(previewSource, /resizeHandle\.releasePointerCapture\(pointerId\)/);
-  assert.match(previewSource, /aria-valuenow=\{sidebarCollapsed \? undefined : sidebarWidth\}/);
-  assert.match(previewSource, /aria-valuemin=\{MIN_SIDEBAR_WIDTH\}/);
-  assert.match(previewSource, /preview-sidebar-toggle/);
-  assert.match(previewSource, /preview-slide-type/);
+  assert.match(previewSource, /collapsed=\{sidebarCollapsed\}/);
+  assert.match(resizeSource, /window\.addEventListener\("pointercancel", cleanup\)/);
+  assert.match(resizeSource, /handle\.setPointerCapture\(pointerId\)/);
+  assert.match(resizeSource, /handle\.releasePointerCapture\(pointerId\)/);
+  assert.match(resizerSource, /aria-valuenow=\{collapsed \? undefined : width\}/);
+  assert.match(resizerSource, /aria-valuemin=\{minWidth\}/);
+  assert.match(resizerSource, /preview-sidebar-toggle/);
+  assert.match(sidebarSource, /preview-sidebar\$\{collapsed \? " is-collapsed" : ""\}/);
+  assert.match(sidebarSource, /preview-slide-type/);
   assert.match(previewStyles, /grid-template-columns: var\(--sidebar-width\) 8px minmax\(0, 1fr\)/);
   assert.match(previewStyles, /\.preview-sidebar\.is-collapsed \.preview-slide-type/);
   assert.doesNotMatch(exportSource, /preview-sidebar|sidebarWidth|sidebarCollapsed/);
