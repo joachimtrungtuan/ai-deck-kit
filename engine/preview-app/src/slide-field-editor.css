@@ -7,12 +7,15 @@
 .yaml-field, .yaml-group, .yaml-sequence-item { display: grid; gap: 8px; margin: 0; border: 1px solid #3d3d38; padding: 10px; }
 .yaml-group legend { color: #d7d7ce; padding: 0 4px; }
 .yaml-field-header, .sequence-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.yaml-field-header label { color: #a7a79f; font-size: 12px; }
+.yaml-key-label { color: #d8c08a; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
 .yaml-field input, .yaml-field-header input, .yaml-sequence-item input, .yaml-sequence-item textarea { width: 100%; border: 1px solid #5a5a54; background: #232321; color: #f7f7f2; font: inherit; padding: 7px; }
-.yaml-field-header input { width: auto; flex: 1; min-width: 80px; }
+.yaml-field-header input.yaml-key-input { width: 120px; flex: none; min-width: 0; font-size: 12px; padding: 4px 6px; }
 .yaml-sequence-item textarea { min-height: 72px; resize: vertical; }
-.editor-action, .sequence-controls button, .yaml-field-header button, .slide-field-editor footer button { border: 1px solid #5a5a54; background: #232321; color: #f7f7f2; cursor: pointer; padding: 6px 8px; }
-.slide-field-editor footer button:disabled, .sequence-controls button:disabled { cursor: default; opacity: .45; }
+.slide-field-editor footer button { border: 1px solid #5a5a54; background: #232321; color: #f7f7f2; cursor: pointer; padding: 6px 8px; }
+.icon-button { display: inline-grid; place-items: center; width: 22px; height: 22px; border: 1px solid #5a5a54; background: #232321; color: #a7a79f; cursor: pointer; font-size: 13px; line-height: 1; padding: 0; }
+.icon-button:hover:not(:disabled) { color: #f7f7f2; border-color: #a7a79f; }
+.yaml-fields > .icon-button, .yaml-group > .icon-button { justify-self: start; }
+.slide-field-editor footer button:disabled, .icon-button:disabled { cursor: default; opacity: .45; }
 .editor-note, .editor-badge, .editor-error { color: #a7a79f; font-size: 11px; }
 .editor-badge { border: 1px solid #5a5a54; padding: 2px 4px; }
 .editor-error { color: #f5a7a7; width: 100%; }
