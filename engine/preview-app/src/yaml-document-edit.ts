@@ -15,8 +15,21 @@ export function scalarText(node: Node | null): string {
   return isScalar(node) ? String(node.value ?? "") : "";
 }
 
+/**
+ * Writes typed text into an existing scalar by mutating it in place, so the node's
+ * quote style and trailing comment survive the edit. The text is never re-parsed as
+ * YAML: typing `#1 in market` or `007` stores that exact string, and the serializer
+ * quotes it when a plain form would read back as something else. A scalar that was a
+ * number or boolean keeps that type while the text still parses as one, so editing a
+ * numeric field does not silently turn it into a string.
+ */
 export function setScalar(document: Document, path: YamlPath, value: string): void {
-  document.setIn(path, parseScalar(value));
+  const node = yamlNodeAt(document, path);
+  if (!isScalar(node)) {
+    document.setIn(path, value);
+    return;
+  }
+  node.value = retypedValue(node.value, value);
 }
 
 export function renameMapKey(document: Document, path: YamlPath, nextKey: string): string | undefined {
@@ -28,7 +41,8 @@ export function renameMapKey(document: Document, path: YamlPath, nextKey: string
   if (key !== current && parent.items.some((pair) => nodeKey(pair.key) === key)) return `"${key}" already exists here.`;
   const pair = parent.items.find((entry) => nodeKey(entry.key) === current);
   if (!pair) return "This field no longer exists.";
-  pair.key = document.createNode(key);
+  if (isScalar(pair.key)) pair.key.value = key;
+  else pair.key = document.createNode(key);
 }
 
 export function removeNode(document: Document, path: YamlPath): void {
@@ -68,9 +82,11 @@ export function isYamlSequence(node: Node | null): node is YAMLSeq {
   return isSeq(node);
 }
 
-function parseScalar(value: string): unknown {
-  const document = parseDocument(`value: ${value}`);
-  return document.errors.length ? value : document.get("value", true);
+function retypedValue(previous: unknown, value: string): unknown {
+  if (typeof previous === "number" && value.trim() !== "" && Number.isFinite(Number(value))) return Number(value);
+  if (typeof previous === "boolean" && (value === "true" || value === "false")) return value === "true";
+  if (previous === null && value === "") return null;
+  return value;
 }
 
 function nodeKey(node: unknown): string {

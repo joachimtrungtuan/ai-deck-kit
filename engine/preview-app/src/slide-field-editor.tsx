@@ -55,7 +55,11 @@ export function SlideFieldEditor({ onDirtyChange, slideId, source }: Props) {
   };
 
   if (unsupported) return <div className="slide-field-editor"><h2>Slide editor</h2><p>This v1 deck is not YAML-complete. Migrate it before editing fields here.</p></div>;
-  return <div className="slide-field-editor"><header><p className="preview-label">Slide editor</p><h2>{slideId ?? "No slide"}</h2></header>{state === "idle" ? <YamlFieldRows document={document} onChange={update} /> : <p>{state === "loading" ? "Loading fields…" : message}</p>}
+  // The rows stay mounted whenever a document is loaded, including after a rejected save,
+  // so the edits that failed to save are still on screen to retry or correct. The footer
+  // is the single place errors are announced.
+  const editable = state !== "loading" && document.contents !== null;
+  return <div className="slide-field-editor"><header><p className="preview-label">Slide editor</p><h2>{slideId ?? "No slide"}</h2></header>{editable ? <YamlFieldRows document={document} onChange={update} /> : <p>{state === "loading" ? "Loading fields…" : "No fields to edit."}</p>}
     <footer><p aria-live="polite">{message}</p>{state === "error" && message.includes("Reload and discard") && <button onClick={() => window.location.reload()} type="button">Reload and discard</button>}<button disabled={!dirty || state === "saving"} onClick={() => void save()} type="button">{state === "saving" ? "Saving…" : "Save"}</button></footer>
   </div>;
 }

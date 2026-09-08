@@ -195,6 +195,14 @@ button {
   margin: 0;
 }
 
+.preview-editor.is-collapsed {
+  padding: 12px 6px;
+}
+
+.preview-editor.is-collapsed .slide-field-editor {
+  display: none;
+}
+
 .preview-back-link {
   flex: none;
   margin-bottom: 24px;

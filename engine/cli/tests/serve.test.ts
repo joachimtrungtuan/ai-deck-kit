@@ -170,6 +170,25 @@ test("deck preview middleware reads, writes, and protects raw slide YAML", async
   assert.equal(deckYamlEndpoint(undefined), undefined);
 });
 
+test("deck preview middleware trims trailing newlines and rejects oversized bodies", async () => {
+  const root = mkdtempSync(join(tmpdir(), "aideck-slide-yaml-limits-"));
+  const contentPath = join(root, "content.md");
+  const original = `## Slide 01: First\n\n\`\`\`yaml\nid: first\ntype: title\ntitle: Before\n\`\`\`\n`;
+  writeFileSync(contentPath, original);
+  const endpoint = deckYamlEndpoint(root);
+  if (!endpoint) throw new Error("Deck middleware was not registered.");
+
+  const loaded = JSON.parse((await callEndpoint(endpoint, "GET", "?slideId=first")).body) as { revision: string };
+  const saved = await callEndpoint(endpoint, "POST", "", { slideId: "first", yaml: "id: first\ntype: title\ntitle: After\n", revision: loaded.revision });
+  assert.equal(saved.status, 200);
+  assert.equal(readFileSync(contentPath, "utf8"), original.replace("title: Before", "title: After"));
+
+  const oversized = await callEndpoint(endpoint, "POST", "", { slideId: "first", yaml: `id: first\ntype: title\ntitle: ${"x".repeat(3 * 1024 * 1024)}`, revision: JSON.parse(saved.body).revision });
+  assert.equal(oversized.status, 400);
+  assert.match(oversized.body, /too large/);
+  assert.equal(readFileSync(contentPath, "utf8"), original.replace("title: Before", "title: After"));
+});
+
 test("template preview variant identities cannot collide with display-label delimiters", () => {
   assert.notEqual(
     templatePreviewSlideId("a", "b · c"),
@@ -316,7 +335,8 @@ test("manifest deck sources use unified item metadata and expose overrides", () 
   assert.match(source, /items: \(\{ metadata \}\) => arrayMeta<SlideItem>\(metadata, "items"\)/);
   assert.match(source, /title: \(\{ metadata \}\) => textMeta\(metadata, "title"\)/);
   assert.match(source, /body: layoutPropReaders\.description/);
-  assert.match(source, /recognizedSlideYamlKeys = new Set\(\["id", "type", "override", \.\.\.Object\.keys\(layoutPropReaders\)\]\)/);
+  assert.match(source, /authoringSlideYamlKeys = \["status", "intent", "animation", "transition", "assets", "icons"\]/);
+  assert.match(source, /recognizedSlideYamlKeys = new Set\(\["id", "type", "override", \.\.\.authoringSlideYamlKeys, \.\.\.Object\.keys\(layoutPropReaders\)\]\)/);
   assert.match(source, /override: objectMeta<SlideOverride>\(metadata, "override"\)/);
   assert.match(source, /stats: \(\{ metadata \}\) => arrayMeta\(metadata, "stats"\)/);
   assert.match(source, /regionSeries: \(\{ metadata \}\) => arrayMeta\(metadata, "regionSeries"\)/);

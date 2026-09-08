@@ -131,7 +131,9 @@ export function aideckDeckPlugin(
           if (!isMap(yamlDocument.contents) || yamlDocument.get("id") !== previousDocument.get("id") || yamlDocument.get("type") !== previousDocument.get("type")) {
             return respondJson(response, 400, { error: "id and type must remain unchanged." });
           }
-          const nextContent = replaceSlideYamlBlock(content, body.slideId, body.yaml);
+          // The fence body is spliced in without its surrounding newlines, so a trailing one
+          // from the serializer would grow a blank line before the closing fence on every save.
+          const nextContent = replaceSlideYamlBlock(content, body.slideId, body.yaml.replace(/\n+$/, ""));
           writeFileSync(contentPath, nextContent);
           return respondJson(response, 200, { revision: contentRevision(nextContent) });
         } catch (error) {
@@ -191,11 +193,19 @@ function contentRevision(content: string): string {
   return createHash("sha256").update(content).digest("hex");
 }
 
+/** One slide fence, so a couple of megabytes is already far past any real deck. Capping the
+ * body keeps a runaway or hostile request on the dev server from buffering without bound. */
+const MAX_REQUEST_BODY_BYTES = 2 * 1024 * 1024;
+
 function readJsonBody(request: NodeJS.ReadableStream): Promise<Record<string, unknown>> {
   return new Promise((resolveBody, reject) => {
     let raw = "";
     request.setEncoding("utf8");
-    request.on("data", (chunk: string) => { raw += chunk; });
+    request.on("data", (chunk: string) => {
+      if (raw.length > MAX_REQUEST_BODY_BYTES) return;
+      raw += chunk;
+      if (raw.length > MAX_REQUEST_BODY_BYTES) reject(new Error("Request body is too large."));
+    });
     request.on("end", () => {
       try {
         resolveBody(JSON.parse(raw) as Record<string, unknown>);

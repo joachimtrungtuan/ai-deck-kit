@@ -26,7 +26,7 @@ import { SlideFieldEditor } from "./slide-field-editor";
 const PANEL_MIN_WIDTH = 200;
 const PANEL_MAX_WIDTH = 480;
 const SIDEBAR_DEFAULT_WIDTH = 280;
-const COLLAPSED_SIDEBAR_WIDTH = 56;
+const COLLAPSED_PANEL_WIDTH = 56;
 
 function PreviewApp({ deckMode = false, galleryHref, source }: { deckMode?: boolean; galleryHref?: string; source: PreviewSource }) {
   const [activeIndex, setActiveIndex] = useState(() => deckMode ? readActiveSlideIndex(source) : 0);
@@ -53,7 +53,7 @@ function PreviewApp({ deckMode = false, galleryHref, source }: { deckMode?: bool
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "SELECT" || target.tagName === "TEXTAREA" || target.closest?.("[data-agentation-root]"))) return;
+      if (target && (target.tagName === "INPUT" || target.tagName === "SELECT" || target.tagName === "TEXTAREA" || target.closest?.("[data-agentation-root]") || target.closest?.("[data-slide-editor]"))) return;
       if (["ArrowRight", "ArrowDown", "PageDown", " "].includes(event.key)) { event.preventDefault(); go(activeIndex + 1); }
       else if (["ArrowLeft", "ArrowUp", "PageUp"].includes(event.key)) { event.preventDefault(); go(activeIndex - 1); }
       else if (event.key === "Home") { event.preventDefault(); go(0); }
@@ -72,7 +72,7 @@ function PreviewApp({ deckMode = false, galleryHref, source }: { deckMode?: bool
       return next;
     });
   };
-  const shellStyle = { "--sidebar-width": `${sidebarCollapsed ? COLLAPSED_SIDEBAR_WIDTH : sidebar.width}px`, "--editor-width": `${editorCollapsed ? 0 : editor.width}px` } as CSSProperties;
+  const shellStyle = { "--sidebar-width": `${sidebarCollapsed ? COLLAPSED_PANEL_WIDTH : sidebar.width}px`, "--editor-width": `${editorCollapsed ? COLLAPSED_PANEL_WIDTH : editor.width}px` } as CSSProperties;
 
   return <main className={`preview-shell${deckMode ? " has-editor" : ""}`} style={shellStyle}>
     <SlideListSidebar activeIndex={activeIndex} collapsed={sidebarCollapsed} galleryHref={galleryHref} onSelect={go} source={source} />
@@ -80,7 +80,7 @@ function PreviewApp({ deckMode = false, galleryHref, source }: { deckMode?: bool
     <section className="preview-stage" aria-label={activeSlide.type}><FixedSlideCanvas documentRef={frameDocumentRef} mountAgentation slide={activeSlide} slideIndex={activeSlideIndex} source={source} /></section>
     {deckMode && <>
       <PanelResizer collapsed={editorCollapsed} maxWidth={PANEL_MAX_WIDTH} minWidth={PANEL_MIN_WIDTH} onPointerDown={editor.startResize} onToggle={() => togglePanel("aideck.preview.editorCollapsed", setEditorCollapsed)} side="right" width={editor.width} />
-      <aside aria-label="Slide editor" className={`preview-editor${editorCollapsed ? " is-collapsed" : ""}`}><SlideFieldEditor onDirtyChange={setEditorDirty} slideId={activeSlide.id} source={source} /></aside>
+      <aside aria-label="Slide editor" className={`preview-editor${editorCollapsed ? " is-collapsed" : ""}`} data-slide-editor><SlideFieldEditor onDirtyChange={setEditorDirty} slideId={activeSlide.id} source={source} /></aside>
     </>}
   </main>;
 }
