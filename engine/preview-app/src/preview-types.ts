@@ -40,5 +40,6 @@ export type PreviewSource = {
   label: string;
   deckClass: string;
   slides: PreviewSlide[];
+  contentSchemaMajor?: number;
   defaultTransition?: SlideTransitionType;
 };

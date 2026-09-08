@@ -22,6 +22,14 @@ type ParsedSection = {
   metadata: Record<string, unknown>;
 };
 
+type ReaderContext = { index: number; manifest: Manifest; metadata: Record<string, unknown>; total: number };
+
+const layoutPropReaders: Record<string, (context: ReaderContext) => unknown> = {
+  kicker: ({ metadata }) => textMeta(metadata, "kicker"), title: ({ metadata }) => textMeta(metadata, "title") ?? "Untitled", description: ({ metadata }) => textMeta(metadata, "description"), items: ({ metadata }) => arrayMeta<SlideItem>(metadata, "items") ?? [], leftTitle: ({ metadata }) => textMeta(metadata, "leftTitle"), rightTitle: ({ metadata }) => textMeta(metadata, "rightTitle"), tableColumns: ({ metadata }) => arrayMeta<string>(metadata, "tableColumns"), tableRows: ({ metadata }) => arrayMeta<string[]>(metadata, "tableRows"), code: ({ metadata }) => textMeta(metadata, "code"), language: ({ metadata }) => textMeta(metadata, "language"), highlightLines: ({ metadata }) => arrayMeta<number>(metadata, "highlightLines"), commands: ({ metadata }) => arrayMeta<{ prompt: string; output?: string }>(metadata, "commands"), flowSteps: ({ metadata }) => arrayMeta<{ from: string; to: string; label: string; icon?: string }>(metadata, "flowSteps"), method: ({ metadata }) => textMeta(metadata, "method"), path: ({ metadata }) => textMeta(metadata, "path"), requestExample: ({ metadata }) => textMeta(metadata, "requestExample"), responseExample: ({ metadata }) => textMeta(metadata, "responseExample"), layoutVariant: ({ metadata }) => textMeta(metadata, "layoutVariant"), backgroundVariant: ({ metadata }) => textMeta(metadata, "backgroundVariant"), highlightPhrase: ({ metadata }) => textMeta(metadata, "highlightPhrase"), courseName: ({ metadata, manifest }) => textMeta(metadata, "courseName") ?? manifest.title, lessonName: ({ metadata }) => textMeta(metadata, "lessonName"), sectionName: ({ metadata }) => textMeta(metadata, "sectionName"), imageSrc: ({ metadata }) => textMeta(metadata, "imageSrc"), imageAlt: ({ metadata }) => textMeta(metadata, "imageAlt"), imagePosition: ({ metadata }) => textMeta(metadata, "imagePosition"), images: ({ metadata }) => arrayMeta(metadata, "images"), caption: ({ metadata }) => textMeta(metadata, "caption"), source: ({ metadata }) => textMeta(metadata, "source"), attribution: ({ metadata }) => textMeta(metadata, "attribution"), metric: ({ metadata }) => textMeta(metadata, "metric"), metricLabel: ({ metadata }) => textMeta(metadata, "metricLabel"), chartData: ({ metadata }) => arrayMeta(metadata, "chartData"), stats: ({ metadata }) => arrayMeta(metadata, "stats"), regionSeries: ({ metadata }) => arrayMeta(metadata, "regionSeries"), index: ({ metadata }) => numberMeta(metadata, "index"), recommendedColumn: ({ metadata }) => numberMeta(metadata, "recommendedColumn"), context: ({ metadata }) => textMeta(metadata, "context"), decision: ({ metadata }) => textMeta(metadata, "decision"), consequences: ({ metadata }) => arrayMeta<string>(metadata, "consequences"),
+};
+
+export const recognizedSlideYamlKeys = new Set(["id", "type", "override", ...Object.keys(layoutPropReaders)]);
+
 export function createManifestDeckSourceV2(
   manifest: Manifest,
   content: string,
@@ -35,7 +43,6 @@ export function createManifestDeckSourceV2(
     const metadata = section.metadata;
     const Component = components[slide.type];
     if (!Component) throw new Error(`Template component missing for slide type "${slide.type}".`);
-    const items = arrayMeta<SlideItem>(metadata, "items") ?? [];
     const layoutVariant = textMeta(metadata, "layoutVariant");
     const parsedSlide = {
       id: slide.id,
@@ -45,51 +52,7 @@ export function createManifestDeckSourceV2(
       layoutVariant,
       transition: slide.transition as PreviewSlide["transition"],
       override: objectMeta<SlideOverride>(metadata, "override"),
-      props: {
-        animation: slide.animation ?? "gentle-rise",
-        kicker: textMeta(metadata, "kicker"),
-        title: textMeta(metadata, "title") ?? "Untitled",
-        body: textMeta(metadata, "description"),
-        items,
-        leftTitle: textMeta(metadata, "leftTitle"),
-        rightTitle: textMeta(metadata, "rightTitle"),
-        tableColumns: arrayMeta<string>(metadata, "tableColumns"),
-        tableRows: arrayMeta<string[]>(metadata, "tableRows"),
-        code: textMeta(metadata, "code"),
-        language: textMeta(metadata, "language"),
-        highlightLines: arrayMeta<number>(metadata, "highlightLines"),
-        commands: arrayMeta<{ prompt: string; output?: string }>(metadata, "commands"),
-        flowSteps: arrayMeta<{ from: string; to: string; label: string; icon?: string }>(metadata, "flowSteps"),
-        method: textMeta(metadata, "method"),
-        path: textMeta(metadata, "path"),
-        requestExample: textMeta(metadata, "requestExample"),
-        responseExample: textMeta(metadata, "responseExample"),
-        layoutVariant,
-        backgroundVariant: textMeta(metadata, "backgroundVariant"),
-        highlightPhrase: textMeta(metadata, "highlightPhrase"),
-        courseName: textMeta(metadata, "courseName") ?? manifest.title,
-        lessonName: textMeta(metadata, "lessonName"),
-        sectionName: textMeta(metadata, "sectionName"),
-        imageSrc: textMeta(metadata, "imageSrc"),
-        imageAlt: textMeta(metadata, "imageAlt"),
-        imagePosition: textMeta(metadata, "imagePosition"),
-        images: arrayMeta(metadata, "images"),
-        caption: textMeta(metadata, "caption"),
-        source: textMeta(metadata, "source"),
-        attribution: textMeta(metadata, "attribution"),
-        metric: textMeta(metadata, "metric"),
-        metricLabel: textMeta(metadata, "metricLabel"),
-        chartData: arrayMeta(metadata, "chartData"),
-        stats: arrayMeta(metadata, "stats"),
-        regionSeries: arrayMeta(metadata, "regionSeries"),
-        index: numberMeta(metadata, "index"),
-        recommendedColumn: numberMeta(metadata, "recommendedColumn"),
-        context: textMeta(metadata, "context"),
-        decision: textMeta(metadata, "decision"),
-        consequences: arrayMeta<string>(metadata, "consequences"),
-        pageCurrent: index + 1,
-        pageTotal: total,
-      },
+      props: createLayoutProps(metadata, manifest, slide.animation, index, total),
     };
     return parsedSlide;
   });
@@ -100,6 +63,11 @@ export function createManifestDeckSourceV2(
     slides,
     defaultTransition: manifest.defaults?.transition as PreviewSource["defaultTransition"],
   };
+}
+
+function createLayoutProps(metadata: Record<string, unknown>, manifest: Manifest, animation: string | undefined, index: number, total: number): Record<string, unknown> {
+  const context = { metadata, manifest, index, total };
+  return { animation: animation ?? "gentle-rise", body: layoutPropReaders.description(context), ...Object.fromEntries(Object.entries(layoutPropReaders).filter(([key]) => key !== "description").map(([key, read]) => [key, read(context)])), pageCurrent: index + 1, pageTotal: total };
 }
 
 function parseSections(content: string): Map<string, ParsedSection> {

@@ -30,6 +30,8 @@ export function createManifestDeckSource(
         + "\". Supported schema majors: " + SUPPORTED_CONTENT_SCHEMA_MAJORS.join(", ") + ".",
     );
   }
-  if (major === 1) return createManifestDeckSourceV1(manifest, content, deckClass, components);
-  return createManifestDeckSourceV2(manifest, content, deckClass, components);
+  const source = major === 1
+    ? createManifestDeckSourceV1(manifest, content, deckClass, components)
+    : createManifestDeckSourceV2(manifest, content, deckClass, components);
+  return { ...source, contentSchemaMajor: major };
 }

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import type { Plugin } from "vite";
-import { parseDocument } from "yaml";
+import { isMap, parseDocument } from "yaml";
 import { resolveFontImports } from "../cli/lib/font-catalog.ts";
 
 const virtualId = "virtual:aideck-deck";
@@ -123,8 +123,14 @@ export function aideckDeckPlugin(
           }
           const content = readFileSync(contentPath, "utf8");
           if (contentRevision(content) !== body.revision) return respondJson(response, 409, { error: "content.md changed; re-read before saving." });
+          const previousYaml = readSlideYamlBlock(content, body.slideId);
+          if (previousYaml === undefined) return respondJson(response, 404, { error: `Unknown slide id: ${body.slideId}` });
           const yamlDocument = parseDocument(body.yaml);
           if (yamlDocument.errors.length) return respondJson(response, 400, { error: "YAML is invalid." });
+          const previousDocument = parseDocument(previousYaml);
+          if (!isMap(yamlDocument.contents) || yamlDocument.get("id") !== previousDocument.get("id") || yamlDocument.get("type") !== previousDocument.get("type")) {
+            return respondJson(response, 400, { error: "id and type must remain unchanged." });
+          }
           const nextContent = replaceSlideYamlBlock(content, body.slideId, body.yaml);
           writeFileSync(contentPath, nextContent);
           return respondJson(response, 200, { revision: contentRevision(nextContent) });
@@ -243,7 +249,7 @@ function loadDeckSource(root: string, engineRoot: string, watchedFiles: Set<stri
     return `import { ${sourceExport} } from ${JSON.stringify(source)};
 ${renderFontImports(definition).join("\n")}
 ${renderTemplateStyleImports(definition).join("\n")}
-export const runtimeDeck = { id: ${JSON.stringify(manifest.slug)}, label: ${JSON.stringify(manifest.title)}, deckClass: ${JSON.stringify(definition.deckClass)}, slides: ${sourceExport}, defaultTransition: ${JSON.stringify(defaultTransition)} };
+export const runtimeDeck = { id: ${JSON.stringify(manifest.slug)}, label: ${JSON.stringify(manifest.title)}, deckClass: ${JSON.stringify(definition.deckClass)}, slides: ${sourceExport}, contentSchemaMajor: ${JSON.stringify(contentSchemaMajor(manifest.contentSchemaVersion))}, defaultTransition: ${JSON.stringify(defaultTransition)} };
 export const runtimeTemplate = null;`;
   }
   const componentImports = renderComponentImports(definition.imports);
@@ -257,6 +263,11 @@ import { createManifestDeckSource } from ${JSON.stringify(join(process.cwd(), "p
 const components = { ${componentMap.join(", ")} };
 export const runtimeDeck = createManifestDeckSource(${JSON.stringify(resolvedManifest)}, ${JSON.stringify(content)}, ${JSON.stringify(definition.deckClass)}, components);
 export const runtimeTemplate = null;`;
+}
+
+function contentSchemaMajor(version: unknown): number {
+  const match = typeof version === "string" ? /^(\d+)\.\d+\.\d+$/.exec(version) : undefined;
+  return match ? Number(match[1]) : 1;
 }
 
 const assetMimeTypes: Record<string, string> = {

@@ -21,6 +21,7 @@ import { readActiveSlideIndex, rememberActiveSlide } from "./active-slide-memory
 import { PanelResizer } from "./panel-resizer";
 import { SlideListSidebar } from "./slide-list-sidebar";
 import { usePanelResize } from "./use-panel-resize";
+import { SlideFieldEditor } from "./slide-field-editor";
 
 const PANEL_MIN_WIDTH = 200;
 const PANEL_MAX_WIDTH = 480;
@@ -31,6 +32,7 @@ function PreviewApp({ deckMode = false, galleryHref, source }: { deckMode?: bool
   const [activeIndex, setActiveIndex] = useState(() => deckMode ? readActiveSlideIndex(source) : 0);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem("aideck.preview.sidebarCollapsed") === "1");
   const [editorCollapsed, setEditorCollapsed] = useState(() => localStorage.getItem("aideck.preview.editorCollapsed") === "1");
+  const [editorDirty, setEditorDirty] = useState(false);
   const sidebar = usePanelResize({ defaultWidth: SIDEBAR_DEFAULT_WIDTH, direction: "left", maxWidth: PANEL_MAX_WIDTH, minWidth: PANEL_MIN_WIDTH, widthStorageKey: "aideck.preview.sidebarWidth" });
   const editor = usePanelResize({ defaultWidth: SIDEBAR_DEFAULT_WIDTH, direction: "right", maxWidth: PANEL_MAX_WIDTH, minWidth: PANEL_MIN_WIDTH, widthStorageKey: "aideck.preview.editorWidth" });
   const slides = source.slides;
@@ -40,8 +42,9 @@ function PreviewApp({ deckMode = false, galleryHref, source }: { deckMode?: bool
 
   const go = useCallback((next: number) => {
     const index = Math.max(0, Math.min(slides.length - 1, next));
+    if (index !== activeSlideIndex && editorDirty && !window.confirm("Discard unsaved slide edits?")) return;
     goToSlide({ frameDocument: frameDocumentRef.current, from: slides[activeSlideIndex], to: slides[index], direction: index >= activeSlideIndex ? "forward" : "backward", source, commit: () => setActiveIndex(index) });
-  }, [activeSlideIndex, slides, source]);
+  }, [activeSlideIndex, editorDirty, slides, source]);
 
   useEffect(() => {
     if (deckMode) rememberActiveSlide(source, activeSlideIndex);
@@ -50,7 +53,7 @@ function PreviewApp({ deckMode = false, galleryHref, source }: { deckMode?: bool
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "SELECT" || target.closest?.("[data-agentation-root]"))) return;
+      if (target && (target.tagName === "INPUT" || target.tagName === "SELECT" || target.tagName === "TEXTAREA" || target.closest?.("[data-agentation-root]"))) return;
       if (["ArrowRight", "ArrowDown", "PageDown", " "].includes(event.key)) { event.preventDefault(); go(activeIndex + 1); }
       else if (["ArrowLeft", "ArrowUp", "PageUp"].includes(event.key)) { event.preventDefault(); go(activeIndex - 1); }
       else if (event.key === "Home") { event.preventDefault(); go(0); }
@@ -77,7 +80,7 @@ function PreviewApp({ deckMode = false, galleryHref, source }: { deckMode?: bool
     <section className="preview-stage" aria-label={activeSlide.type}><FixedSlideCanvas documentRef={frameDocumentRef} mountAgentation slide={activeSlide} slideIndex={activeSlideIndex} source={source} /></section>
     {deckMode && <>
       <PanelResizer collapsed={editorCollapsed} maxWidth={PANEL_MAX_WIDTH} minWidth={PANEL_MIN_WIDTH} onPointerDown={editor.startResize} onToggle={() => togglePanel("aideck.preview.editorCollapsed", setEditorCollapsed)} side="right" width={editor.width} />
-      <aside aria-label="Slide editor" className={`preview-editor${editorCollapsed ? " is-collapsed" : ""}`}><p>Slide editor loads here.</p></aside>
+      <aside aria-label="Slide editor" className={`preview-editor${editorCollapsed ? " is-collapsed" : ""}`}><SlideFieldEditor onDirtyChange={setEditorDirty} slideId={activeSlide.id} source={source} /></aside>
     </>}
   </main>;
 }

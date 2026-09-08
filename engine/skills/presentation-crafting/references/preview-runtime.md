@@ -23,6 +23,7 @@ Use the shared runtime to review:
 - Keep generated deck-specific source under `decks/{presentation-slug}.deck/.build/source/`; it is never canonical input.
 - Never name a template in runtime source. Everything the runtime renders arrives through `virtual:aideck-deck`, built from what the CLI resolved.
 - Run the shared runtime through `aideck serve`; the CLI resolves the workspace from `ai-deck-kit.json`.
+- In deck mode only, the right-hand Slide editor can explicitly save the active v2/v3 slide's YAML through the dev server. It never writes the inlined virtual-module content, does not run for template/gallery previews or exports, and leaves v1 decks disabled until migrated.
 
 ## Review Flow
 

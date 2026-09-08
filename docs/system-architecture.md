@@ -176,6 +176,7 @@ Small and curated — not a general animation engine.
   aliasing components per entry, so same-named exports across templates cannot
   collide. A template that fails to resolve is omitted from the gallery, not fatal.
 - Export reuses the existing pipeline: standalone self-contained `index.html` (bundled) and flattened raster PDF (Chrome screenshot + ImageMagick). See existing `export-runtime-contract.md`.
+- `aideck serve` alone may expose a deck-scoped write endpoint for the Slide editor. It reads and replaces only the selected YAML fence in raw `content.md`, guarded by a whole-file revision hash; neither the virtual-module asset-inlined content nor HTML/PDF export has a write path.
 - Templates remain code-owned (design-system CSS + React layouts per slide type); one template set per deck.
 
 ## 6. Versioning (axes carried + extended from current system)
@@ -236,7 +237,7 @@ user prompt ─▶ agent (skill) ─▶ aideck new (CLI scaffolds .deck from tem
                         ▼
              author content.md (+ manifest, assets)
                         │
-             aideck serve ─▶ React preview (read-only review)
+             aideck serve ─▶ React preview (review; v2/v3 active-slide YAML editor)
                         │
              aideck export html|pdf ─▶ shareable output
                         │
