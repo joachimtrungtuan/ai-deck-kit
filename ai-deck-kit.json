@@ -1,5 +1,5 @@
 {
   "engineRoot": "./engine",
   "decksRoot": "./decks",
-  "engineVersion": "1.1.0"
+  "engineVersion": "1.1.1"
 }

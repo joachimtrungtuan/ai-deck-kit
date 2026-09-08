@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { PreviewSource } from "./preview-types";
-import { parseYamlDocument } from "./yaml-document-edit";
+import { parseYamlDocument, serializeYamlDocument } from "./yaml-document-edit";
 import { YamlFieldRows } from "./yaml-field-rows";
 import "./slide-field-editor.css";
 
@@ -46,7 +46,7 @@ export function SlideFieldEditor({ onDirtyChange, slideId, source }: Props) {
     if (!slideId || !dirty) return;
     try {
       setState("saving");
-      const response = await fetch("/__aideck/slide-yaml", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slideId, yaml: String(document), revision }) });
+      const response = await fetch("/__aideck/slide-yaml", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slideId, yaml: serializeYamlDocument(document), revision }) });
       const body = await response.json() as { error?: string; revision?: string };
       if (response.status === 409) { setMessage("This file changed outside the preview. Reload and discard before saving."); setState("error"); return; }
       if (!response.ok || !body.revision) { setMessage(body.error ?? "Could not save this slide."); setState("error"); return; }

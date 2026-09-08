@@ -55,7 +55,7 @@ test("verify accepts v2 decks created from both shipped templates", async () => 
     engineRoot: join(projectRoot, "engine"),
     decksRoot: join(root, "decks"),
     pointerPath: join(root, "ai-deck-kit.json"),
-    pointer: { engineRoot: join(projectRoot, "engine"), decksRoot: "decks", engineVersion: "1.1.0" },
+    pointer: { engineRoot: join(projectRoot, "engine"), decksRoot: "decks", engineVersion: "1.1.1" },
   };
   try {
     mkdirSync(workspace.decksRoot, { recursive: true });

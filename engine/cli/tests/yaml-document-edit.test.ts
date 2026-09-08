@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { addMapEntry, moveSequenceItem, parseYamlDocument, removeNode, renameMapKey, setScalar } from "../../preview-app/src/yaml-document-edit.ts";
+import { addMapEntry, moveSequenceItem, parseYamlDocument, removeNode, renameMapKey, serializeYamlDocument, setScalar } from "../../preview-app/src/yaml-document-edit.ts";
 
 test("YAML document edits preserve untouched comments and support row mutations", () => {
   const document = parseYamlDocument("# slide comment\nid: welcome\ntitle: Before\nitems:\n  - First\n  - Second\n");
@@ -50,4 +50,11 @@ test("YAML document edits reject duplicate mapping keys", () => {
   const document = parseYamlDocument("id: welcome\ntitle: Hello\n");
   assert.equal(renameMapKey(document, ["title"], "id"), '"id" already exists here.');
   assert.match(String(document), /title: Hello/);
+});
+
+test("saving keeps untouched long scalars and block scalars exactly as authored", () => {
+  const source = `id: slide-20\ntitle: Before\nimageAlt: "Dashboard mock showing rainfall bars, temperature line, and a green health badge"\ncode: |\n  const stations = await loadStations({ region: "north", includeArchived: false, limit: 250 });\n  render(stations);\n`;
+  const document = parseYamlDocument(source);
+  setScalar(document, ["title"], "After");
+  assert.equal(serializeYamlDocument(document), source.replace("title: Before", "title: After"));
 });

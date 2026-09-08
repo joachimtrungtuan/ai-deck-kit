@@ -92,3 +92,13 @@ function retypedValue(previous: unknown, value: string): unknown {
 function nodeKey(node: unknown): string {
   return String((node as { value?: unknown } | null)?.value ?? "");
 }
+
+/**
+ * Renders the document back to text for saving. Line folding is disabled so a long
+ * scalar the author left on one line is written back on one line: the save rewrites
+ * the whole fence, and without this an untouched value wider than the serializer's
+ * default column limit would be re-wrapped as a side effect of editing its neighbour.
+ */
+export function serializeYamlDocument(document: Document): string {
+  return document.toString({ lineWidth: 0 });
+}
