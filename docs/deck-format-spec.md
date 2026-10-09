@@ -1,6 +1,6 @@
 # `.deck` Bundle Format Specification
 
-**Status:** Canonical spec (2026-09-04). `contentSchemaVersion: "3.0.0"` is the
+**Status:** Canonical spec (2026-10-09). `contentSchemaVersion: "3.1.0"` is the
 current authoring format for newly created decks. The v3 grammar is identical
 to the v2 grammar; the major bump marks the aggregate breaking changes of the
 motion/catalog/diagram work (see §10 Content Schema History).
@@ -75,7 +75,7 @@ Promotes the current `.slides.md` frontmatter to a structured, validated file. T
   "template": { "set": "swiss-modern", "version": "2.0.0" },
   "slideTypeCatalog": "v2",
   "blockCatalog": "v1",
-  "contentSchemaVersion": "3.0.0",
+  "contentSchemaVersion": "3.1.0",
   "outputMode": "react-and-static-html",
   "status": "draft",
   "defaults": { "animation": "gentle-rise", "transition": "none" },
@@ -169,10 +169,22 @@ If present, `layoutVariant` and `backgroundVariant` must exist in the selected
 template manifest. The runtime supplies current/total page position.
 
 Structured fields stay explicit rather than being folded into `items[]`:
-`images[]`, `stats[]`, `chartData[]`, `regionSeries[]`, `tableColumns`, and
-`tableRows`. Code slides keep `language` as documentation metadata even though
+`images[]`, `stats[]`, `chartData[]`, `regionSeries[]`, `tableColumns`,
+`tableRows`, and `tableColumnWidths`. Code slides keep `language` as documentation metadata even though
 the current tokenizer does not branch on it. `blocks[]` and `morph` remain the
 separate design-primitives mechanism described below.
+
+`tableColumnWidths` is optional and sizes table columns. It holds one entry per
+`tableColumns` entry, either all positive numbers read as fractions
+(`[2, 1, 1]`) or all percentage strings that sum to 100
+(`["50%", "25%", "25%"]`); the validator rejects a count mismatch or a mixed
+list. Templates apply it (the shipped sets use a `<colgroup>`); a template that
+ignores it keeps automatic widths.
+
+`tocTitle` is optional and navigation-only: a short label for the slide in the
+preview sidebar and the exported deck's slide picker, with the slide type as
+secondary text. It never reaches the layout, so it never appears on the slide.
+Without it the slide list shows the type alone.
 
 ### Field reference by slide type
 
@@ -190,7 +202,7 @@ slide catalog. Every row lists fields beyond the always-present `title`.
 | `content-media` | figure-left/right | `kicker`, `description`, `imageSrc`, `imageAlt` | `description` supports literal `\n`. |
 | `content-media` | image-grid-left/right | `kicker`, `description`, `images[]` (src/alt/caption) | 2–5 images. |
 | `full-bleed-image` | editorial-overlay(-white), caption-strip(-black) | `kicker`, `description`, `imageSrc`, `imageAlt` | |
-| `table` | reference-table | `kicker`, `tableColumns`, `tableRows` | Maximum 5×6. |
+| `table` | reference-table | `kicker`, `tableColumns`, `tableRows`, `tableColumnWidths` | Maximum 5×6. |
 | `table` | comparison-table | plus `recommendedColumn` (0-indexed) | |
 | `code` | explain-and-code | `kicker`, `description`, `code`, `language`, `highlightLines` | `language` is documentation-only today. |
 | `code` | focus-lines | `code`, `highlightLines` | No `kicker`/`description`/intro title. |
@@ -315,7 +327,16 @@ and are replaced wholesale on engine upgrade.
 
 ## 10. Content Schema History
 
-### `3.0.0` (2026-09-04) — current
+### `3.1.0` (2026-10-09) — current
+
+Additive minor bump; every 3.0.0 deck stays valid unchanged.
+
+- `tableColumnWidths` (optional): per-column widths for table slides, as
+  fractions or percentages. Validated against `tableColumns`; applied by
+  `swiss-modern` and `linear-dark` from template version `3.4.0`.
+- `tocTitle` (optional): navigation-only slide-list label.
+
+### `3.0.0` (2026-09-04)
 
 One declared value across the engine, both shipped templates, and the showcase
 deck. **Major bump, deliberate:** the v3 grammar is identical to the v2 grammar

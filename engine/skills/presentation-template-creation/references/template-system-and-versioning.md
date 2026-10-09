@@ -44,7 +44,7 @@ One place: the project's `templates/{name}.template/`. `engine/templates/` holds
   "displayName": "Swiss Modern",
   "deckClass": "swiss-deck",
   "templateVersion": "1.0.0",
-  "contentSchemaVersion": "3.0.0",
+  "contentSchemaVersion": "3.1.0",
   "slideTypeCatalog": "v2",
   "runtime": ["react", "static-html"],
   "iconFamily": "phosphor-react",
