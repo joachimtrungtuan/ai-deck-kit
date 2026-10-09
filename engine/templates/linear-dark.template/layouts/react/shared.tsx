@@ -46,6 +46,7 @@ export type LinearSlideProps = {
   responseExample?: string;
   tableColumns?: string[];
   tableRows?: string[][];
+  tableColumnWidths?: (number | string)[];
   recommendedColumn?: number;
   context?: string;
   decision?: string;

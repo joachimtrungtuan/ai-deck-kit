@@ -1,4 +1,4 @@
-import { renderRichText } from "../../../../primitives/blocks";
+import { renderRichText, tableColumnWidthPercentages } from "../../../../primitives/blocks";
 import { SwissFrame, SwissSmallLabel, type SwissSlideProps } from "./shared";
 
 function SwissCodePanel({ code, label }: { code?: string; label: string }) {
@@ -10,11 +10,13 @@ function SwissCodePanel({ code, label }: { code?: string; label: string }) {
   );
 }
 
-function SwissTable({ columns = [], rows = [], recommendedColumn }: { columns?: string[]; rows?: string[][]; recommendedColumn?: number }) {
+function SwissTable({ columns = [], rows = [], columnWidths, recommendedColumn }: { columns?: string[]; rows?: string[][]; columnWidths?: (number | string)[]; recommendedColumn?: number }) {
   const visibleColumns = columns.slice(0, 5);
+  const widths = tableColumnWidthPercentages(columnWidths, visibleColumns.length);
   return (
     <div className="swiss-panel" style={{ overflow: "hidden", padding: "12px 24px" }}>
       <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+        {widths ? <colgroup>{widths.map((width, index) => <col key={index} style={{ width }} />)}</colgroup> : null}
         <thead>
           <tr>{visibleColumns.map((column, index) => <th key={column} style={{ padding: "12px 8px", borderBottom: "2px solid var(--swiss-ink)", background: recommendedColumn === index ? "var(--swiss-ink)" : undefined, color: recommendedColumn === index ? "var(--swiss-emphasis-ink)" : undefined, fontFamily: "var(--swiss-font-mono)", fontSize: "11px", textAlign: "left", textTransform: "uppercase" }}>{column}</th>)}</tr>
         </thead>
@@ -47,7 +49,7 @@ function SwissTableSlide(props: SwissSlideProps & { recommendedColumn?: number; 
         <SwissSmallLabel>{renderRichText(props.kicker ?? props.label)}</SwissSmallLabel>
         <h1 className="swiss-section-title">{renderRichText(props.title)}</h1>
       </header>
-      <div style={{ gridColumn: "1 / 13", gridRow: "3 / 9" }}><SwissTable columns={props.tableColumns} rows={props.tableRows} recommendedColumn={props.recommendedColumn} /></div>
+      <div style={{ gridColumn: "1 / 13", gridRow: "3 / 9" }}><SwissTable columns={props.tableColumns} rows={props.tableRows} columnWidths={props.tableColumnWidths} recommendedColumn={props.recommendedColumn} /></div>
     </SwissFrame>
   );
 }

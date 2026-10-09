@@ -1,4 +1,4 @@
-import { renderRichText } from "../../../../primitives/blocks";
+import { renderRichText, tableColumnWidthPercentages } from "../../../../primitives/blocks";
 import { LinearFrame, LinearSmallLabel, type LinearSlideProps } from "./shared";
 import { CodeBlock } from "./technical-slides";
 
@@ -28,10 +28,12 @@ export function LinearApiEndpointSlide(props: LinearSlideProps) {
 function LinearTable(props: LinearSlideProps & { recommendedColumn?: number; gridRow?: string }) {
   const columns = (props.tableColumns ?? []).slice(0, 5);
   const rows = (props.tableRows ?? []).slice(0, 6);
+  const widths = tableColumnWidthPercentages(props.tableColumnWidths, columns.length);
   const rec = props.recommendedColumn;
   return (
     <div className="ld-panel" style={{ gridColumn: "1 / 13", gridRow: props.gridRow ?? "3 / 9", padding: "8px 24px 14px", overflow: "hidden", alignSelf: "start" }}>
-      <table className="ld-table">
+      <table className="ld-table" style={widths ? { tableLayout: "fixed" } : undefined}>
+        {widths ? <colgroup>{widths.map((width, index) => <col key={index} style={{ width }} />)}</colgroup> : null}
         <thead>
           <tr>
             {columns.map((col, c) => (
