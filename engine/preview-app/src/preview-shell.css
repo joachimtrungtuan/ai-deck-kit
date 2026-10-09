@@ -120,6 +120,20 @@ button {
   font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 
+.preview-sidebar nav .preview-slide-type {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.preview-sidebar nav .preview-slide-type-secondary {
+  color: #a7a79f;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 400;
+}
+
 .preview-sidebar-resizer {
   position: relative;
   cursor: col-resize;

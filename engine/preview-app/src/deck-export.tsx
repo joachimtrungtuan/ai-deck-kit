@@ -133,7 +133,7 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
         >
           {slides.map((slide, index) => (
             <option key={slide.id ?? slide.type} value={index}>
-            {String(index + 1).padStart(2, "0")} — {slide.type}
+            {String(index + 1).padStart(2, "0")} — {slide.tocTitle ? `${slide.tocTitle} · ${slide.type}` : slide.type}
             </option>
           ))}
         </select>

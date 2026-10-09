@@ -20,7 +20,9 @@ export function SlideListSidebar({ activeIndex, collapsed, galleryHref, onSelect
         {source.slides.map((slide, index) => (
           <button className={index === activeIndex ? "is-active" : ""} key={slide.id ?? slide.type} onClick={() => onSelect(index)} type="button">
             <span className="preview-slide-index">{String(index + 1).padStart(2, "0")}</span>
-            <span className="preview-slide-type">{slide.type}</span>
+            <span className="preview-slide-type">
+              {slide.tocTitle ? <><span className="preview-slide-toc-title">{slide.tocTitle}</span><small className="preview-slide-type-secondary">{slide.type}</small></> : slide.type}
+            </span>
           </button>
         ))}
       </nav>
