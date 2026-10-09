@@ -64,8 +64,8 @@ New in v2. For delivering technical explanations: code, architecture, specs, API
 | `architecture-overview` | System components and their connections at a glance | `LinearArchitectureOverviewSlide` | `children` slot (diagram markup) + `items` for component legend |
 | `data-flow` | Step-by-step flow of data/requests between actors | `LinearDataFlowSlide` | `flowSteps?: { from: string; to: string; label: string }[]` |
 | `api-endpoint` | One API operation: method, path, request/response shape | `LinearApiEndpointSlide` | `method?: string`, `path?: string`, `requestExample?: string`, `responseExample?: string` |
-| `spec-table` | Requirements/spec matrix (ID, requirement, priority, status) | `LinearSpecTableSlide` | `tableColumns?: string[]`, `tableRows?: string[][]` |
-| `comparison-table` | Options/approaches compared across criteria | `LinearComparisonTableSlide` | `tableColumns?`, `tableRows?` (shared with `spec-table`), `recommendedColumn?: number` |
+| `spec-table` | Requirements/spec matrix (ID, requirement, priority, status) | `LinearSpecTableSlide` | `tableColumns?: string[]`, `tableRows?: string[][]`, `tableColumnWidths?: (number \| string)[]` (one fraction or percentage per column) |
+| `comparison-table` | Options/approaches compared across criteria | `LinearComparisonTableSlide` | `tableColumns?`, `tableRows?`, `tableColumnWidths?` (shared with `spec-table`), `recommendedColumn?: number` |
 | `decision-record` | Architecture decision: context → decision → consequences | `LinearDecisionRecordSlide` | `context?: string`, `decision?: string`, `consequences?: string[]` |
 
 ### Technical category rules

@@ -60,6 +60,7 @@ flowSteps:
 \`\`\`yaml
 id: api
 title: API
+tocTitle: Preview endpoint
 method: POST
 path: /v1/preview
 requestExample: "{}"
@@ -75,6 +76,8 @@ context: Existing state
 decision: Use v2
 consequences:
   - Portable decks
+tableColumns: [Option, Cost]
+tableColumnWidths: [2, 1]
 \`\`\``,
       "swiss-deck",
       {
@@ -91,6 +94,10 @@ consequences:
     assert.deepEqual(source.slides[3].props.context, "Existing state");
     assert.deepEqual(source.slides[3].props.decision, "Use v2");
     assert.deepEqual(source.slides[3].props.consequences, ["Portable decks"]);
+    assert.deepEqual(source.slides[3].props.tableColumnWidths, [2, 1]);
+    // tocTitle labels the slide list only; it must not leak into layout props.
+    assert.equal(source.slides[2].tocTitle, "Preview endpoint");
+    assert.equal(source.slides[0].tocTitle, undefined);
   } finally {
     rmSync(outputDir, { recursive: true, force: true });
   }
@@ -107,6 +114,7 @@ function expectApiProps() {
     rightTitle: undefined,
     tableColumns: undefined,
     tableRows: undefined,
+    tableColumnWidths: undefined,
     code: undefined,
     language: undefined,
     highlightLines: undefined,

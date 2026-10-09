@@ -322,6 +322,13 @@ function validateContentV2({ manifest, content, templateManifest, manifestSlides
       errors.push(`${label}: animation "${metadata.animation}" is not supported by template "${templateManifest.name}".`);
     }
 
+    // tocTitle labels the slide in the slide list only; layouts never receive it.
+    if (metadata.tocTitle !== undefined && (typeof metadata.tocTitle !== "string" || !metadata.tocTitle.trim())) {
+      errors.push(`${label}: "tocTitle" must be a non-empty string.`);
+    }
+
+    errors.push(...v2ValidateTableColumnWidths(metadata, label));
+
     // items[]: flag single-line flow-style entries (`- {title: ..., ...}` or `items: [...]`).
     // Block style keeps each attribute on its own line for IDE readability; see
     // engine/schemas/content-schema-guidance.md > "items[] Formatting".
@@ -458,6 +465,36 @@ function validateContentV2({ manifest, content, templateManifest, manifestSlides
       errors.push(`deck.json: slide "${slide.id}" has no matching ## Slide section in content.md.`);
     }
   }
+}
+
+// tableColumnWidths: one entry per tableColumns entry, either all positive numbers (fractions,
+// e.g. [2, 1, 1]) or all percentage strings summing to 100 (e.g. ["50%", "25%", "25%"]).
+// Templates decide how to apply them, so the value is checked here and passed through unchanged.
+function v2ValidateTableColumnWidths(metadata, label) {
+  const widths = metadata.tableColumnWidths;
+  if (widths === undefined) return [];
+  if (!Array.isArray(widths) || widths.length === 0) {
+    return [`${label}: "tableColumnWidths" must be a non-empty list, e.g. [2, 1, 1] or ["50%", "25%", "25%"].`];
+  }
+  const errors = [];
+  if (!Array.isArray(metadata.tableColumns)) {
+    errors.push(`${label}: "tableColumnWidths" is set but "tableColumns" is missing.`);
+  } else if (widths.length !== metadata.tableColumns.length) {
+    errors.push(`${label}: "tableColumnWidths" has ${widths.length} entries but "tableColumns" has ${metadata.tableColumns.length}.`);
+  }
+  const isFraction = (value) => typeof value === "number" && Number.isFinite(value) && value > 0;
+  const percentOf = (value) => {
+    const match = typeof value === "string" ? /^\s*(\d+(?:\.\d+)?)\s*%\s*$/.exec(value) : null;
+    return match && Number(match[1]) > 0 ? Number(match[1]) : null;
+  };
+  if (widths.every(isFraction)) return errors;
+  if (widths.every((value) => percentOf(value) !== null)) {
+    const sum = widths.reduce((total, value) => total + percentOf(value), 0);
+    if (Math.abs(sum - 100) > 0.5) errors.push(`${label}: "tableColumnWidths" percentages sum to ${sum}%, expected 100%.`);
+    return errors;
+  }
+  errors.push(`${label}: "tableColumnWidths" entries must be all positive numbers (fractions) or all percentages like "40%"; do not mix them.`);
+  return errors;
 }
 
 function v2ExtractItemsSection(yamlText) {

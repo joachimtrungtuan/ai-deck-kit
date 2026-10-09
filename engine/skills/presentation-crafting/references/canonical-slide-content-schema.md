@@ -71,10 +71,14 @@ Constraints for layout, hierarchy, spacing, emphasis, or asset treatment.
 - `courseName`, `lessonName`, and `sectionName` are optional instructional
   metadata. Page position is supplied by the runtime rather than authored.
 - Use optional advanced metadata only when the selected layout needs it:
-  `imageSrc`/`imageAlt`/`caption` for media, `tableColumns`/`tableRows` for
+  `imageSrc`/`imageAlt`/`caption` for media, `tableColumns`/`tableRows` (plus
+  optional `tableColumnWidths`, one fraction or percentage per column) for
   tables, `language`/`highlightLines` for code, and `metric`/`metricLabel` or
   `chartData` for data visuals. Keep arrays and objects on one flow-style,
   JSON-compatible YAML line so the shared runtime can parse them.
+- `tocTitle` is an optional, navigation-only label for the slide list (preview
+  sidebar, export picker). It is never rendered on the slide; omit it to show
+  the slide type.
 - Put edit intent and review notes in this file, not hidden only in React source.
 - Keep visible slide copy under the density limits of the chosen template.
 - When a structured block is needed, add it to the slide YAML under `blocks:` using a type from the deck's pinned block catalog. Preserve the prose sections below it.

@@ -6,7 +6,7 @@ Read this before creating, editing, validating, or migrating a template or
 ## Stability Contract
 
 - `contentSchemaVersion` selects the content parser and validator by major
-  version: `1.x` uses the frozen v1 path; `2.x` uses the canonical v2 path.
+  version: `1.x` uses the frozen v1 path; `2.x` and `3.x` use the canonical v2 path.
 - V1 remains supported. Never rewrite or relabel v1 content merely because the
   engine or a template has a newer version.
 - `aideck upgrade` replaces the engine only. It must not rewrite project

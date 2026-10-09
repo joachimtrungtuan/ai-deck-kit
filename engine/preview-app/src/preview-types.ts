@@ -24,6 +24,8 @@ export type SlideOverride = {
 export type PreviewSlide = {
   id?: string;
   type: string;
+  // Short label for the slide list (sidebar, export picker). Navigation only; layouts never see it.
+  tocTitle?: string;
   Component: ComponentType<any>;
   props: Record<string, unknown>;
   morphAnchors?: string[];

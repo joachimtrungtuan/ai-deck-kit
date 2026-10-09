@@ -336,7 +336,8 @@ test("manifest deck sources use unified item metadata and expose overrides", () 
   assert.match(source, /title: \(\{ metadata \}\) => textMeta\(metadata, "title"\)/);
   assert.match(source, /body: layoutPropReaders\.description/);
   assert.match(source, /authoringSlideYamlKeys = \["status", "intent", "animation", "transition", "assets", "icons"\]/);
-  assert.match(source, /recognizedSlideYamlKeys = new Set\(\["id", "type", "override", \.\.\.authoringSlideYamlKeys, \.\.\.Object\.keys\(layoutPropReaders\)\]\)/);
+  assert.match(source, /navigationSlideYamlKeys = \["tocTitle"\]/);
+  assert.match(source, /recognizedSlideYamlKeys = new Set\(\["id", "type", "override", \.\.\.authoringSlideYamlKeys, \.\.\.navigationSlideYamlKeys, \.\.\.Object\.keys\(layoutPropReaders\)\]\)/);
   assert.match(source, /override: objectMeta<SlideOverride>\(metadata, "override"\)/);
   assert.match(source, /stats: \(\{ metadata \}\) => arrayMeta\(metadata, "stats"\)/);
   assert.match(source, /regionSeries: \(\{ metadata \}\) => arrayMeta\(metadata, "regionSeries"\)/);

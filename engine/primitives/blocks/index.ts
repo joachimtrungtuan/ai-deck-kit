@@ -1,5 +1,6 @@
 export * from "./contracts";
 export { renderRichText } from "./rich-text";
+export { tableColumnWidthPercentages } from "./table-column-widths";
 export { TextBlock } from "./text-block";
 export { TitleDescriptionBlock } from "./title-description-block";
 export { ImageBlock } from "./image-block";
