@@ -20,6 +20,8 @@ type SlideItem = {
 type ParsedSection = {
   anchors: string[];
   metadata: Record<string, unknown>;
+  /** Raw text under `### Speaker Notes` (up to the next `###` heading); header lines are parsed by the presenter. */
+  speakerNotes?: string;
 };
 
 type ReaderContext = { index: number; manifest: Manifest; metadata: Record<string, unknown>; total: number };
@@ -57,6 +59,7 @@ export function createManifestDeckSourceV2(
       id: slide.id,
       type: slide.type,
       tocTitle: textMeta(metadata, "tocTitle"),
+      speakerNotes: section.speakerNotes,
       Component,
       morphAnchors: section.anchors,
       layoutVariant,
@@ -91,7 +94,8 @@ function parseSections(content: string): Map<string, ParsedSection> {
     const metadata = parseMetadata(metadataText);
     const id = textMeta(metadata, "id");
     if (!id) return;
-    sections.set(id, { anchors: collectMorphAnchors(metadata), metadata });
+    const speakerNotes = text.match(/^### Speaker Notes[^\n]*\n([\s\S]*?)(?=^### |(?![\s\S]))/m)?.[1].trim();
+    sections.set(id, { anchors: collectMorphAnchors(metadata), metadata, speakerNotes });
   });
   return sections;
 }
