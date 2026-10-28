@@ -22,6 +22,7 @@ import { PanelResizer } from "./panel-resizer";
 import { SlideListSidebar } from "./slide-list-sidebar";
 import { usePanelResize } from "./use-panel-resize";
 import { AudienceView } from "./presenter/audience-view";
+import { PresenterRoot } from "./presenter/presenter-root";
 import { SlideFieldEditor } from "./slide-field-editor";
 
 const PANEL_MIN_WIDTH = 200;
@@ -29,7 +30,7 @@ const PANEL_MAX_WIDTH = 480;
 const SIDEBAR_DEFAULT_WIDTH = 280;
 const COLLAPSED_PANEL_WIDTH = 56;
 
-function PreviewApp({ deckMode = false, galleryHref, source }: { deckMode?: boolean; galleryHref?: string; source: PreviewSource }) {
+function PreviewApp({ deckMode = false, galleryHref, onDirtyChange, source }: { deckMode?: boolean; galleryHref?: string; onDirtyChange?: (dirty: boolean) => void; source: PreviewSource }) {
   const [activeIndex, setActiveIndex] = useState(() => deckMode ? readActiveSlideIndex(source) : 0);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem("aideck.preview.sidebarCollapsed") === "1");
   const [editorCollapsed, setEditorCollapsed] = useState(() => localStorage.getItem("aideck.preview.editorCollapsed") === "1");
@@ -46,6 +47,8 @@ function PreviewApp({ deckMode = false, galleryHref, source }: { deckMode?: bool
     if (index !== activeSlideIndex && editorDirty && !options?.force && !window.confirm("Discard unsaved slide edits?")) return;
     goToSlide({ frameDocument: frameDocumentRef.current, from: slides[activeSlideIndex], to: slides[index], direction: index >= activeSlideIndex ? "forward" : "backward", source, commit: () => setActiveIndex(index) });
   }, [activeSlideIndex, editorDirty, slides, source]);
+
+  useEffect(() => { onDirtyChange?.(editorDirty); }, [editorDirty, onDirtyChange]);
 
   useEffect(() => {
     if (deckMode) rememberActiveSlide(source, activeSlideIndex);
@@ -90,6 +93,7 @@ function AppRouter() {
   if (window.location.pathname === "/primitives") return <PrimitivesDemo />;
   const params = new URLSearchParams(window.location.search);
   if (runtimeDeck && params.has("audience")) return <AudienceView kind={params.get("source") === "export" ? "export" : "live"} source={runtimeDeck} />;
+  if (runtimeDeck && params.has("present")) return <PresenterRoot kind={params.get("source") === "export" ? "export" : "live"} renderEditor={(onDirtyChange) => <PreviewApp deckMode onDirtyChange={onDirtyChange} source={runtimeDeck} />} source={runtimeDeck} />;
   if (runtimeDeck) return <PreviewApp deckMode source={runtimeDeck} />;
   const gallery: PreviewSource[] = runtimeGallery ?? [];
   const sources = runtimeTemplate ? [runtimeTemplate, ...gallery.filter((source) => source.id !== runtimeTemplate.id)] : gallery;
