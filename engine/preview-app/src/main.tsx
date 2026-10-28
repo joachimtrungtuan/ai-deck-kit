@@ -21,6 +21,7 @@ import { readActiveSlideIndex, rememberActiveSlide } from "./active-slide-memory
 import { PanelResizer } from "./panel-resizer";
 import { SlideListSidebar } from "./slide-list-sidebar";
 import { usePanelResize } from "./use-panel-resize";
+import { AudienceView } from "./presenter/audience-view";
 import { SlideFieldEditor } from "./slide-field-editor";
 
 const PANEL_MIN_WIDTH = 200;
@@ -40,9 +41,9 @@ function PreviewApp({ deckMode = false, galleryHref, source }: { deckMode?: bool
   const activeSlide = slides[activeSlideIndex];
   const frameDocumentRef = useRef<Document | null>(null);
 
-  const go = useCallback((next: number) => {
+  const go = useCallback((next: number, options?: { force?: boolean }) => {
     const index = Math.max(0, Math.min(slides.length - 1, next));
-    if (index !== activeSlideIndex && editorDirty && !window.confirm("Discard unsaved slide edits?")) return;
+    if (index !== activeSlideIndex && editorDirty && !options?.force && !window.confirm("Discard unsaved slide edits?")) return;
     goToSlide({ frameDocument: frameDocumentRef.current, from: slides[activeSlideIndex], to: slides[index], direction: index >= activeSlideIndex ? "forward" : "backward", source, commit: () => setActiveIndex(index) });
   }, [activeSlideIndex, editorDirty, slides, source]);
 
@@ -87,8 +88,9 @@ function PreviewApp({ deckMode = false, galleryHref, source }: { deckMode?: bool
 
 function AppRouter() {
   if (window.location.pathname === "/primitives") return <PrimitivesDemo />;
-  if (runtimeDeck) return <PreviewApp deckMode source={runtimeDeck} />;
   const params = new URLSearchParams(window.location.search);
+  if (runtimeDeck && params.has("audience")) return <AudienceView kind={params.get("source") === "export" ? "export" : "live"} source={runtimeDeck} />;
+  if (runtimeDeck) return <PreviewApp deckMode source={runtimeDeck} />;
   const gallery: PreviewSource[] = runtimeGallery ?? [];
   const sources = runtimeTemplate ? [runtimeTemplate, ...gallery.filter((source) => source.id !== runtimeTemplate.id)] : gallery;
   const requestedTemplate = params.get("template");

@@ -90,7 +90,9 @@ export function aideckDeckPlugin(
         : templatePath
           ? loadTemplateSource(resolve(templatePath), watchedFiles)
           : "export const runtimeDeck = null;\nexport const runtimeTemplate = null;";
-      const combined = `${loadGallerySource(gallery, watchedFiles)}\n${source}`;
+      // Presenter mode mirrors the built export through Vite's /@fs route (same origin, no middleware).
+      const exportUrl = deckPath ? `/@fs${join(resolve(deckPath), ".build", "export", "index.html").replaceAll("\\", "/")}` : null;
+      const combined = `${loadGallerySource(gallery, watchedFiles)}\n${source}\nexport const runtimeDeckExportUrl = ${JSON.stringify(exportUrl)};`;
       watchedFiles.forEach((file) => this.addWatchFile(file));
       return combined;
     },

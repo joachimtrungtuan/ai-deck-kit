@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { goToSlide } from "./slide-transition-runtime";
 import { FixedSlideCanvas } from "./fixed-slide-canvas";
 import type { PreviewSource } from "./preview-types";
 import { SlideOverrideLayer } from "./slide-override-layer";
+import { useExportBridge } from "./presenter/use-export-bridge";
 
 // The templates size type/layout with viewport units (e.g. clamp(48px, 6vw, 96px)) and a
 // max-width media query. A CSS transform does NOT change what `vw` resolves to, so a scaled
@@ -27,7 +28,8 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
   const [active, setActive] = useState(0);
   const activeSlide = slides[active];
   const [jumpValue, setJumpValue] = useState("1");
-  const [controlsVisible, setControlsVisible] = useState(true);
+  // Embedded in the presenter's mirror frame, the on-slide controls would only be noise.
+  const [controlsVisible, setControlsVisible] = useState(() => window.parent === window);
   const frameDocumentRef = useRef<Document | null>(null);
 
   const go = (next: number) => {
@@ -43,6 +45,9 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
   };
 
   useEffect(() => setJumpValue(String(active + 1)), [active]);
+
+  const summaries = useMemo(() => slides.map((slide, index) => ({ id: slide.id ?? String(index), tocTitle: slide.tocTitle, type: slide.type })), [slides]);
+  useExportBridge(summaries, active, go);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
