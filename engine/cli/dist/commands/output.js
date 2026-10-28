@@ -1,8 +1,9 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { deckPath } from "../lib/deck.js";
-import { listTemplates, resolveTemplate } from "../lib/templates.js";
+import { resolveTemplate } from "../lib/templates.js";
+import { resolveDeckForServe, spawnPreviewServer } from "./preview-server-spawn.js";
 import { findWorkspace } from "../lib/workspace.js";
 export const outputHelp = `Output commands:
   serve [<deck-id> | deck <id> | template <name> | --deck <id> | --template <name>]
@@ -53,64 +54,17 @@ function parseArgsWithOptions(args, options) {
     return { positionals, values };
 }
 function runServe(workspace, args) {
-    const vite = join(workspace.engineRoot, "node" + "_modules", ".bin", "vite");
-    if (!existsSync(vite))
-        throw new Error(`Vite executable missing: ${vite}`);
     const options = parseServeArgs(args);
-    const viteArgs = buildServeViteArgs(options);
     const deckRoot = options.deck ? resolveDeckForServe(workspace, options.deck) : "";
     const template = options.template ? resolveTemplate(workspace, options.template) : undefined;
-    const templateRoot = template?.root ?? "";
     // Say out loud what is about to be rendered, so a wrong target is caught before the browser opens.
     if (deckRoot)
         console.log(`Serving deck ${basename(deckRoot)}: ${deckRoot}`);
     if (template)
         console.log(`Serving template ${template.manifest.name} (${template.origin} ${template.manifest.templateVersion}): ${template.root}`);
-    if (!deckRoot && !templateRoot)
+    if (!deckRoot && !template)
         console.log("Serving the template gallery (no deck or template selected).");
-    const deckPathKey = "AIDECK_DECK" + "_PATH";
-    const templatePathKey = "AIDECK_TEMPLATE" + "_PATH";
-    const engineRootKey = "AIDECK_ENGINE" + "_ROOT";
-    const galleryKey = "AIDECK_TEMPLATE" + "_GALLERY";
-    const result = spawnSync(vite, viteArgs, {
-        cwd: workspace.engineRoot,
-        stdio: "inherit",
-        env: {
-            ...process.env,
-            [deckPathKey]: deckRoot,
-            [templatePathKey]: templateRoot,
-            [engineRootKey]: workspace.engineRoot,
-            // The gallery renders exactly what this project can resolve — never a hardcoded shipped set.
-            [galleryKey]: JSON.stringify(galleryEntries(workspace)),
-        },
-    });
-    if (result.status !== 0)
-        throw new Error(`Preview server exited with code ${result.status ?? 1}.`);
-}
-/** Templates the preview may show, resolved through the same precedence every other command uses. */
-function galleryEntries(workspace) {
-    return listTemplates(workspace).flatMap((entry) => {
-        try {
-            resolveTemplate(workspace, entry.name);
-        }
-        catch {
-            return []; // A broken bundle is reported by `template validate`; it must not break the gallery.
-        }
-        return [{ name: entry.name, root: entry.root, origin: entry.origin }];
-    });
-}
-function resolveDeckForServe(workspace, deck) {
-    const root = deckPath(workspace, deck);
-    if (existsSync(join(root, "deck.json")))
-        return root;
-    const templateMatch = listTemplates(workspace).find((entry) => entry.name === deck);
-    if (templateMatch)
-        throw new Error(`"${deck}" is a template, not a deck. Run: aideck serve template ${deck}`);
-    const available = existsSync(workspace.decksRoot)
-        ? readdirSync(workspace.decksRoot).filter((entry) => entry.endsWith(".deck")).map((entry) => entry.slice(0, -".deck".length))
-        : [];
-    const hint = available.length ? ` Available decks: ${available.join(", ")}.` : " This project has no decks yet.";
-    throw new Error(`Deck not found: ${root}.${hint}`);
+    spawnPreviewServer(workspace, { deckRoot, templateRoot: template?.root ?? "", viteArgs: buildServeViteArgs(options) });
 }
 export function parseServeArgs(args) {
     const tokens = args[0] === "serve" ? args.slice(1) : args;
@@ -180,10 +134,10 @@ export function buildServeViteArgs(options) {
     if (options.port)
         args.push("--port", options.port);
     if (options.open)
-        args.push("--open");
+        args.push("--open", ...(options.openPath ? [options.openPath] : []));
     return args;
 }
-function runExport(workspace, format, deck) {
+export function runExport(workspace, format, deck) {
     if (!deck)
         throw new Error(`Usage: aideck export ${format} <deck-id>`);
     const scriptRoot = join(workspace.engineRoot, "skills", "presentation-crafting", "scripts");

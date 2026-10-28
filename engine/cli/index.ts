@@ -10,6 +10,7 @@ import { generationHelp, runGeneration } from "./commands/generation.ts";
 import { guidanceHelp, runGuidance } from "./commands/guidance.ts";
 import { linkHelp, runLink } from "./commands/link.ts";
 import { outputHelp, runOutput } from "./commands/output.ts";
+import { presentHelp, runPresent } from "./commands/present.ts";
 import { presentationHelp, runPresentation } from "./commands/presentation.ts";
 import { runSkills, skillsHelp } from "./commands/wire-skills.ts";
 import { runTemplates, templateHelp } from "./commands/templates.ts";
@@ -44,7 +45,9 @@ ${catalogHelp}
 
 ${generationHelp}
 
-${outputHelp}`;
+${outputHelp}
+
+${presentHelp}`;
 
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const [command, ...args] = argv;
@@ -66,6 +69,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   if (command === "remove" || command === "uninstall" || command === "reinstall") return runRemoval([command, ...args]);
   if (command === "blocks" || command === "motion" || command === "tokens") return runCatalog([command, ...args]);
   if (command === "gen") return runGeneration(args);
+  if (command === "present") return runPresent(args);
   if (command === "serve" || command === "export" || command === "pack" || command === "unpack") return runOutput([command, ...args]);
   throw new Error(`Unknown command: ${command}. Run "aideck --help" for usage.`);
 }
