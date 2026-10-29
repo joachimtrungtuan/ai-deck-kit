@@ -128,7 +128,7 @@ Pull requests and pushes to `main` run:
 - HTML and raster PDF export smoke tests.
 - Upgrade hash check proving `decks/` is unchanged.
 
-Tags matching `vMAJOR.MINOR.PATCH` run the configured release workflow. The workflow validates the engine, packs the root `ai-deck-kit` package, and is intended to attach the tarball plus `engine.version.json` to the GitHub release. Remote release execution has not been verified. Install from a tagged GitHub source with `npx github:joachimtrungtuan/ai-deck-kit#v<version> init`.
+Tags matching `vMAJOR.MINOR.PATCH` run the configured release workflow. The workflow validates the engine, packs the root `ai-deck-kit` package, and creates the GitHub release with the tarball plus `engine.version.json` attached (verified for v1.0.1). Release notes are edited in afterwards; the full procedure is in `CLAUDE.md` → "Releases". Install from a tagged GitHub source with `npx github:joachimtrungtuan/ai-deck-kit#v<version> init`.
 
 ## Versioning
 
