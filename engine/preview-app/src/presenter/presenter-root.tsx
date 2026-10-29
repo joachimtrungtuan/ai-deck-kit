@@ -3,8 +3,9 @@ import type { ReactNode } from "react";
 import { runtimeDeckExportUrl } from "virtual:aideck-deck";
 import { readActiveSlideIndex, rememberActiveSlide } from "../active-slide-memory";
 import type { PreviewSource } from "../preview-types";
+import { exportDrift } from "./notes-export-drift";
 import { MirrorFrame, type MirrorSourceKind } from "./mirror-frame";
-import { nextSeq, openPresenterChannel, type PresenterChannel, type ScreenMode } from "./presenter-channel";
+import { nextSeq, openPresenterChannel, type PresenterChannel, type ScreenMode, type SlideSummary } from "./presenter-channel";
 import { presenterKeyAction } from "./presenter-keyboard";
 import { writeResumeIndex } from "./presenter-resume";
 import { PresenterView, type NotesTheme } from "./presenter-view";
@@ -48,6 +49,8 @@ export function PresenterRoot({ kind, renderEditor, source }: {
   const visit = useRef({ slideId: slides[index]?.id ?? "", at: Date.now() });
   const editorDirty = useRef(false);
 
+  const [exportSlides, setExportSlides] = useState<SlideSummary[] | null>(null);
+  const drift = useMemo(() => (kind === "export" && exportSlides ? exportDrift(slides, exportSlides) : []), [kind, exportSlides, slides]);
   const parsed = useMemo(() => slides.map((slide) => parseSpeakerNotes(slide.speakerNotes)), [slides]);
   const pacings = useMemo(() => parsed.map((notes) => notes.pacing), [parsed]);
   const latest = useRef({ index, screen });
@@ -135,12 +138,13 @@ export function PresenterRoot({ kind, renderEditor, source }: {
   );
 
   return <div className="present-root">
+    {drift.length > 0 && <p className="present-drift-banner" role="alert">The export is out of date with the deck: {drift.join(" ")} Re-run <code>aideck present --export</code> to rebuild it.</p>}
     <ViewSwitcher editorDisabledReason={kind === "export" ? EXPORT_EDITOR_HINT : undefined} onChange={switchView} view={view} />
     {view === "presenter" && <PresenterView
       audienceIndex={audienceIndex} clock={clock} index={index} kind={kind} nextIndex={nextTarget !== index ? nextTarget : null}
       notes={parsed[index]} notesTheme={theme} notesZoom={zoomStep} now={now}
       onAdjustClock={(delta) => setClock((c) => adjustClock(c, delta, Date.now()))} onJump={goTo} onNext={() => step(1)} onPrev={() => step(-1)}
-      onResetClock={() => setClock(INITIAL_CLOCK)} onToggleBlack={() => toggleScreen("black")} onToggleClock={toggleClock} onToggleFreeze={() => toggleScreen("frozen")}
+      onResetClock={() => setClock(INITIAL_CLOCK)} onToggleBlack={() => toggleScreen("black")} onToggleClock={toggleClock} onToggleFreeze={() => toggleScreen("frozen")} onExportState={setExportSlides}
       pace={paceAgainstTargets(targets, index, elapsed)} rehearsalRows={rows} screen={screen} source={source} />}
     {view === "slide" && <div className="present-slide-view"><MirrorFrame exportUrl={runtimeDeckExportUrl} index={audienceIndex} kind={kind} source={source} /></div>}
     {view === "editor" && renderEditor((dirty) => { editorDirty.current = dirty; })}

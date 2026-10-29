@@ -11,6 +11,7 @@ const cli = join(root, "bin", "create-ai-deck-kit");
 const workspace = mkdtempSync(join(tmpdir(), "ai-deck-kit-ci-"));
 const ciSkipInstallEnv = "AIDECK_" + "CI_SKIP_INSTALL";
 const skipInstallEnv = "AIDECK_" + "SKIP_INSTALL";
+const notesSentinel = "SPEAKER-NOTES-SENTINEL-4f9c";
 const env = process.env[ciSkipInstallEnv] === "1" ? { [skipInstallEnv]: "1" } : process.env;
 
 run([cli, "init", "--dir", "tools/ai-deck-kit"], workspace, env);
@@ -22,11 +23,15 @@ for (const [slug, template] of [
   run([targetCli, "new", slug, "--template", template], workspace, env);
   run([targetCli, "validate", slug], workspace, env);
   if (process.env[ciSkipInstallEnv] !== "1") {
+    const contentFile = join(workspace, "decks", `${slug}.deck`, "content.md");
+    writeFileSync(contentFile, `${readFileSync(contentFile, "utf8").trimEnd()}\n\n### Speaker Notes\n${notesSentinel}\n`);
     if (slug === "swiss-smoke") {
       const directHtmlExport = join(workspace, "tools", "ai-deck-kit", "skills", "presentation-crafting", "scripts", "export-standalone-html.mjs");
       run([directHtmlExport, "--deck", slug], workspace, env);
     }
     run([targetCli, "export", "html", slug], workspace, env);
+    const exported = readFileSync(join(workspace, "decks", `${slug}.deck`, ".build", "export", "index.html"), "utf8");
+    if (exported.includes(notesSentinel)) throw new Error(`Export of ${slug} leaked speaker notes.`);
     run([targetCli, "export", "pdf", slug], workspace, env);
   }
 }

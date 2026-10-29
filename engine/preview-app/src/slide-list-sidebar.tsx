@@ -1,10 +1,11 @@
 import type { PreviewSource } from "./preview-types";
 
-export function SlideListSidebar({ activeIndex, collapsed, galleryHref, onSelect, source }: {
+export function SlideListSidebar({ activeIndex, collapsed, galleryHref, onSelect, presentHref, source }: {
   activeIndex: number;
   collapsed: boolean;
   galleryHref?: string;
   onSelect: (index: number) => void;
+  presentHref?: string;
   source: PreviewSource;
 }) {
   return (
@@ -14,6 +15,7 @@ export function SlideListSidebar({ activeIndex, collapsed, galleryHref, onSelect
           {galleryHref && <a className="preview-back-link" href={galleryHref}>← All templates</a>}
           <p className="preview-label">Slides</p>
           <h1>{source.label}</h1>
+          {presentHref && <a className="preview-back-link" href={presentHref}>▶ Present</a>}
         </div>
       </header>
       <nav aria-label="Slides">

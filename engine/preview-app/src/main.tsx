@@ -79,7 +79,7 @@ function PreviewApp({ deckMode = false, galleryHref, onDirtyChange, source }: { 
   const shellStyle = { "--sidebar-width": `${sidebarCollapsed ? COLLAPSED_PANEL_WIDTH : sidebar.width}px`, "--editor-width": `${editorCollapsed ? COLLAPSED_PANEL_WIDTH : editor.width}px` } as CSSProperties;
 
   return <main className={`preview-shell${deckMode ? " has-editor" : ""}`} style={shellStyle}>
-    <SlideListSidebar activeIndex={activeIndex} collapsed={sidebarCollapsed} galleryHref={galleryHref} onSelect={go} source={source} />
+    <SlideListSidebar activeIndex={activeIndex} collapsed={sidebarCollapsed} galleryHref={galleryHref} onSelect={go} presentHref={deckMode && !onDirtyChange ? "?present" : undefined} source={source} />
     <PanelResizer collapsed={sidebarCollapsed} maxWidth={PANEL_MAX_WIDTH} minWidth={PANEL_MIN_WIDTH} onPointerDown={sidebar.startResize} onToggle={() => togglePanel("aideck.preview.sidebarCollapsed", setSidebarCollapsed)} side="left" width={sidebar.width} />
     <section className="preview-stage" aria-label={activeSlide.type}><FixedSlideCanvas documentRef={frameDocumentRef} mountAgentation slide={activeSlide} slideIndex={activeSlideIndex} source={source} /></section>
     {deckMode && <>

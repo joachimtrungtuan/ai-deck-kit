@@ -26,7 +26,7 @@ export default defineConfig({
   define: {
     __EXPORT_DECK_ID__: JSON.stringify(deckId),
   },
-  plugins: [react(), aideckDeckPlugin(), viteSingleFile()],
+  plugins: [react(), aideckDeckPlugin(undefined, undefined, undefined, undefined, { stripNotes: true }), viteSingleFile()],
   build: {
     outDir,
     emptyOutDir: true,

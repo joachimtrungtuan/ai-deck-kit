@@ -5,7 +5,7 @@ import { MirrorFrame, type MirrorSourceKind } from "./mirror-frame";
 import { PLACEMENT_HINT, openAudienceWindow } from "./audience-window-placement";
 import { RehearsalLogPanel } from "./rehearsal-log-panel";
 import type { RehearsalRow } from "./rehearsal-log";
-import type { ScreenMode } from "./presenter-channel";
+import type { ScreenMode, SlideSummary } from "./presenter-channel";
 import type { ParsedSpeakerNotes } from "./speaker-notes-parser";
 import { SpeakerNotesRenderer } from "./speaker-notes-renderer";
 import { TalkClockBar } from "./talk-clock-bar";
@@ -27,6 +27,7 @@ export type PresenterViewProps = {
   onJump: (index: number) => void;
   onNext: () => void;
   onPrev: () => void;
+  onExportState?: (slides: SlideSummary[]) => void;
   onResetClock: () => void;
   onToggleClock: () => void;
   onToggleFreeze: () => void;
@@ -61,7 +62,7 @@ export function PresenterView(props: PresenterViewProps) {
   return <div className="present-view">
     <p className="present-banner" role="note">PRESENTER ONLY — do not share this window</p>
     <div className="present-frames">
-      <figure className="present-frame"><div className="present-frame-box"><MirrorFrame exportUrl={runtimeDeckExportUrl} index={audienceIndex} kind={kind} source={source} /></div>
+      <figure className="present-frame"><div className="present-frame-box"><MirrorFrame exportUrl={runtimeDeckExportUrl} index={audienceIndex} kind={kind} onExportState={props.onExportState ? (slides) => props.onExportState?.(slides) : undefined} source={source} /></div>
         <figcaption>Audience · {audienceIndex + 1}/{source.slides.length}{props.screen !== "live" ? ` · ${props.screen}` : ""}</figcaption></figure>
       {secondIndex !== null && <figure className="present-frame present-frame-next"><div className="present-frame-box"><MirrorFrame exportUrl={runtimeDeckExportUrl} index={secondIndex} kind={kind} source={source} /></div>
         <figcaption>{browsing ? `Browsing · ${secondIndex + 1}` : `Next · ${secondIndex + 1}`}</figcaption></figure>}

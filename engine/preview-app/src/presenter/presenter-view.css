@@ -29,3 +29,6 @@
 .present-rehearsal table { width: 100%; border-collapse: collapse; margin-top: 8px; } .present-rehearsal th, .present-rehearsal td { text-align: left; padding: 2px 8px; border-bottom: 1px solid #2b2f36; }
 .present-slide-view { position: relative; flex: 1; background: #000; }
 .mirror-frame-missing { padding: 12px; color: #9aa0a6; }
+
+.present-drift-banner { margin: 0; padding: 8px 14px; background: #7a3b00; color: #fff; font-size: 13px; }
+.present-drift-banner code { background: rgba(255, 255, 255, 0.18); padding: 1px 5px; border-radius: 3px; }
