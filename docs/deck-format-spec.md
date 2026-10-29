@@ -1,6 +1,6 @@
 # `.deck` Bundle Format Specification
 
-**Status:** Canonical spec (2026-10-09). `contentSchemaVersion: "3.1.0"` is the
+**Status:** Canonical spec (2026-10-29). `contentSchemaVersion: "3.2.0"` is the
 current authoring format for newly created decks. The v3 grammar is identical
 to the v2 grammar; the major bump marks the aggregate breaking changes of the
 motion/catalog/diagram work (see §10 Content Schema History).
@@ -75,7 +75,7 @@ Promotes the current `.slides.md` frontmatter to a structured, validated file. T
   "template": { "set": "swiss-modern", "version": "2.0.0" },
   "slideTypeCatalog": "v2",
   "blockCatalog": "v1",
-  "contentSchemaVersion": "3.1.0",
+  "contentSchemaVersion": "3.2.0",
   "outputMode": "react-and-static-html",
   "status": "draft",
   "defaults": { "animation": "gentle-rise", "transition": "none" },
@@ -136,7 +136,11 @@ assets: []
 ```
 
 ### Speaker Notes
-What the presenter says; not on the slide.
+Pacing: FOCUS            <!-- optional: FOCUS | BRIEF | SKIM | ON-DEMAND -->
+Target: 2m30s            <!-- optional duration -->
+Cue: Hand over to pricing.   <!-- optional -->
+
+What the presenter says; not on the slide. Stripped from exports.
 
 ### Design Notes
 Layout / hierarchy / spacing constraints.
@@ -327,7 +331,17 @@ and are replaced wholesale on engine upgrade.
 
 ## 10. Content Schema History
 
-### `3.1.0` (2026-10-09) — current
+### `3.2.0` (2026-10-29) — current
+
+Additive minor bump; every 3.1.0 deck stays valid unchanged.
+
+- `### Speaker Notes` may open with optional header lines `Pacing:` (`FOCUS`,
+  `BRIEF`, `SKIM`, `ON-DEMAND`), `Target:` (a duration such as `90s`, `2m30s`)
+  and `Cue:`, in any order, before the Markdown body. Unknown values are
+  validator warnings. Presenter mode (`aideck present`) reads them; exports
+  never carry speaker notes.
+
+### `3.1.0` (2026-10-09)
 
 Additive minor bump; every 3.0.0 deck stays valid unchanged.
 

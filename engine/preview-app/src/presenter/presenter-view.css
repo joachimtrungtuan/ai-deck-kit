@@ -1,0 +1,34 @@
+.present-root { display: flex; flex-direction: column; height: 100vh; background: #14161a; color: #e8eaed; font: 14px/1.4 Inter, system-ui, sans-serif; }
+.present-switcher { display: flex; gap: 4px; padding: 6px 10px; border-bottom: 1px solid #2b2f36; }
+.present-switcher button, .present-controls button, .present-clock button, .present-rehearsal button { background: #23272e; color: inherit; border: 1px solid #343a43; border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+.present-switcher button[aria-pressed="true"], .present-controls button[aria-pressed="true"], .present-rehearsal button[aria-pressed="true"] { background: #3b6fd8; border-color: #3b6fd8; }
+.present-switcher button:disabled, .present-rehearsal button:disabled { opacity: .45; cursor: not-allowed; }
+.present-view { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); grid-template-rows: auto 1fr auto auto; gap: 10px; padding: 10px; flex: 1; min-height: 0; overflow: auto; }
+.present-banner { grid-column: 1 / -1; margin: 0; padding: 4px 10px; background: #5c1f1f; border-radius: 6px; font-weight: 600; letter-spacing: .05em; text-align: center; }
+.present-frames { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.present-frame { margin: 0; }
+.present-frame-box { position: relative; aspect-ratio: 16 / 9; background: #000; border-radius: 6px; overflow: hidden; }
+.present-frame-next { width: 50%; opacity: .9; }
+.present-frame figcaption { margin-top: 4px; color: #9aa0a6; font-size: 12px; }
+.present-notes-card { display: flex; flex-direction: column; min-height: 0; border: 1px solid #343a43; border-radius: 8px; background: #1b1e23; }
+.present-notes-card[data-theme="light"] { background: #f6f6f3; color: #1a1a1a; }
+.present-notes-card > header { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 12px; border-bottom: 1px solid #343a43; font-size: 12px; }
+.present-notes { padding: 8px 14px; overflow: auto; flex: 1; }
+.present-pacing { padding: 1px 8px; border-radius: 10px; background: #3b6fd8; color: #fff; font-weight: 600; }
+.present-pacing-skim { background: #6b7280; } .present-pacing-brief { background: #0f8b6d; } .present-pacing-on-demand { background: #8b5cf6; }
+.present-invalid { color: #f5a524; }
+.notes-empty { color: #9aa0a6; font-style: italic; }
+.present-clock { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.present-clock-elapsed { font-size: 22px; font-variant-numeric: tabular-nums; }
+.present-pace { margin-left: auto; color: #9aa0a6; }
+.present-controls { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.present-controls input { background: #23272e; color: inherit; border: 1px solid #343a43; border-radius: 4px; padding: 2px 6px; }
+.present-hint { grid-column: 1 / -1; margin: 0; color: #f5a524; }
+.present-rehearsal { grid-column: 1 / -1; border: 1px solid #343a43; border-radius: 8px; padding: 8px 12px; }
+.present-rehearsal header { display: flex; align-items: center; gap: 8px; } .present-rehearsal h2 { margin: 0 auto 0 0; font-size: 14px; }
+.present-rehearsal table { width: 100%; border-collapse: collapse; margin-top: 8px; } .present-rehearsal th, .present-rehearsal td { text-align: left; padding: 2px 8px; border-bottom: 1px solid #2b2f36; }
+.present-slide-view { position: relative; flex: 1; background: #000; }
+.mirror-frame-missing { padding: 12px; color: #9aa0a6; }
+
+.present-drift-banner { margin: 0; padding: 8px 14px; background: #7a3b00; color: #fff; font-size: 13px; }
+.present-drift-banner code { background: rgba(255, 255, 255, 0.18); padding: 1px 5px; border-radius: 3px; }

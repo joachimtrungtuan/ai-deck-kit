@@ -272,6 +272,30 @@ console.log(`Deck is valid: ${path.relative(process.cwd(), deckDir)}`);
 // unify them. See plans/260826-1000-content-md-schema-redesign/
 // phase-03-validator-updates.md.
 // ============================================================================
+// Optional presenter header lines at the top of ### Speaker Notes. Mirrors the grammar in
+// preview-app/src/presenter/speaker-notes-parser.ts (this script runs standalone, so it cannot import it).
+function v2SpeakerNotesHeaderWarnings(block) {
+  const notes = block.match(/^### Speaker Notes[^\n]*\n([\s\S]*?)(?=^### |(?![\s\S]))/m)?.[1] ?? "";
+  const warnings = [];
+  let seenHeader = false;
+  for (const raw of notes.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line && !seenHeader) continue;
+    const header = /^(Pacing|Target|Cue)\s*:\s*(.*)$/i.exec(line);
+    if (!header) break;
+    seenHeader = true;
+    const key = header[1].toLowerCase();
+    const value = header[2].trim();
+    if (key === "pacing" && !["FOCUS", "BRIEF", "SKIM", "ON-DEMAND"].includes(value.toUpperCase())) {
+      warnings.push(`speaker notes "Pacing: ${value}" is not FOCUS, BRIEF, SKIM or ON-DEMAND.`);
+    }
+    if (key === "target" && !(/^(\d+m)?\s*(\d+s)?$/i.test(value) && value)) {
+      warnings.push(`speaker notes "Target: ${value}" is not a duration like 90s, 2m or 2m30s.`);
+    }
+  }
+  return warnings;
+}
+
 function validateContentV2({ manifest, content, templateManifest, manifestSlides, manifestIds, errors, warnings }) {
   const headers = [...content.matchAll(/^## Slide\s+(\d+).*$/gm)];
   if (headers.length === 0) {
@@ -446,6 +470,8 @@ function validateContentV2({ manifest, content, templateManifest, manifestSlides
 
     if (!/^### Speaker Notes/m.test(block)) {
       errors.push(`${label}: missing ### Speaker Notes section.`);
+    } else {
+      warnings.push(...v2SpeakerNotesHeaderWarnings(block).map((warning) => `${label}: ${warning}`));
     }
   });
 

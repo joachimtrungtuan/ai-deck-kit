@@ -47,6 +47,10 @@ Describe image, icon, chart, diagram, or type-only treatment.
 
 ### Speaker Notes
 
+Pacing: FOCUS
+Target: 2m30s
+Cue: pause for questions after the second point
+
 What the presenter should say but the slide should not carry.
 
 ### Design Notes
@@ -76,6 +80,12 @@ Constraints for layout, hierarchy, spacing, emphasis, or asset treatment.
   tables, `language`/`highlightLines` for code, and `metric`/`metricLabel` or
   `chartData` for data visuals. Keep arrays and objects on one flow-style,
   JSON-compatible YAML line so the shared runtime can parse them.
+- `### Speaker Notes` may open with optional header lines, in any order, before the body:
+  `Pacing: FOCUS|BRIEF|SKIM|ON-DEMAND` (ON-DEMAND slides are skipped by presenter Next/Prev),
+  `Target: 90s|2m|2m30s` (talk-time budget for the pace indicator), and `Cue: <text>` (one-line
+  reminder). The body is Markdown plus a small safe HTML subset and is shown only in the presenter
+  window — never on the slide or in an export. Notes without headers stay valid; unknown `Pacing`
+  or an unparseable `Target` is a validator warning, not an error.
 - `tocTitle` is an optional, navigation-only label for the slide list (preview
   sidebar, export picker). It is never rendered on the slide; omit it to show
   the slide type.

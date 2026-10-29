@@ -179,6 +179,15 @@ Small and curated — not a general animation engine.
 - `aideck serve` alone may expose a deck-scoped write endpoint for the Slide editor. It reads and replaces only the selected YAML fence in raw `content.md`, guarded by a whole-file revision hash and a request-body size cap; neither the virtual-module asset-inlined content nor HTML/PDF export has a write path.
 - Templates remain code-owned (design-system CSS + React layouts per slide type); one template set per deck.
 
+### 5.1 Presenter mode
+
+`aideck present` serves the shared preview runtime and opens `/?present`
+(or `/?present&source=export` for the frozen export) plus `/?audience`. The two
+windows sync over `BroadcastChannel("aideck-present:<deckId>")`; the presenter
+owns the position. Notes are parsed from `content.md` in the live runtime only:
+the export build strips `### Speaker Notes` so a shared export never carries them.
+Source: `engine/preview-app/src/presenter/`, `engine/cli/commands/present.ts`.
+
 ## 6. Versioning (axes carried + extended from current system)
 
 - `templateVersion` — visual template set version.

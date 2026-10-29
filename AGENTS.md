@@ -8,7 +8,7 @@ Guidance for AI agents (OpenCode, Codex, Gemini CLI, and others) working in this
 
 **Core principles:** consistency, flexibility, portability, user control.
 
-> **Status (2026-07-28).** All eight migration phases are implemented: the two-root split, the `.deck` bundle format, the `aideck` CLI, the primitives layer, the shared preview/export runtime, and the installer. Remote release publication and a registry-backed clean install remain unverified. Vision, architecture, and per-module PRDs live in `docs/`; read `docs/project-overview-pdr.md` + `docs/system-architecture.md` before structural work. **This repository develops the engine — decks and templates are authored in other projects that install the kit** (`npx github:joachimtrungtuan/ai-deck-kit init --here`; see `README.md`).
+> **Status (2026-07-28).** All eight migration phases are implemented: the two-root split, the `.deck` bundle format, the `aideck` CLI, the primitives layer, the shared preview/export runtime, and the installer. Tagged releases publish through GitHub Actions (see Releases); a registry-backed clean install remains unverified. Vision, architecture, and per-module PRDs live in `docs/`; read `docs/project-overview-pdr.md` + `docs/system-architecture.md` before structural work. **This repository develops the engine — decks and templates are authored in other projects that install the kit** (`npx github:joachimtrungtuan/ai-deck-kit init --here`; see `README.md`).
 
 ## Structure
 
@@ -79,6 +79,18 @@ Full rules: `.claude/rules/development-rules.md`. The ones that bite hardest:
 - **One concern per file**, ~200-line soft cap; split when either trips. Long descriptive kebab-case filenames (respect language conventions).
 - **Think before coding** — state assumptions; multiple interpretations → present them; unclear → stop and ask.
 - **Never hide or weaken a failing check** (lint, typecheck, build, test) to make it pass.
+
+## Releases (required)
+
+Every kit version that reaches `main` gets a tagged GitHub release — don't let version bumps pile up unreleased. Releases are cut from `main` only.
+
+1. **Land the work on `main`** — `git merge --no-ff <branch> -m "merge: <feature>"` (or a merged PR), after `npm test`, `npm run build:check`, `npm run lint`, `npm run typecheck` and `npm run validate` pass.
+2. **Version in lockstep** (semver; `chore(release): bump …` commit): `package.json`, `engine/package.json` (+ `engine/package-lock.json`), `engine/engine.version.json` `engineVersion`, `ai-deck-kit.json`. A `contentSchemaVersion` bump also touches `engine/cli/lib/templates.ts` (+ rebuilt `dist/`) and its test — grep the old value to find every copy.
+3. **Changelog** — a `## X.Y.Z — YYYY-MM-DD` entry in `docs/project-changelog.md` covering everything since the previous tag.
+4. **Tag** — annotated, on the `main` commit: `git tag -a vX.Y.Z -m "vX.Y.Z — <one-line summary>"`. Push `main` first, then the tag.
+5. **Let the `Engine Release` workflow create the release.** The tag push runs `.github/workflows/engine-release.yml`, which validates, packs, and creates the release with `ai-deck-kit-X.Y.Z.tgz` + `engine.version.json` attached. **Never `gh release create` by hand** — it races the workflow, which then fails on "release already exists" and the assets never attach (this happened to v1.0.2).
+6. **Then write the notes** — once the run succeeds: `gh release edit vX.Y.Z --title "vX.Y.Z — <summary>" --notes-file <file>`. Notes address the installing user: `### Added` / `### Changed` / `### Fixed` / `### Docs` / `### Upgrading` as applicable (bold lead sentence per bullet, then the why), ending with `**Full changelog:** https://github.com/joachimtrungtuan/ai-deck-kit/compare/vPREV...vX.Y.Z`.
+7. **Log it** in `update-logs/` (version, tag commit, workflow run result).
 
 ## Update Logs (required)
 

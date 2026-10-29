@@ -10,6 +10,7 @@ import { generationHelp, runGeneration } from "./commands/generation.js";
 import { guidanceHelp, runGuidance } from "./commands/guidance.js";
 import { linkHelp, runLink } from "./commands/link.js";
 import { outputHelp, runOutput } from "./commands/output.js";
+import { presentHelp, runPresent } from "./commands/present.js";
 import { presentationHelp, runPresentation } from "./commands/presentation.js";
 import { runSkills, skillsHelp } from "./commands/wire-skills.js";
 import { runTemplates, templateHelp } from "./commands/templates.js";
@@ -42,7 +43,9 @@ ${catalogHelp}
 
 ${generationHelp}
 
-${outputHelp}`;
+${outputHelp}
+
+${presentHelp}`;
 export async function main(argv = process.argv.slice(2)) {
     const [command, ...args] = argv;
     if (!command || command === "--help" || command === "help") {
@@ -73,6 +76,8 @@ export async function main(argv = process.argv.slice(2)) {
         return runCatalog([command, ...args]);
     if (command === "gen")
         return runGeneration(args);
+    if (command === "present")
+        return runPresent(args);
     if (command === "serve" || command === "export" || command === "pack" || command === "unpack")
         return runOutput([command, ...args]);
     throw new Error(`Unknown command: ${command}. Run "aideck --help" for usage.`);

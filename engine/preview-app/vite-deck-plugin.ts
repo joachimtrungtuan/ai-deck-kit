@@ -4,6 +4,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import type { Plugin } from "vite";
 import { isMap, parseDocument } from "yaml";
 import { resolveFontImports } from "../cli/lib/font-catalog.ts";
+import { stripSpeakerNotes } from "./strip-speaker-notes.ts";
 
 const virtualId = "virtual:aideck-deck";
 const resolvedVirtualId = `\0${virtualId}`;
@@ -51,6 +52,7 @@ export function aideckDeckPlugin(
   templatePath = process.env[templatePathKey],
   engineRoot = process.env[engineRootKey] ?? process.cwd(),
   gallery = parseGallery(),
+  { stripNotes = false }: { stripNotes?: boolean } = {},
 ): Plugin {
   const watchedFiles = new Set<string>();
   const galleryRoots = gallery.map((entry) => resolve(entry.root));
@@ -86,11 +88,13 @@ export function aideckDeckPlugin(
       if (id !== resolvedVirtualId) return undefined;
       watchedFiles.clear();
       const source = deckPath
-        ? loadDeckSource(resolve(deckPath), resolve(engineRoot), watchedFiles)
+        ? loadDeckSource(resolve(deckPath), resolve(engineRoot), watchedFiles, stripNotes)
         : templatePath
           ? loadTemplateSource(resolve(templatePath), watchedFiles)
           : "export const runtimeDeck = null;\nexport const runtimeTemplate = null;";
-      const combined = `${loadGallerySource(gallery, watchedFiles)}\n${source}`;
+      // Presenter mode mirrors the built export through Vite's /@fs route (same origin, no middleware).
+      const exportUrl = deckPath ? `/@fs${join(resolve(deckPath), ".build", "export", "index.html").replaceAll("\\", "/")}` : null;
+      const combined = `${loadGallerySource(gallery, watchedFiles)}\n${source}\nexport const runtimeDeckExportUrl = ${JSON.stringify(exportUrl)};`;
       watchedFiles.forEach((file) => this.addWatchFile(file));
       return combined;
     },
@@ -239,7 +243,7 @@ export function resolveGeneratedTemplateImport(
   return existsSync(migrated) ? migrated : undefined;
 }
 
-function loadDeckSource(root: string, engineRoot: string, watchedFiles: Set<string>): string {
+function loadDeckSource(root: string, engineRoot: string, watchedFiles: Set<string>, stripNotes: boolean): string {
   const manifestPath = join(root, "deck.json");
   const contentPath = join(root, "content.md");
   if (!existsSync(manifestPath) || !existsSync(contentPath)) throw new Error(`Deck must contain deck.json and content.md: ${root}`);
@@ -265,7 +269,8 @@ export const runtimeTemplate = null;`;
   const componentImports = renderComponentImports(definition.imports);
   const componentMap = Object.entries(definition.layouts).map(([type, entry]) => `${JSON.stringify(type)}: ${entry.component}`);
   const resolvedManifest = { ...manifest, defaults: { ...manifest.defaults, transition: defaultTransition } };
-  const content = inlineDeckAssets(readFileSync(contentPath, "utf8"), root, watchedFiles);
+  const rawContent = readFileSync(contentPath, "utf8");
+  const content = inlineDeckAssets(stripNotes ? stripSpeakerNotes(rawContent) : rawContent, root, watchedFiles);
   return `${componentImports.join("\n")}
 ${renderFontImports(definition).join("\n")}
 ${renderTemplateStyleImports(definition).join("\n")}

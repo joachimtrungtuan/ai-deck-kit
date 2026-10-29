@@ -84,7 +84,8 @@ rule forbids.
    - Slide diagrams (flow, topology, custody): author the JSON IR in `assets/diagrams/`, validate it, and render it into that slide's `override` with `scripts/render-diagram.mjs` — never hand-draw override HTML. Follow `references/diagram-authoring.md`.
 5. Validate the canonical bundle with `aideck validate <slug>`. Resolve every manifest/content mismatch before preview or export. When you finish an editing pass, run `aideck verify` for the workspace as a whole — it catches edits that landed outside the deck, including a template edited inside the deck's frozen copy.
 6. Review through the shared runtime with `aideck serve --deck <slug>`. The command prints the deck path and the resolved template before Vite starts — read it back and confirm it is the deck and template you intended.
-7. When the deck is renderable, export with `aideck export html <slug>` or `aideck export pdf <slug>`, then perform the HTML/PDF visual checks in `references/export-workflow.md`.
+7. To rehearse or deliver, run `aideck present <slug>` (add `--export` to present the frozen export). Speaker notes may start with optional `Pacing:` (`FOCUS|BRIEF|SKIM|ON-DEMAND`), `Target:` (e.g. `2m30s`) and `Cue:` lines; `aideck validate` warns on unknown values. Exports strip speaker notes.
+8. When the deck is renderable, export with `aideck export html <slug>` or `aideck export pdf <slug>`, then perform the HTML/PDF visual checks in `references/export-workflow.md`.
 
 ## Re-Syncing A Deck's Template
 

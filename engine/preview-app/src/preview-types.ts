@@ -26,6 +26,8 @@ export type PreviewSlide = {
   type: string;
   // Short label for the slide list (sidebar, export picker). Navigation only; layouts never see it.
   tocTitle?: string;
+  /** Raw `### Speaker Notes` text from content.md (schema v2+); never rendered on the slide or exported. */
+  speakerNotes?: string;
   Component: ComponentType<any>;
   props: Record<string, unknown>;
   morphAnchors?: string[];
