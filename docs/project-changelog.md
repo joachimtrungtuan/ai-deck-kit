@@ -1,5 +1,16 @@
 # AI Deck Kit — Project Changelog
 
+## 1.3.0 — 2026-10-29
+
+- Added presenter mode: `aideck present <deck> [--export]` opens a presenter
+  window (current/next slide, HTML notes, talk clock, per-slide timers,
+  rehearsal log) synced over `BroadcastChannel` to an audience window.
+- Content schema `3.2.0`: optional `Pacing`, `Target` and `Cue` header lines in
+  `### Speaker Notes`; unknown values are validator warnings.
+- Exports now strip `### Speaker Notes`; a stale-export banner appears when the
+  frozen export no longer matches the live deck.
+- Preview sidebar gains a "Present" link.
+
 ## 1.0.0 — 2026-08-28
 
 - Added dual-schema `content.md` parsing and validation: existing v1 decks stay

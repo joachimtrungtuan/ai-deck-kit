@@ -1,7 +1,7 @@
 ---
 module: "presenter"
 surface: ["cli", "runtime", "schema"]
-status: "draft"
+status: "implemented"
 version: "0.1.0"
 depends_on: ["preview", "presentation", "annotation", "export-package"]
 ---

@@ -8,7 +8,7 @@
 AI Deck Kit is a single-package, agent-native presentation toolkit. The root package exposes the `ai-deck-kit` installer and `aideck` binary. The `engine/` tree contains the deterministic CLI, preview/export runtime, primitives, skills, and shipped templates. User decks and user-authored templates are separate workspace data roots.
 
 The shipped template set comprises `swiss-modern` and `linear-dark`; both declare
-the current `slideTypeCatalog: "v2"` and `contentSchemaVersion: "3.1.0"`, at
+the current `slideTypeCatalog: "v2"` and `contentSchemaVersion: "3.2.0"`, at
 template version `3.4.0`. The engine
 supports content-schema majors 1, 2, and 3: existing v1 decks remain frozen,
 while newly created decks inherit the selected template's schema. Project-local templates and existing
@@ -30,6 +30,14 @@ AI Presentation/
 ├── docs/                        # product, architecture, module, and deployment docs
 └── plans/                       # implementation plans and reports
 ```
+
+## Presenter Mode
+
+`engine/preview-app/src/presenter/` holds the presenter and audience windows
+(channel, navigation API, notes sanitizer, talk clock, rehearsal log, keyboard
+and window-placement logic, export-drift check). `engine/cli/commands/present.ts`
+implements `aideck present`. `engine/preview-app/strip-speaker-notes.ts` removes
+notes from export builds.
 
 ## Runtime Flow
 

@@ -27,3 +27,11 @@ test("speaker notes sections are removed up to the next heading", () => {
 test("content without notes is unchanged", () => {
   assert.equal(stripSpeakerNotes("## A\n### Content\nbody\n"), "## A\n### Content\nbody\n");
 });
+
+test("deeper headings and rules inside notes are removed with the rest of the notes", () => {
+  const out = stripSpeakerNotes(
+    ["## Slide 1", "### Speaker Notes", "SECRET-A", "#### Aside", "SECRET-B", "###### Deep", "SECRET-C", "### Review", "kept"].join("\n"),
+  );
+  assert.doesNotMatch(out, /SECRET|Aside|Deep/);
+  assert.match(out, /### Review\nkept/);
+});

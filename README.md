@@ -287,6 +287,18 @@ The preview is read-only: you cannot break a deck by clicking around in it. A fe
 toolbar (bottom-right) lets you click an element, leave a note, and copy your notes to
 paste into your agent — it never shows up in `aideck export html/pdf` output.
 
+### Present with speaker notes
+
+```sh
+aideck present my-talk            # presenter window + audience window, live deck
+aideck present my-talk --export   # present the frozen HTML export instead
+```
+
+The presenter window shows the current and next slide, your notes, a talk clock
+and per-slide timers; the audience window mirrors the slide on a second display.
+Notes live in `content.md` under `### Speaker Notes` and may open with optional
+`Pacing:`, `Target:` and `Cue:` lines. Exports never contain speaker notes.
+
 ---
 
 ## 7. Come back to earlier work
