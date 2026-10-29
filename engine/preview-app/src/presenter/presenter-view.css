@@ -1,8 +1,8 @@
 .present-root { display: flex; flex-direction: column; height: 100vh; background: #14161a; color: #e8eaed; font: 14px/1.4 Inter, system-ui, sans-serif; }
 .present-switcher { display: flex; gap: 4px; padding: 6px 10px; border-bottom: 1px solid #2b2f36; }
 .present-switcher button, .present-controls button, .present-clock button, .present-rehearsal button { background: #23272e; color: inherit; border: 1px solid #343a43; border-radius: 6px; padding: 4px 10px; cursor: pointer; }
-.present-switcher button[aria-pressed="true"], .present-controls button[aria-pressed="true"] { background: #3b6fd8; border-color: #3b6fd8; }
-.present-switcher button:disabled { opacity: .45; cursor: not-allowed; }
+.present-switcher button[aria-pressed="true"], .present-controls button[aria-pressed="true"], .present-rehearsal button[aria-pressed="true"] { background: #3b6fd8; border-color: #3b6fd8; }
+.present-switcher button:disabled, .present-rehearsal button:disabled { opacity: .45; cursor: not-allowed; }
 .present-view { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); grid-template-rows: auto 1fr auto auto; gap: 10px; padding: 10px; flex: 1; min-height: 0; overflow: auto; }
 .present-banner { grid-column: 1 / -1; margin: 0; padding: 4px 10px; background: #5c1f1f; border-radius: 6px; font-weight: 600; letter-spacing: .05em; text-align: center; }
 .present-frames { display: flex; flex-direction: column; gap: 10px; min-height: 0; }

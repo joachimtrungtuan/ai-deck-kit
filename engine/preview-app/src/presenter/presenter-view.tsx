@@ -24,6 +24,7 @@ export type PresenterViewProps = {
   notesZoom: number;
   now: number;
   onAdjustClock: (deltaMs: number) => void;
+  onClearRehearsal: () => void;
   onJump: (index: number) => void;
   onNext: () => void;
   onPrev: () => void;
@@ -32,8 +33,10 @@ export type PresenterViewProps = {
   onToggleClock: () => void;
   onToggleFreeze: () => void;
   onToggleBlack: () => void;
+  onToggleRehearsal: () => void;
   pace: { deltaSeconds: number; untimed: number };
   rehearsalRows: RehearsalRow[];
+  rehearsing: boolean;
   screen: ScreenMode;
   source: PreviewSource;
 };
@@ -84,9 +87,9 @@ export function PresenterView(props: PresenterViewProps) {
       <button aria-pressed={props.screen === "black"} onClick={props.onToggleBlack} type="button">Black (B)</button>
       <button aria-pressed={frozen} onClick={props.onToggleFreeze} type="button">Freeze (F)</button>
       <button onClick={openAudience} type="button">Open audience window</button>
-      <button onClick={() => setShowLog((v) => !v)} type="button">Rehearsal log</button>
+      <button aria-pressed={showLog} onClick={() => setShowLog((v) => !v)} type="button">Rehearsal log{props.rehearsing ? " ●" : ""}</button>
     </div>
     {hint && <p className="present-hint" role="status">{hint}</p>}
-    {showLog && <RehearsalLogPanel onClose={() => setShowLog(false)} rows={props.rehearsalRows} />}
+    {showLog && <RehearsalLogPanel onClear={props.onClearRehearsal} onClose={() => setShowLog(false)} onToggleRecording={props.onToggleRehearsal} recording={props.rehearsing} rows={props.rehearsalRows} />}
   </div>;
 }

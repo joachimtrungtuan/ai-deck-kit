@@ -35,3 +35,11 @@ test("deeper headings and rules inside notes are removed with the rest of the no
   assert.doesNotMatch(out, /SECRET|Aside|Deep/);
   assert.match(out, /### Review\nkept/);
 });
+
+test("# and ## headings inside notes do not end the notes early", () => {
+  const out = stripSpeakerNotes(
+    ["## Slide 1", "### Speaker Notes", "SECRET-A", "# Big point", "SECRET-B", "## Backup answer", "SECRET-C", "## Slide 2", "### Content", "kept"].join("\n"),
+  );
+  assert.doesNotMatch(out, /SECRET|Big point|Backup answer/);
+  assert.match(out, /## Slide 2\n### Content\nkept/);
+});

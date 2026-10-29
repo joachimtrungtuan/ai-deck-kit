@@ -42,25 +42,29 @@ export function PresenterRoot({ kind, renderEditor, source }: {
   const [clock, setClock] = useState(() => readClock(localStorage, source.id));
   const [now, setNow] = useState(() => Date.now());
   const [log, setLog] = useState<RehearsalLog>([]);
+  const [rehearsing, setRehearsing] = useState(false);
   const [theme, setTheme] = useState<NotesTheme>(() => stored("aideck.present.notesTheme", ["dark", "light"], "dark"));
   const [zoomStep, setZoomStep] = useState(() => Number(stored("aideck.present.notesZoom", ZOOM_STEPS.map(String), "1")));
   const channel = useRef<PresenterChannel | null>(null);
   const seq = useRef(0);
-  const visit = useRef({ slideId: slides[index]?.id ?? "", at: Date.now() });
+  // Slides without an id are keyed by position, the same way the export reports them.
+  const summaries = useMemo<SlideSummary[]>(() => slides.map(({ id, tocTitle, type }, i) => ({ id: id ?? String(i), tocTitle, type })), [slides]);
+  const visit = useRef({ slideId: summaries[index]?.id ?? "", at: Date.now() });
   const editorDirty = useRef(false);
 
   const [exportSlides, setExportSlides] = useState<SlideSummary[] | null>(null);
-  const drift = useMemo(() => (kind === "export" && exportSlides ? exportDrift(slides, exportSlides) : []), [kind, exportSlides, slides]);
+  const drift = useMemo(() => (kind === "export" && exportSlides ? exportDrift(summaries, exportSlides) : []), [kind, exportSlides, summaries]);
   const parsed = useMemo(() => slides.map((slide) => parseSpeakerNotes(slide.speakerNotes)), [slides]);
   const pacings = useMemo(() => parsed.map((notes) => notes.pacing), [parsed]);
-  const latest = useRef({ index, screen });
-  latest.current = { index, screen };
+  const latest = useRef({ index, screen, frozenAt, rehearsing });
+  latest.current = { index, screen, frozenAt, rehearsing };
 
+  // A (re)joining audience gets the frozen slide, not the one the presenter is browsing.
   const postState = useCallback(() => {
     seq.current = nextSeq(seq.current);
-    channel.current?.post({ kind: "state", index: latest.current.index, seq: seq.current, total, slides: slides.map(({ id, tocTitle, type }, i) => ({ id: id ?? String(i), tocTitle, type })) });
+    channel.current?.post({ kind: "state", index: latest.current.frozenAt ?? latest.current.index, seq: seq.current, total, slides: summaries });
     channel.current?.post({ kind: "screen", mode: latest.current.screen });
-  }, [slides, total]);
+  }, [summaries, total]);
 
   useEffect(() => {
     const opened = openPresenterChannel(source.id, (message) => { if (message.kind === "hello") postState(); });
@@ -75,20 +79,36 @@ export function PresenterRoot({ kind, renderEditor, source }: {
   const goTo = useCallback((target: number) => {
     const next = clamp(target);
     const at = Date.now();
-    if (next !== latest.current.index) setLog((current) => recordVisit(current, visit.current.slideId, at - visit.current.at));
-    visit.current = { slideId: slides[next].id ?? "", at };
+    const { slideId, at: since } = visit.current;
+    if (latest.current.rehearsing && next !== latest.current.index) setLog((current) => recordVisit(current, slideId, at - since));
+    visit.current = { slideId: summaries[next].id, at };
     setIndex(next);
     rememberActiveSlide(source, next);
     try { writeResumeIndex(localStorage, source.id, next); } catch { /* storage unavailable */ }
     seq.current = nextSeq(seq.current);
     channel.current?.post({ kind: "goto", index: next, seq: seq.current });
-  }, [clamp, slides, source]);
+  }, [clamp, source, summaries]);
 
   const changeScreen = useCallback((mode: ScreenMode) => {
+    const wasFrozen = latest.current.screen === "frozen";
     setScreen(mode);
     setFrozenAt(mode === "frozen" ? latest.current.index : null);
     channel.current?.post({ kind: "screen", mode });
+    // A reloaded audience holds nothing to catch up to, so resend where the presenter is.
+    if (wasFrozen && mode !== "frozen") {
+      seq.current = nextSeq(seq.current);
+      channel.current?.post({ kind: "goto", index: latest.current.index, seq: seq.current });
+    }
   }, []);
+
+  const toggleRehearsal = () => {
+    const { slideId, at } = visit.current;
+    const stamp = Date.now();
+    if (rehearsing) setLog((current) => recordVisit(current, slideId, stamp - at));
+    visit.current = { slideId, at: stamp };
+    setRehearsing(!rehearsing);
+  };
+  const clearRehearsal = () => { setLog([]); visit.current = { ...visit.current, at: Date.now() }; };
   const toggleScreen = (mode: "black" | "frozen") => changeScreen(latest.current.screen === mode ? "live" : mode);
 
   const toggleClock = useCallback(() => setClock((c) => (c.running ? pauseClock(c, Date.now()) : startClock(c, Date.now()))), []);
@@ -133,8 +153,8 @@ export function PresenterRoot({ kind, renderEditor, source }: {
   const elapsed = elapsedMs(clock, now);
   const targets = useMemo(() => parsed.map((notes) => notes.targetSeconds), [parsed]);
   const rows = rehearsalRows(
-    recordVisit(log, visit.current.slideId, now - visit.current.at),
-    slides.map((slide, i) => ({ id: slide.id ?? String(i), title: slide.tocTitle ?? slide.id ?? slide.type, targetSeconds: parsed[i].targetSeconds })),
+    rehearsing ? recordVisit(log, visit.current.slideId, now - visit.current.at) : log,
+    summaries.map((slide, i) => ({ id: slide.id, title: slide.tocTitle ?? slides[i].id ?? slide.type, targetSeconds: parsed[i].targetSeconds })),
   );
 
   return <div className="present-root">
@@ -145,7 +165,8 @@ export function PresenterRoot({ kind, renderEditor, source }: {
       notes={parsed[index]} notesTheme={theme} notesZoom={zoomStep} now={now}
       onAdjustClock={(delta) => setClock((c) => adjustClock(c, delta, Date.now()))} onJump={goTo} onNext={() => step(1)} onPrev={() => step(-1)}
       onResetClock={() => setClock(INITIAL_CLOCK)} onToggleBlack={() => toggleScreen("black")} onToggleClock={toggleClock} onToggleFreeze={() => toggleScreen("frozen")} onExportState={setExportSlides}
-      pace={paceAgainstTargets(targets, index, elapsed)} rehearsalRows={rows} screen={screen} source={source} />}
+      onClearRehearsal={clearRehearsal} onToggleRehearsal={toggleRehearsal}
+      pace={paceAgainstTargets(targets, index, elapsed)} rehearsalRows={rows} rehearsing={rehearsing} screen={screen} source={source} />}
     {view === "slide" && <div className="present-slide-view"><MirrorFrame exportUrl={runtimeDeckExportUrl} index={audienceIndex} kind={kind} source={source} /></div>}
     {view === "editor" && renderEditor((dirty) => { editorDirty.current = dirty; })}
   </div>;

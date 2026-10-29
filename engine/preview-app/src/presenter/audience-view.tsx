@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { runtimeDeckExportUrl } from "virtual:aideck-deck";
 import type { PreviewSource } from "../preview-types";
 import { MirrorFrame, type MirrorSourceKind } from "./mirror-frame";
-import { isFresh, openPresenterChannel, type PresenterChannel, type ScreenMode } from "./presenter-channel";
+import { isFresh, openPresenterChannel, type ScreenMode } from "./presenter-channel";
 import { readResumeIndex } from "./presenter-resume";
 
 /**
@@ -16,7 +16,6 @@ export function AudienceView({ kind, source }: { kind: MirrorSourceKind; source:
   const lastSeq = useRef(0);
   const latest = useRef({ index, mode });
   const held = useRef<number | null>(null);
-  const channelRef = useRef<PresenterChannel | null>(null);
   latest.current = { index, mode };
 
   useEffect(() => {
@@ -32,9 +31,8 @@ export function AudienceView({ kind, source }: { kind: MirrorSourceKind; source:
         setMode(message.mode);
       }
     });
-    channelRef.current = channel;
     channel.post({ kind: "hello" });
-    return () => { channel.close(); channelRef.current = null; };
+    return () => channel.close();
   }, [source.id, total]);
 
   return <main style={{ position: "fixed", inset: 0, background: "#000" }}>
