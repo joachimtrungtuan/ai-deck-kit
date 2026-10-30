@@ -3,28 +3,48 @@
 .present-switcher button, .present-controls button, .present-clock button, .present-rehearsal button { background: #23272e; color: inherit; border: 1px solid #343a43; border-radius: 6px; padding: 4px 10px; cursor: pointer; }
 .present-switcher button[aria-pressed="true"], .present-controls button[aria-pressed="true"], .present-rehearsal button[aria-pressed="true"] { background: #3b6fd8; border-color: #3b6fd8; }
 .present-switcher button:disabled, .present-rehearsal button:disabled { opacity: .45; cursor: not-allowed; }
-.present-view { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); grid-template-rows: auto 1fr auto auto; gap: 10px; padding: 10px; flex: 1; min-height: 0; overflow: auto; }
-.present-banner { grid-column: 1 / -1; margin: 0; padding: 4px 10px; background: #5c1f1f; border-radius: 6px; font-weight: 600; letter-spacing: .05em; text-align: center; }
-.present-frames { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
-.present-frame { margin: 0; }
-.present-frame-box { position: relative; aspect-ratio: 16 / 9; background: #000; border-radius: 6px; overflow: hidden; }
-.present-frame-next { width: 50%; opacity: .9; }
-.present-frame figcaption { margin-top: 4px; color: #9aa0a6; font-size: 12px; }
-.present-notes-card { display: flex; flex-direction: column; min-height: 0; border: 1px solid #343a43; border-radius: 8px; background: #1b1e23; }
+.present-view { display: flex; flex-direction: column; gap: 8px; padding: 10px; flex: 1; min-height: 0; overflow: hidden; }
+.present-banner { flex: none; margin: 0; padding: 3px 10px; background: #5c1f1f; border-radius: 6px; font-weight: 600; font-size: 12px; letter-spacing: .05em; text-align: center; }
+.present-main { flex: 1; min-height: 0; display: flex; }
+.present-frames { flex: 0 0 58%; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.present-frame { margin: 0; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.present-frame-current { flex: 1; }
+.present-frame-row { flex: 0 0 30%; min-height: 0; display: flex; gap: 8px; }
+.present-frame-side { flex: 1; }
+.present-frame-box { position: relative; flex: 1; min-height: 0; background: #000; border-radius: 6px; overflow: hidden; }
+.present-frame-side figcaption { margin-top: 4px; color: #9aa0a6; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.present-position { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 6px; }
+.present-position-count { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; } .present-position-count small { font-size: 15px; font-weight: 500; color: #9aa0a6; }
+.present-position-title { flex: 1; min-width: 0; font-size: 18px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.present-position-badge { padding: 1px 8px; border-radius: 10px; background: #f5a524; color: #1a1a1a; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+.present-position-progress { flex-basis: 100%; height: 6px; appearance: none; border: 0; border-radius: 3px; background: #2b2f36; overflow: hidden; }
+.present-position-progress::-webkit-progress-bar { background: #2b2f36; } .present-position-progress::-webkit-progress-value { background: #3b6fd8; } .present-position-progress::-moz-progress-bar { background: #3b6fd8; }
+.present-splitter { flex: 0 0 12px; cursor: col-resize; position: relative; touch-action: none; outline: none; }
+.present-splitter::after { content: ""; position: absolute; top: 0; bottom: 0; left: 5px; width: 2px; border-radius: 1px; background: #2b2f36; }
+.present-splitter:hover::after, .present-splitter:focus-visible::after { background: #3b6fd8; }
+body.present-resizing { cursor: col-resize; user-select: none; } body.present-resizing iframe { pointer-events: none; }
+.present-notes-card { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; border: 1px solid #343a43; border-radius: 8px; background: #1b1e23; }
 .present-notes-card[data-theme="light"] { background: #f6f6f3; color: #1a1a1a; }
-.present-notes-card > header { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 12px; border-bottom: 1px solid #343a43; font-size: 12px; }
+.present-notes-card > header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid #343a43; font-size: 12px; }
+.present-notes-zoom { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+.present-notes-zoom button { background: #23272e; color: #e8eaed; border: 1px solid #343a43; border-radius: 6px; padding: 2px 8px; cursor: pointer; font-weight: 600; }
 .present-notes { padding: 8px 14px; overflow: auto; flex: 1; }
 .present-pacing { padding: 1px 8px; border-radius: 10px; background: #3b6fd8; color: #fff; font-weight: 600; }
 .present-pacing-skim { background: #6b7280; } .present-pacing-brief { background: #0f8b6d; } .present-pacing-on-demand { background: #8b5cf6; }
 .present-invalid { color: #f5a524; }
 .notes-empty { color: #9aa0a6; font-style: italic; }
-.present-clock { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.present-clock-elapsed { font-size: 22px; font-variant-numeric: tabular-nums; }
-.present-pace { margin-left: auto; color: #9aa0a6; }
-.present-controls { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.present-controls input { background: #23272e; color: inherit; border: 1px solid #343a43; border-radius: 4px; padding: 2px 6px; }
-.present-hint { grid-column: 1 / -1; margin: 0; color: #f5a524; }
-.present-rehearsal { grid-column: 1 / -1; border: 1px solid #343a43; border-radius: 8px; padding: 8px 12px; }
+.present-bar { flex: none; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border: 1px solid #343a43; border-radius: 8px; background: #1b1e23; }
+.present-clock, .present-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.present-controls { padding-top: 6px; border-top: 1px solid #2b2f36; }
+.present-clock-wall { color: #9aa0a6; font-variant-numeric: tabular-nums; }
+.present-clock-elapsed { font-size: 22px; font-variant-numeric: tabular-nums; min-width: 4.5ch; }
+.present-pace { margin-left: auto; color: #9aa0a6; cursor: help; }
+.present-pace-behind strong { color: #f5a524; } .present-pace-ahead strong { color: #34c38f; } .present-pace-even strong { color: #e8eaed; }
+.present-goto { display: inline-flex; align-items: center; gap: 6px; }
+.present-goto input, .present-goto select { background: #23272e; color: inherit; border: 1px solid #343a43; border-radius: 4px; padding: 3px 6px; }
+.present-goto select { max-width: 260px; }
+.present-hint { color: #f5a524; }
+.present-rehearsal { flex: none; max-height: 35vh; overflow: auto; border: 1px solid #343a43; border-radius: 8px; padding: 8px 12px; }
 .present-rehearsal header { display: flex; align-items: center; gap: 8px; } .present-rehearsal h2 { margin: 0 auto 0 0; font-size: 14px; }
 .present-rehearsal table { width: 100%; border-collapse: collapse; margin-top: 8px; } .present-rehearsal th, .present-rehearsal td { text-align: left; padding: 2px 8px; border-bottom: 1px solid #2b2f36; }
 .present-slide-view { position: relative; flex: 1; background: #000; }
