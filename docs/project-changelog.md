@@ -1,5 +1,19 @@
 # AI Deck Kit — Project Changelog
 
+## 1.4.0 — 2026-10-30
+
+- Presenter layout: a draggable splitter between the slides and notes columns
+  (with minimum widths), the view fills the viewport under the view switcher,
+  and slide frames fit inside their column.
+- Presenter shows the previous, current and next slides; only the current slide
+  animates, the previous and next previews are still images.
+- Live mirror frames now play slide transitions.
+- Slide title and progress are shown more prominently.
+- Bottom bar in two rows: the talk clock shows seconds and gains ±5m and ±10m
+  steps; the go-to control takes a slide number or a slide picked by name.
+- Notes text size buttons; the size applies to all slides and is kept until
+  the dev server stops.
+
 ## 1.3.0 — 2026-10-29
 
 - Added presenter mode: `aideck present <deck> [--export]` opens a presenter
