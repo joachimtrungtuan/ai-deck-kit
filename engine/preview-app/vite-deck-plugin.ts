@@ -56,9 +56,14 @@ export function aideckDeckPlugin(
 ): Plugin {
   const watchedFiles = new Set<string>();
   const galleryRoots = gallery.map((entry) => resolve(entry.root));
+  // Identifies one dev-server process, so per-server presenter preferences can expire with it.
+  let serverRunId: number | null = null;
 
   return {
     name: "aideck-deck-manifest",
+    configResolved(config) {
+      serverRunId = config.command === "serve" ? Date.now() : null;
+    },
     async resolveId(id, importer) {
       if (id === virtualId) return resolvedVirtualId;
       const migratedTemplateImport = deckPath && importer
@@ -94,7 +99,7 @@ export function aideckDeckPlugin(
           : "export const runtimeDeck = null;\nexport const runtimeTemplate = null;";
       // Presenter mode mirrors the built export through Vite's /@fs route (same origin, no middleware).
       const exportUrl = deckPath ? `/@fs${join(resolve(deckPath), ".build", "export", "index.html").replaceAll("\\", "/")}` : null;
-      const combined = `${loadGallerySource(gallery, watchedFiles)}\n${source}\nexport const runtimeDeckExportUrl = ${JSON.stringify(exportUrl)};`;
+      const combined = `${loadGallerySource(gallery, watchedFiles)}\n${source}\nexport const runtimeDeckExportUrl = ${JSON.stringify(exportUrl)};\nexport const runtimeServerRunId = ${JSON.stringify(serverRunId)};`;
       watchedFiles.forEach((file) => this.addWatchFile(file));
       return combined;
     },
