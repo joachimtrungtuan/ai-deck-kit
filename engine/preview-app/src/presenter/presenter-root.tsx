@@ -5,6 +5,7 @@ import { readActiveSlideIndex, rememberActiveSlide } from "../active-slide-memor
 import type { PreviewSource } from "../preview-types";
 import { exportDrift } from "./notes-export-drift";
 import { MirrorFrame, type MirrorSourceKind } from "./mirror-frame";
+import { readNotesZoom, stepNotesZoom } from "./notes-zoom-memory";
 import { nextSeq, openPresenterChannel, type PresenterChannel, type ScreenMode, type SlideSummary } from "./presenter-channel";
 import { presenterKeyAction } from "./presenter-keyboard";
 import { writeResumeIndex } from "./presenter-resume";
@@ -16,7 +17,6 @@ import { ViewSwitcher, type PresenterViewKind } from "./view-switcher";
 import "./presenter-view.css";
 
 const EXPORT_EDITOR_HINT = "Editing needs live mode; restart without --export";
-const ZOOM_STEPS = [0.8, 0.9, 1, 1.15, 1.3, 1.5, 1.8, 2.2];
 
 function stored<T extends string>(key: string, allowed: readonly T[], fallback: T): T {
   try { const value = localStorage.getItem(key) as T | null; return value && allowed.includes(value) ? value : fallback; } catch { return fallback; }
@@ -44,7 +44,7 @@ export function PresenterRoot({ kind, renderEditor, source }: {
   const [log, setLog] = useState<RehearsalLog>([]);
   const [rehearsing, setRehearsing] = useState(false);
   const [theme, setTheme] = useState<NotesTheme>(() => stored("aideck.present.notesTheme", ["dark", "light"], "dark"));
-  const [zoomStep, setZoomStep] = useState(() => Number(stored("aideck.present.notesZoom", ZOOM_STEPS.map(String), "1")));
+  const [zoomStep, setZoomStep] = useState(readNotesZoom);
   const channel = useRef<PresenterChannel | null>(null);
   const seq = useRef(0);
   // Slides without an id are keyed by position, the same way the export reports them.
@@ -116,6 +116,7 @@ export function PresenterRoot({ kind, renderEditor, source }: {
     if (direction === 1) setClock((c) => (c.running || elapsedMs(c, Date.now()) > 0 ? c : startClock(c, Date.now())));
     goTo(nextPresentableIndex(pacings, latest.current.index, direction));
   }, [goTo, pacings]);
+  const zoomNotes = useCallback((direction: 1 | -1) => setZoomStep((z) => stepNotesZoom(z, direction)), []);
 
   useEffect(() => {
     if (view === "editor") return;
@@ -132,7 +133,7 @@ export function PresenterRoot({ kind, renderEditor, source }: {
       else if (action === "black") toggleScreen("black");
       else if (action === "freeze") toggleScreen("frozen");
       else if (view === "presenter" && action === "theme") setTheme((t) => { const n = t === "dark" ? "light" : "dark"; persist("aideck.present.notesTheme", n); return n; });
-      else if (view === "presenter") setZoomStep((z) => { const n = Math.max(0, Math.min(ZOOM_STEPS.length - 1, ZOOM_STEPS.indexOf(z) + (action === "zoom-in" ? 1 : -1))); persist("aideck.present.notesZoom", String(ZOOM_STEPS[n])); return ZOOM_STEPS[n]; });
+      else if (view === "presenter") zoomNotes(action === "zoom-in" ? 1 : -1);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -150,23 +151,25 @@ export function PresenterRoot({ kind, renderEditor, source }: {
 
   const audienceIndex = frozenAt ?? index;
   const nextTarget = nextPresentableIndex(pacings, index, 1);
+  const prevTarget = nextPresentableIndex(pacings, index, -1);
+  const titles = summaries.map((slide, i) => slide.tocTitle ?? slides[i].id ?? slide.type);
   const elapsed = elapsedMs(clock, now);
   const targets = useMemo(() => parsed.map((notes) => notes.targetSeconds), [parsed]);
   const rows = rehearsalRows(
     rehearsing ? recordVisit(log, visit.current.slideId, now - visit.current.at) : log,
-    summaries.map((slide, i) => ({ id: slide.id, title: slide.tocTitle ?? slides[i].id ?? slide.type, targetSeconds: parsed[i].targetSeconds })),
+    summaries.map((slide, i) => ({ id: slide.id, title: titles[i], targetSeconds: parsed[i].targetSeconds })),
   );
 
   return <div className="present-root">
     {drift.length > 0 && <p className="present-drift-banner" role="alert">The export is out of date with the deck: {drift.join(" ")} Re-run <code>aideck present --export</code> to rebuild it.</p>}
     <ViewSwitcher editorDisabledReason={kind === "export" ? EXPORT_EDITOR_HINT : undefined} onChange={switchView} view={view} />
     {view === "presenter" && <PresenterView
-      audienceIndex={audienceIndex} clock={clock} index={index} kind={kind} nextIndex={nextTarget !== index ? nextTarget : null}
+      audienceIndex={audienceIndex} clock={clock} hasTargets={targets.some((t) => t !== undefined)} index={index} kind={kind} nextIndex={nextTarget !== index ? nextTarget : null}
       notes={parsed[index]} notesTheme={theme} notesZoom={zoomStep} now={now}
       onAdjustClock={(delta) => setClock((c) => adjustClock(c, delta, Date.now()))} onJump={goTo} onNext={() => step(1)} onPrev={() => step(-1)}
       onResetClock={() => setClock(INITIAL_CLOCK)} onToggleBlack={() => toggleScreen("black")} onToggleClock={toggleClock} onToggleFreeze={() => toggleScreen("frozen")} onExportState={setExportSlides}
-      onClearRehearsal={clearRehearsal} onToggleRehearsal={toggleRehearsal}
-      pace={paceAgainstTargets(targets, index, elapsed)} rehearsalRows={rows} rehearsing={rehearsing} screen={screen} source={source} />}
+      onClearRehearsal={clearRehearsal} onToggleRehearsal={toggleRehearsal} onZoomNotes={zoomNotes}
+      pace={paceAgainstTargets(targets, index, elapsed)} prevIndex={prevTarget !== index ? prevTarget : null} rehearsalRows={rows} rehearsing={rehearsing} screen={screen} source={source} titles={titles} />}
     {view === "slide" && <div className="present-slide-view"><MirrorFrame exportUrl={runtimeDeckExportUrl} index={audienceIndex} kind={kind} source={source} /></div>}
     {view === "editor" && renderEditor((dirty) => { editorDirty.current = dirty; })}
   </div>;
