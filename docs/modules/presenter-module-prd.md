@@ -28,21 +28,22 @@ Deliver a talk from the shared preview runtime: one **presenter window** (live m
 
 1. **Two windows.** The presenter window owns the slide position, and the audience window follows it. Either window can be reloaded and comes back on the current slide.
 2. **Screen placement.** On Chromium, the Window Management API (`getScreenDetails`) places the audience window fullscreen on the external screen, after a one-time permission and one click. Without permission or without an external screen, the audience window opens as a normal window beside the presenter window. A visible hint explains what happened.
-3. **Live mirror.** The presenter view shows the current slide scaled down and replays its entrance animation in step with the audience window.
-4. **Next-slide preview.** A smaller frame shows the next slide that Next will go to, skipping ON-DEMAND slides.
+3. **Live mirror.** The presenter view shows the current slide scaled down, plays its slide transition and entrance animation in step with the audience window, and shows its number, title and a progress bar prominently.
+4. **Previous and next previews.** Two smaller, static frames (animations pinned to their final state) show the slides Previous and Next will go to, skipping ON-DEMAND slides.
 5. **Notes.** Notes render Markdown plus an allow-listed set of HTML tags: headings, `ul`/`ol`/`li`, `strong`/`b`, `em`/`i`, `u`, `mark`, `br`, `p`, `span`, `code`, `blockquote`. Scripts, event handlers and embeds are stripped.
 6. **Theme.** The notes area has light and dark themes. A toggle (key `T`) switches between them, and the choice is remembered per browser. The audience window is never themed.
-7. **Font zoom.** The `+` and `−` keys resize the notes text, and the size is remembered.
-8. **Navigation.** The presenter window accepts →/↓/PageDown/Space for Next and ←/↑/PageUp for Previous. Next and Previous skip ON-DEMAND slides. A slide list or a number jump reaches any slide. Presentation clickers work, because they send these keys.
+7. **Font zoom.** The `+`/`−` keys and the A−/A+ buttons resize the notes text for every slide. The size lasts until the `present` server stops.
+8. **Navigation.** The presenter window accepts →/↓/PageDown/Space for Next and ←/↑/PageUp for Previous. Next and Previous skip ON-DEMAND slides. A Go-to number box and a slide-title dropdown reach any slide. Presentation clickers work, because they send these keys.
 9. **Blackout and freeze.** `B` blacks out the audience screen. `F` freezes it on the current slide while the presenter browses other slides. Pressing the same key again resumes.
-10. **Clocks.** The presenter window always shows the current system time and the elapsed talk time. Elapsed time can be started, paused and reset, and adjusted by ±1 min and ±5 min (to carry on after a restart). It survives a reload.
-11. **Pacing.** The presenter window shows each slide's pacing badge and target time, and an ahead/behind indicator: cumulative target time up to the current slide compared with elapsed time.
+10. **Clocks.** The presenter window always shows the current system time and the elapsed talk time. Elapsed time can be started, paused and reset, and adjusted by ±1, ±5 and ±10 min (to carry on after a restart). The system time shows seconds. It survives a reload.
+11. **Pacing.** The presenter window shows each slide's pacing badge and target time, and a "Schedule" indicator: elapsed time compared with the summed target times of the slides before the current one, read as "on pace", "m:ss behind" or "m:ss ahead" (a tooltip explains it). Without targets it reads "no targets set".
 12. **Cue.** The cue line is shown prominently near Next, as the hand-off to the next slide.
 13. **Rehearsal log.** A rehearsal mode records the actual time spent on each slide and shows a table of actual vs target that you can copy. It never writes `content.md`.
 14. **Drift check.** In export mode, if the slide list in `content.md` (count, ids, tocTitle, type) differs from the export, a banner names the first mismatches.
 15. **Live updates.** In live mode, saving `content.md` refreshes both the slides and the notes without losing the current position.
 16. **Safety banner.** The presenter window carries a "PRESENTER ONLY" marker that never appears in the audience window.
 17. **No DOM-poking.** The audience window is driven through a navigation API that the runtime exposes. The export gets the same API, added without changing its visible behaviour.
+18. **Layout.** The presenter view fills the window below the view switcher without scrolling. A draggable, keyboard-operable splitter sets the slides/notes column widths, with a minimum width on each side; the split is remembered per browser. Slide frames contain-fit their box. Clocks and controls sit in a two-row bottom bar.
 
 ## 4. Notes Schema (content.md)
 
