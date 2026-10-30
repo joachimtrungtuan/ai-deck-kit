@@ -10,4 +10,4 @@
 
 **Follow-ups**
 - `engine/cli/tests/verify-slide-type-catalog.test.ts` hard-coded the engine version, so one test failed after the bump and was pushed with the tag. Fixed in `08059d6` on `main`: the test now reads `engine.version.json`. That commit comes after the tag. The released package isn't affected, because the change is only in a test.
-- The Engine Release workflow doesn't run `npm test`. Consider adding it so a failing test blocks a release.
+- The release workflow now runs the tests (see `02-release-workflow-runs-tests.md`).
