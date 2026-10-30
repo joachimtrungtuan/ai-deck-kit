@@ -13,6 +13,7 @@ import type { TemplateManifest } from "../lib/templates.ts";
 import type { Workspace } from "../lib/types.ts";
 
 const projectRoot = fileURLToPath(new URL("../../..", import.meta.url));
+const engineVersion = (JSON.parse(readFileSync(join(projectRoot, "engine", "engine.version.json"), "utf8")) as { engineVersion: string }).engineVersion;
 
 test("a deck using its own template's named catalog profile is not flagged unsupported", async () => {
   const workspace = fixtureWorkspace();
@@ -55,7 +56,7 @@ test("verify accepts v2 decks created from both shipped templates", async () => 
     engineRoot: join(projectRoot, "engine"),
     decksRoot: join(root, "decks"),
     pointerPath: join(root, "ai-deck-kit.json"),
-    pointer: { engineRoot: join(projectRoot, "engine"), decksRoot: "decks", engineVersion: "1.3.0" },
+    pointer: { engineRoot: join(projectRoot, "engine"), decksRoot: "decks", engineVersion },
   };
   try {
     mkdirSync(workspace.decksRoot, { recursive: true });
