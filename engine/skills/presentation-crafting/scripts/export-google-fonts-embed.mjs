@@ -7,14 +7,21 @@ const USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/13
 export async function embedGoogleFonts(css, { fetchImpl = fetch, warn = console.warn } = {}) {
   const warnings = [];
   let output = css;
-  const imports = [...css.matchAll(/@import\s+url\(\s*["']?(https:\/\/fonts\.googleapis\.com\/[^\s)'";]+)["']?\s*\)\s*;?/gi)].map((m) => m[1]);
-  for (const url of imports) {
+  const imports = [...css.matchAll(/@import\s*(?:url\(\s*(["']?)(https:\/\/fonts\.googleapis\.com\/[^\s)'\"]+)\1\s*\)|(["'])(https:\/\/fonts\.googleapis\.com\/[^\s'\"]+)\3)\s*;?/gi)];
+  const fetchedCss = new Map();
+  for (const match of imports) {
+    const url = match[2] ?? match[4];
+    if (fetchedCss.has(url)) {
+      output = output.replace(match[0], fetchedCss.get(url));
+      continue;
+    }
     let response;
     try { response = await fetchImpl(url, { headers: { "user-agent": USER_AGENT } }); }
     catch (error) { throw new Error(`Could not download Google Font CSS for ${url}: ${error.message}`); }
     if (!response.ok) throw new Error(`Could not download Google Font CSS for ${url}: HTTP ${response.status}`);
     const fontCss = await response.text();
-    output = output.replaceAll(url, fontCss);
+    fetchedCss.set(url, fontCss);
+    output = output.replace(match[0], fontCss);
   }
   const urls = [...output.matchAll(/url\(\s*["']?(https:\/\/fonts\.gstatic\.com\/[^\s)'";]+)["']?\s*\)/gi)].map((m) => m[1]);
   for (const url of [...new Set(urls)]) {

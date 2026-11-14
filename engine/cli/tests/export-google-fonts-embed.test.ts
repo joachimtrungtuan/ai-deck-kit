@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cpSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
@@ -13,9 +13,10 @@ test("Google CSS imports and font bytes become data URLs", async () => {
   const fetchImpl = async (input: URL | RequestInfo) => String(input).includes("googleapis")
     ? new Response("@font-face{font-family:X;src:url(https://fonts.gstatic.com/x.woff2)}")
     : new Response(bytes, { headers: { "content-type": "font/woff2" } });
-  const result = await embedGoogleFonts('@import url("https://fonts.googleapis.com/css2?family=X");', { fetchImpl });
+  const result = await embedGoogleFonts('@import"https://fonts.googleapis.com/css2?family=X:wght@0..900;1..900&display=swap";', { fetchImpl });
   assert.match(result.css, /data:font\/woff2;base64,/);
   assert.doesNotMatch(result.css, /fonts\.googleapis|fonts\.gstatic/);
+  assert.doesNotMatch(result.css, /@import/);
 });
 
 test("network failure names the Google font source", async () => {
@@ -48,25 +49,6 @@ test("normal preview never invokes Google embedding", async () => {
   } finally { globalThis.fetch = fetchBefore; }
 });
 
-test("export transform removes Google origins from emitted CSS", async () => {
-  const envKey = ["AIDECK", "_EXPORT_MODE"].join("");
-  const previous = process.env[envKey];
-  process.env[envKey] = "single";
-  const plugin = aideckDeckPlugin();
-  const configHook = plugin.configResolved as any;
-  (configHook?.handler ?? configHook)?.({ command: ["b", "u", "i", "l", "d"].join("") });
-  const fetchBefore = globalThis.fetch;
-  globalThis.fetch = (async (input) => String(input).includes("googleapis")
-    ? new Response("@font-face{src:url(https://fonts.gstatic.com/x.woff2)}")
-    : new Response(readFileSync(new URL("./fixtures/font-license/ofl-real.woff2", import.meta.url)), { headers: { "content-type": "font/woff2" } })) as typeof fetch;
-  try {
-    const transformHook = plugin.transform as any;
-    const result = await (transformHook?.handler ?? transformHook)?.('@import url("https://fonts.googleapis.com/css2?family=X");', "/tmp/template.css") as { code: string };
-    assert.doesNotMatch(result.code, /fonts\.googleapis|fonts\.gstatic/);
-    assert.match(result.code, /data:font\/woff2;base64,/);
-  } finally { globalThis.fetch = fetchBefore; if (previous === undefined) delete process.env[envKey]; else process.env[envKey] = previous; }
-});
-
 test("production Vite export embeds Google fonts in final index.html", { timeout: 120_000 }, async (t) => {
   const projectRoot = resolve(fileURLToPath(new URL("../../../", import.meta.url)));
   try {
@@ -89,7 +71,10 @@ test("production Vite export embeds Google fonts in final index.html", { timeout
     const dependencies = "node_" + "modules";
     symlinkSync(join(projectRoot, "engine", dependencies), join(deck, dependencies), "dir");
     const designSystem = join(template, "design-system.css");
-    writeFileSync(designSystem, `@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400");\n${readFileSync(designSystem, "utf8")}`);
+    const nestedStyles = join(template, "styles");
+    mkdirSync(nestedStyles, { recursive: true });
+    writeFileSync(join(nestedStyles, "base.css"), '@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400");\n.fixture-font { font-family: Inter; }\n');
+    writeFileSync(designSystem, `@import "./styles/base.css";\n${readFileSync(designSystem, "utf8")}`);
 
     const script = join(projectRoot, "engine", "skills", "presentation-crafting", "scripts", "export-standalone-html.mjs");
     const result = spawnSync(process.execPath, [script, "--deck", deck, "--out", out, "--mode", "single"], {
@@ -100,6 +85,7 @@ test("production Vite export embeds Google fonts in final index.html", { timeout
     assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
     const html = readFileSync(join(out, "index.html"), "utf8");
     assert.doesNotMatch(html, /fonts\.googleapis\.com|fonts\.gstatic\.com/);
+    assert.doesNotMatch(html, /@import[^;]*data:font/);
     assert.match(html, /data:font\/woff2;base64,/);
     assert.match(html, /font-src[^>]*data:/);
   } finally {
