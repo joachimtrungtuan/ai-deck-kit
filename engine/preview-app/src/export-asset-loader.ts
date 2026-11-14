@@ -38,7 +38,11 @@ export async function decodeImage(src: string): Promise<void> {
         void createImageBitmap(image).then((bitmap) => {
           bitmap.close();
           resolve();
-        }, reject);
+        }, () => {
+          // Some browsers expose createImageBitmap but reject particular image formats. Retry the
+          // native image decoder before surfacing the asset failure; load alone is never enough.
+          void image.decode().then(resolve, reject);
+        });
       } else {
         void image.decode().then(resolve, reject);
       }

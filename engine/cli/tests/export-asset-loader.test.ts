@@ -4,7 +4,7 @@ import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { test } from "node:test";
-import { AssetLoader, slideAssetPaths } from "../../preview-app/src/export-asset-loader.ts";
+import { AssetLoader, decodeImage, slideAssetPaths } from "../../preview-app/src/export-asset-loader.ts";
 
 const settleMicrotasks = () => new Promise((resolve) => setImmediate(resolve));
 
@@ -33,6 +33,68 @@ function manualSource() {
 const decodeAnything = async () => {};
 const slidePath = (index: number) => `assets/slide-${index + 1}.png`;
 const fortySlides = () => Array.from({ length: 40 }, (_, index) => [slidePath(index)]);
+
+function runDecodeBrowser(mode: "success" | "bitmap-reject" | "both-reject") {
+  const chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+  if (!existsSync(chrome)) return undefined;
+  const work = mkdtempSync(join(tmpdir(), "aideck-image-decode-browser-"));
+  try {
+    const html = join(work, "fixture.html");
+    const decodeSource = decodeImage.toString();
+    const svg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='2' height='2'><rect width='2' height='2' fill='red'/></svg>");
+    writeFileSync(html, `<!doctype html><html><body><div id="result"></div><script>
+      const nativeBitmap = window.createImageBitmap;
+      const mode = ${JSON.stringify(mode)};
+      let closed = false, decoded = false;
+      if (mode !== "success") {
+        window.createImageBitmap = () => Promise.reject(new Error("bitmap format rejected"));
+        const nativeDecode = HTMLImageElement.prototype.decode;
+        HTMLImageElement.prototype.decode = function () {
+          decoded = true;
+          if (mode === "both-reject") return Promise.reject(new Error("native decode rejected"));
+          return nativeDecode.call(this);
+        };
+      } else {
+        window.createImageBitmap = async (image) => {
+          await new Promise((resolve) => setTimeout(resolve, 250));
+          const bitmap = await nativeBitmap(image);
+          return { close() { closed = true; bitmap.close(); } };
+        };
+      }
+      const decodeImage = ${decodeSource};
+      decodeImage(${JSON.stringify(svg)}).then(() => {
+        document.documentElement.dataset.result = "success";
+        document.documentElement.dataset.closed = String(closed);
+        document.documentElement.dataset.decoded = String(decoded);
+      }, (error) => {
+        document.documentElement.dataset.result = "failure";
+        document.documentElement.dataset.error = error.message;
+        document.documentElement.dataset.decoded = String(decoded);
+      });
+    </script></body></html>`);
+    const output = execFileSync(chrome, ["--headless=new", "--no-sandbox", "--disable-gpu", "--user-data-dir=" + join(work, "profile"), "--virtual-time-budget=3000", "--dump-dom", `file://${html}`], { encoding: "utf8" });
+    return {
+      result: output.match(/data-result="([^"]+)"/)?.[1],
+      closed: output.match(/data-closed="([^"]+)"/)?.[1],
+      decoded: output.match(/data-decoded="([^"]+)"/)?.[1],
+      error: output.match(/data-error="([^"]+)"/)?.[1],
+    };
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
+}
+
+test("decodeImage waits for and closes a real browser bitmap, then falls back to native decode", (t) => {
+  const success = runDecodeBrowser("success");
+  if (!success) { t.skip("Chrome is required for the native decode lifecycle regression"); return; }
+  assert.deepEqual(success, { result: "success", closed: "true", decoded: "false", error: undefined });
+  const fallback = runDecodeBrowser("bitmap-reject");
+  assert.deepEqual(fallback, { result: "success", closed: "false", decoded: "true", error: undefined });
+  const failure = runDecodeBrowser("both-reject");
+  assert.equal(failure?.result, "failure");
+  assert.equal(failure?.decoded, "true");
+  assert.match(failure?.error ?? "", /native decode rejected/);
+});
 
 test("loads the first four slides before anything else, then continues in slide order", async () => {
   const source = manualSource();
