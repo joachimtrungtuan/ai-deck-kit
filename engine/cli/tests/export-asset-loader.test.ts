@@ -58,6 +58,16 @@ test("a jump re-aims loading at the target, the slides after it, then the rest i
   assert.equal(loader.isSlideReady(37), true);
 });
 
+test("an early jump starts the target before the startup batch settles", async () => {
+  const source = manualSource();
+  const loader = new AssetLoader({ slidePaths: fortySlides(), getPayload: source.getPayload, decode: decodeAnything });
+  loader.start();
+  loader.prioritise(37);
+  assert.equal(source.requested[4], slidePath(37));
+  await source.finish(slidePath(37));
+  assert.equal(loader.isSlideReady(37), true);
+});
+
 test("a path that has loaded or is loading is never requested again", async () => {
   const source = manualSource();
   const loader = new AssetLoader({ slidePaths: fortySlides(), getPayload: source.getPayload, decode: decodeAnything, concurrency: 40 });
@@ -108,7 +118,7 @@ test("a slide is ready only when every one of its paths is ready", async () => {
   assert.equal(loader.isSlideReady(0), true);
 });
 
-test("a failed fetch or decode settles the asset so the deck still starts", async () => {
+test("a failed fetch or decode keeps the affected slide unready and reports the path", async () => {
   const source = manualSource();
   const loader = new AssetLoader({
     slidePaths: [["assets/missing.png"], ["assets/corrupt.png"]],
@@ -120,8 +130,10 @@ test("a failed fetch or decode settles the asset so the deck still starts", asyn
   loader.start();
   await source.fail("assets/missing.png");
   await source.finish("assets/corrupt.png");
-  assert.equal(loader.isStartupReady(), true);
-  assert.equal(loader.isAllReady(), true);
+  assert.equal(loader.isStartupReady(), false);
+  assert.equal(loader.isAllReady(), false);
+  assert.deepEqual(loader.failurePaths(), ["assets/missing.png", "assets/corrupt.png"]);
+  assert.equal(loader.hasSlideFailure(0), true);
 });
 
 test("subscribers hear every state change and can unsubscribe", async () => {

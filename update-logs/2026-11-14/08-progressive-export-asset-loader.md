@@ -23,3 +23,10 @@ Progressive exports must show feedback immediately, avoid requesting every image
 ## Follow-ups
 
 Throttled browser proof for loader visibility and early jump gating remains scheduled for the later headless/manual phases.
+
+## Review fixes
+
+- Failed fetch/decode now keeps slides and the full export unready, exposes failed paths to the gate, and writes an export error marker for PDF failure reporting.
+- An early jump reserves a priority request so the target can begin before the first four startup assets finish.
+- PDF capture now requires `data-export-ready="true"`, reports asset failures or readiness timeout, and uses a 30-second bounded wait for both DOM synchronization and screenshot capture.
+- Regression coverage now includes early jumps and failed-asset readiness.

@@ -51,6 +51,7 @@ export class AssetLoader {
   private readonly concurrency: number;
   private readonly listeners = new Set<() => void>();
   private focus = 0;
+  private priorityInFlight = false;
   private active = 0;
   private started = false;
   private version = 0;
@@ -72,22 +73,36 @@ export class AssetLoader {
 
   /** Aims loading at `slideIndex`, then the slides after it, then the ones before it. */
   prioritise(slideIndex: number): void {
-    if (slideIndex === this.focus || slideIndex < 0 || slideIndex >= this.slidePaths.length) return;
+    if (slideIndex < 0 || slideIndex >= this.slidePaths.length) return;
+    if (slideIndex === this.focus && this.started) return;
     this.focus = slideIndex;
     if (this.started) this.pump();
   }
 
   isSlideReady(slideIndex: number): boolean {
-    return (this.slidePaths[slideIndex] ?? []).every((path) => this.settled(path));
+    return (this.slidePaths[slideIndex] ?? []).every((path) => this.states.get(path) === "ready");
   }
 
   /** True once every asset of the startup slides has settled. */
   isStartupReady(): boolean {
-    return this.startupPaths().every((path) => this.settled(path));
+    return this.startupPaths().every((path) => this.states.get(path) === "ready");
   }
 
   isAllReady(): boolean {
-    return [...this.states.keys()].every((path) => this.settled(path));
+    return [...this.states.keys()].every((path) => this.states.get(path) === "ready");
+  }
+
+  hasSlideFailure(slideIndex: number): boolean {
+    return (this.slidePaths[slideIndex] ?? []).some((path) => this.states.get(path) === "failed");
+  }
+
+  failurePaths(slideIndex?: number): string[] {
+    const paths = slideIndex === undefined ? [...this.states.keys()] : this.slidePaths[slideIndex] ?? [];
+    return paths.filter((path) => this.states.get(path) === "failed");
+  }
+
+  hasFailure(): boolean {
+    return this.failurePaths().length > 0;
   }
 
   /** Startup-slide assets settled so far, against how many there are. */
@@ -109,7 +124,7 @@ export class AssetLoader {
 
   private settled(path: string): boolean {
     const state = this.states.get(path);
-    return state === "ready" || state === "failed";
+    return state === "ready";
   }
 
   private progressOf(paths: string[]): { done: number; total: number } {
@@ -128,6 +143,11 @@ export class AssetLoader {
   /** Slide indexes in the order loading should visit them. */
   private order(): number[] {
     const count = this.slidePaths.length;
+    if (this.focus > 0 && !this.isStartupReady()) {
+      const prioritised = Array.from({ length: count }, (_, offset) => (this.focus + offset) % count);
+      const startup = Array.from({ length: this.startupSlides }, (_, index) => index);
+      return [...new Set([...prioritised, ...startup])];
+    }
     if (!this.isStartupReady()) return Array.from({ length: this.startupSlides }, (_, index) => index);
     return Array.from({ length: count }, (_, offset) => (this.focus + offset) % count);
   }
@@ -141,14 +161,16 @@ export class AssetLoader {
   }
 
   private pump(): void {
-    while (this.active < this.concurrency) {
+    while (this.active < this.concurrency || (this.focus > 0 && !this.isStartupReady() && !this.priorityInFlight)) {
       const path = this.nextPending();
       if (!path) return;
-      void this.load(path);
+      const priority = this.active >= this.concurrency;
+      if (priority) this.priorityInFlight = true;
+      void this.load(path, priority);
     }
   }
 
-  private async load(path: string): Promise<void> {
+  private async load(path: string, priority = false): Promise<void> {
     this.states.set(path, "loading");
     this.active += 1;
     let outcome: AssetState = "ready";
@@ -159,6 +181,7 @@ export class AssetLoader {
     }
     this.active -= 1;
     this.states.set(path, outcome);
+    if (priority) this.priorityInFlight = false;
     this.pump();
     this.notify();
   }

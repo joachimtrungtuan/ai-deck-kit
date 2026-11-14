@@ -120,7 +120,7 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
         slide={activeSlide}
         source={source}
       />
-      {!slideReady && <SlideGate key={active} slideNumber={active + 1} {...loader.slideProgress(active)} />}
+      {!slideReady && <SlideGate key={active} slideNumber={active + 1} failures={loader.failurePaths(active)} {...loader.slideProgress(active)} />}
 
       <nav className={`deck-controls${controlsVisible ? "" : " is-hidden"}`} aria-label="Slide navigation">
         <button type="button" aria-label="Previous slide" onClick={() => go(active - 1)} disabled={active === 0}>

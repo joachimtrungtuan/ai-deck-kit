@@ -22,7 +22,15 @@ export function useExportAssetLoader(source: PreviewSource, until: "startup" | "
   useEffect(() => {
     const element = document.getElementById("export-loader");
     if (!element) return;
-    if (until === "all" ? loader.isAllReady() : loader.isStartupReady()) return element.remove();
+    const failed = loader.hasFailure();
+    if (until === "all" ? loader.isAllReady() : loader.isStartupReady()) {
+      document.documentElement.dataset.exportReady = "true";
+      return element.remove();
+    }
+    if (failed) {
+      document.documentElement.dataset.exportError = loader.failurePaths().join(",");
+      return element.remove();
+    }
     const { done, total } = loader.startupProgress();
     const bar = element.firstElementChild as HTMLElement | null;
     bar?.classList.add("is-determinate");

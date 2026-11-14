@@ -197,6 +197,14 @@ select {
   letter-spacing: 0.12em;
 }
 
+.slide-gate-error {
+  max-width: min(640px, 80vw);
+  color: #ff8d8d;
+  font-size: 14px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
 .slide-gate-bar {
   width: min(320px, 60vw);
   height: 3px;

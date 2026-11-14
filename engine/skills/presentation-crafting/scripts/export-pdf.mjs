@@ -149,11 +149,15 @@ try {
   const domDump = join(workDir, "dom.html");
   runToFile(chrome, [
     ...chromeBaseArgs,
-    "--virtual-time-budget=5000",
+    "--virtual-time-budget=30000",
     "--dump-dom",
     fileUrl,
   ], domDump);
   const renderedDom = readFileSync(domDump, "utf8");
+  if (!renderedDom.includes('data-export-ready="true"')) {
+    const failure = renderedDom.match(/data-export-error="([^"]*)"/);
+    throw new Error(failure ? `Deck assets failed to load: ${failure[1]}` : "Timed out waiting for deck assets to load.");
+  }
   const slideCount = (renderedDom.match(/class="deck-page"/g) ?? []).length;
   if (slideCount < 1) {
     throw new Error("Could not find any .deck-page nodes in the rendered print deck.");
@@ -165,7 +169,7 @@ try {
   run(chrome, [
     ...chromeBaseArgs,
     `--window-size=1600,${slideCount * 900}`,
-    "--virtual-time-budget=5000",
+    "--virtual-time-budget=30000",
     `--screenshot=${tallPng}`,
     fileUrl,
   ]);
