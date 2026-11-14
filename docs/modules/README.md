@@ -48,3 +48,4 @@ distribution-cicd  (no deps, installer)
 - `system-architecture.md` — two-root model, module surfaces, versioning.
 - `deck-format-spec.md` — .deck bundle, .template bundles, field ownership.
 - `project-overview-pdr.md` — vision, scope, non-goals.
+- `export-progressive-html-functional-requirements.md` — functional requirements for the progressive, de-duplicated, CSP-hardened HTML export (sub-spec of Export & Package).

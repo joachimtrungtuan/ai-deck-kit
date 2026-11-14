@@ -8,6 +8,8 @@ depends_on: ["presentation", "preview"]
 
 # Module PRD: Export & Package
 
+> Functional requirements for progressive, de-duplicated, CSP-hardened HTML export (`--mode single|web`): [export-progressive-html-functional-requirements.md](./export-progressive-html-functional-requirements.md).
+
 ## 1. Purpose
 Exports .deck to shareable formats (standalone HTML, PDF) and packages .deck as portable zip archive. Uses existing export runtime (React → HTML, Chrome rasterization → PDF).
 
