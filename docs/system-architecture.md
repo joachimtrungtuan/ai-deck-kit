@@ -175,7 +175,27 @@ Small and curated — not a general animation engine.
   The bare-`serve` gallery is built by resolving every visible template and
   aliasing components per entry, so same-named exports across templates cannot
   collide. A template that fails to resolve is omitted from the gallery, not fatal.
-- Export reuses the existing pipeline: standalone self-contained `index.html` (bundled) and flattened raster PDF (Chrome screenshot + ImageMagick). See existing `export-runtime-contract.md`.
+- Export reuses one preview runtime and exposes two HTML delivery modes through
+  `aideck export html <deck-id> [--mode single|web]`:
+  - **single (default):** one `index.html`; the app script, styles, fonts, and
+    referenced image payloads are bundled, while per-slide `text/plain` data
+    blocks remain non-executable and are read progressively.
+  - **web:** `index.html` plus only the rendered slide assets in `assets/`;
+    preload uses those adjacent same-origin paths. This is the only expected
+    browser asset request; neither mode has external runtime dependencies or
+    external network calls.
+  Both modes show the early-slide loader/gate, prioritize a late jump, and use
+  the shared CSP assembly and headless check. The export scripts scan sources before Vite builds, then rewrite Google Fonts
+  imports in generated CSS to embedded fonts. Authoring validators block font-licence
+  failures; export adds a warn-only `fsType` backstop. The exported policy uses hashed scripts/styles, a strict
+  `default-src 'none'`, `connect-src 'none'`, no-referrer, and a frame-busting
+  fallback; cross-origin embedding attempts top-level navigation and refuses to
+  render if still framed. Same-origin presenter frames remain supported. Server-only headers remain a deployment concern.
+  `aideck export pdf` consumes the generated HTML and flattens it with Chrome +
+  ImageMagick. Executable owners: `engine/cli/commands/output.ts`,
+  `engine/skills/presentation-crafting/scripts/export-standalone-html.mjs`,
+  `export-html-source-scan.mjs`, `export-html-csp-meta.mjs`, and
+  `export-html-csp-headless-check.mjs`.
 - `aideck serve` alone may expose a deck-scoped write endpoint for the Slide editor. It reads and replaces only the selected YAML fence in raw `content.md`, guarded by a whole-file revision hash and a request-body size cap; neither the virtual-module asset-inlined content nor HTML/PDF export has a write path.
 - Templates remain code-owned (design-system CSS + React layouts per slide type); one template set per deck.
 

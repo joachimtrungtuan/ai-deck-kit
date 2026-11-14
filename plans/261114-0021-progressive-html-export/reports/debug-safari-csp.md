@@ -20,9 +20,14 @@ The affected generated control came from `engine/preview-app/src/deck-export.tsx
 - `npm run build:check`, `npm run lint`, `npm run typecheck`, `npm run validate`: pass.
 - Fresh shipped-template exports pass focused browser checks; fresh Marusei Safari normal rerun against the external source is still required for final native evidence.
 
-## Unresolved questions
+## Superseding evidence
 
-- Fresh native Safari 0974 artifact rerun (`/tmp/marusei-097-artifacts/runtime.jsonl`) confirms normal single/web and print modes report zero CSP violations; Firefox web/print also report zero.
+The earlier unresolved note is closed. The fresh native Safari 0974 artifact
+rerun (`/tmp/marusei-097-artifacts/runtime.jsonl`) confirms normal single/web
+and print modes report zero CSP violations; Firefox web/print also report zero.
+The final picker review adds current Chrome interaction evidence. The remaining
+CLI `134` observation is documented separately as a managed-sandbox Chrome
+launch failure, not a Safari/CSP product defect.
 
 ## Picker interaction follow-up
 

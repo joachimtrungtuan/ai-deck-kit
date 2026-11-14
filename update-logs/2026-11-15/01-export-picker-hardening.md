@@ -17,4 +17,4 @@ Close the residual stale-index and inconsistent active-state paths identified in
 
 ## Follow-up
 
-The CLI file-URL CSP probe still reports its known local-file runtime failure; loopback execution of the same generated artifact passed the interaction proof.
+The earlier CLI exit-134 observation was isolated to the managed sandbox by a minimal plain-HTML control. Native execution passed the same checker and real single/web exports in normal and print modes; see `02-cli-browser-launch-verification.md`.
