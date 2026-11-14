@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { findChrome } from "./find-chrome-executable.mjs";
 
@@ -40,6 +40,30 @@ function checkDom(dom, url) {
   }
 }
 
+const CHECK_LOCK = join(tmpdir(), "aideck-csp-check.lock");
+
+function acquireCheckLock(timeoutMs = 60000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      mkdirSync(CHECK_LOCK);
+      writeFileSync(join(CHECK_LOCK, "owner"), `${process.pid}\n${Date.now()}\n`);
+      return;
+    } catch (error) {
+      if (error.code !== "EEXIST") throw error;
+      try {
+        if (Date.now() - statSync(join(CHECK_LOCK, "owner")).mtimeMs > timeoutMs) rmSync(CHECK_LOCK, { recursive: true, force: true });
+      } catch { /* Another checker is creating or releasing the lock. */ }
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
+    }
+  }
+  throw new Error("Chrome CSP check could not acquire the shared headless-browser lease within 60 seconds.");
+}
+
+function releaseCheckLock() {
+  rmSync(CHECK_LOCK, { recursive: true, force: true });
+}
+
 export function runHtmlCspHeadlessCheck({ htmlPath, chrome: chromeOverride, slideCount = 1 } = {}) {
   const chrome = findChrome({ override: chromeOverride });
   if (!chrome || !existsSync(chrome)) {
@@ -50,19 +74,24 @@ export function runHtmlCspHeadlessCheck({ htmlPath, chrome: chromeOverride, slid
   const budget = Math.min(15000, Math.max(5000, 2500 + Number(slideCount) * 500));
   const baseArgs = ["--headless=new", "--disable-gpu", "--no-sandbox", "--no-first-run", "--no-default-browser-check", "--disable-extensions", "--disable-default-apps", "--disable-background-networking", "--disable-sync", "--hide-scrollbars", "--log-level=3"];
   const started = Date.now();
-  for (const suffix of ["", "?print"]) {
-    const profile = mkdtempSync(resolve(tmpdir(), "aideck-csp-check-"));
-    try {
-      const url = `${pathToFileURL(resolve(htmlPath)).href}${suffix}`;
-      const result = spawnSync(chrome, [...baseArgs, `--user-data-dir=${profile}`, `--virtual-time-budget=${budget}`, "--dump-dom", url], { encoding: "utf8", maxBuffer: 32 * 1024 * 1024, timeout: budget + 10000 });
-      if (result.error || result.status !== 0) {
-        const details = [result.error?.message, result.stderr?.trim(), result.stdout?.trim()].filter(Boolean).join("\n");
-        throw new Error(`Chrome CSP check failed for ${url}${details ? `:\n${details}` : " (runtime failure)"}`);
+  acquireCheckLock();
+  try {
+    for (const suffix of ["", "?print"]) {
+      const profile = mkdtempSync(resolve(tmpdir(), "aideck-csp-check-"));
+      try {
+        const url = `${pathToFileURL(resolve(htmlPath)).href}${suffix}`;
+        const result = spawnSync(chrome, [...baseArgs, `--user-data-dir=${profile}`, `--virtual-time-budget=${budget}`, "--dump-dom", url], { encoding: "utf8", maxBuffer: 32 * 1024 * 1024, timeout: budget + 10000 });
+        if (result.error || result.status !== 0) {
+          const details = [result.error?.message, result.stderr?.trim(), result.stdout?.trim()].filter(Boolean).join("\n");
+          throw new Error(`Chrome CSP check failed for ${url}${details ? `:\n${details}` : " (runtime failure)"}`);
+        }
+        checkDom(result.stdout ?? "", url);
+      } finally {
+        rmSync(profile, { recursive: true, force: true });
       }
-      checkDom(result.stdout ?? "", url);
-    } finally {
-      rmSync(profile, { recursive: true, force: true });
     }
+  } finally {
+    releaseCheckLock();
   }
   return { skipped: false, elapsedMs: Date.now() - started };
 }
