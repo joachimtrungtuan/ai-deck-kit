@@ -35,23 +35,6 @@ function getArg(name) {
   return i !== -1 && process.argv[i + 1] ? process.argv[i + 1] : undefined;
 }
 
-function findChrome() {
-  const override = getArg("chrome") ?? process.env.CHROME_PATH;
-  if (override) return override;
-  const candidates = [
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    "/Applications/Chromium.app/Contents/MacOS/Chromium",
-    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-    "/usr/bin/google-chrome",
-    "/usr/bin/google-chrome-stable",
-    "/usr/bin/chromium",
-    "/usr/bin/chromium-browser",
-    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-  ];
-  return candidates.find((p) => existsSync(p));
-}
-
 function findImageMagick() {
   const override = getArg("imagemagick");
   if (override) return override;
