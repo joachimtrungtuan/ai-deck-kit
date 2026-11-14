@@ -29,13 +29,23 @@ export function slideAssetPaths(renderValues: unknown[], table: Record<string, s
 /** Decodes an image off the main thread so painting it later does not stall navigation. */
 export async function decodeImage(src: string): Promise<void> {
   const image = new Image();
-  image.src = src;
-  try {
-    await image.decode();
-  } catch (error) {
-    // Some engines reject decode() for SVGs that nevertheless render, so trust a finished load.
-    if (!(image.complete && image.naturalWidth > 0)) throw error;
-  }
+  await new Promise<void>((resolve, reject) => {
+    image.onload = () => {
+      // Chromium can leave HTMLImageElement.decode() pending for large inline SVG data URLs.
+      // createImageBitmap performs an independent decode after load and gives us a resolved,
+      // paintable bitmap without treating load alone as sufficient readiness.
+      if (typeof createImageBitmap === "function") {
+        void createImageBitmap(image).then((bitmap) => {
+          bitmap.close();
+          resolve();
+        }, reject);
+      } else {
+        void image.decode().then(resolve, reject);
+      }
+    };
+    image.onerror = () => reject(new Error(`Unable to load image: ${src}`));
+    image.src = src;
+  });
 }
 
 /**
