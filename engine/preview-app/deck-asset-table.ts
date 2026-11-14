@@ -62,6 +62,14 @@ export function referencedAssetKeys(content: string): string[] {
   return [...keys];
 }
 
+export function referencedAssetKeysBySlide(content: string): string[][] {
+  return content.split(/^## Slide\s+\d/m).slice(1).map((section) => {
+    const keys = new Set<string>();
+    for (const value of slideRenderProps(section)) visitStrings(value, (text) => assetKeysInString(text).forEach((key) => keys.add(key)));
+    return [...keys];
+  });
+}
+
 /** How the export carries asset bytes: inside the HTML as data URIs, or as files the HTML links to. */
 export type AssetDelivery = "embedded" | "linked";
 

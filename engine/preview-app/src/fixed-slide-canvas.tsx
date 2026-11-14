@@ -36,6 +36,7 @@ export function FixedSlideCanvas({
   slideIndex,
   source,
   still = false,
+  assetTable = deckAssets,
 }: {
   documentRef?: DocumentRef;
   /** Keeps the frame but renders no slide in it, so images that are still loading are not requested early. */
@@ -45,6 +46,7 @@ export function FixedSlideCanvas({
   slideIndex?: number;
   source: PreviewSource;
   still?: boolean;
+  assetTable?: Record<string, string>;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
@@ -121,8 +123,8 @@ export function FixedSlideCanvas({
             key={slide.id ?? slide.type}
             style={{ viewTransitionName: slide.morphAnchors?.[0] }}
           >
-            <slide.Component {...resolveSlideAssets(slide.props, deckAssets)} />
-            <SlideOverrideLayer override={resolveSlideAssets(slide.override, deckAssets)} />
+            <slide.Component {...resolveSlideAssets(slide.props, assetTable)} />
+            <SlideOverrideLayer override={resolveSlideAssets(slide.override, assetTable)} />
           </div>,
           frameBody,
         )}

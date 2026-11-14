@@ -11,3 +11,5 @@ declare module "virtual:aideck-deck" {
   export const runtimeServerRunId: number | null;
   export const runtimeGallery: PreviewSource[];
 }
+
+declare const __EXPORT_ASSET_DELIVERY__: "embedded" | "linked";

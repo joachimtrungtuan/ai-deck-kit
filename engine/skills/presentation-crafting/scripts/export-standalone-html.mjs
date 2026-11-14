@@ -16,10 +16,11 @@
 //   --mode   single (default) or web.
 
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { moveAppScriptIntoBody } from "./export-html-assembly.mjs";
+import { appendSlideDataBlocksFromFile } from "./export-html-slide-data-blocks.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDir, "../../../..");
@@ -66,6 +67,7 @@ const outDir = getArg("out")
   : resolve(deckRoot, ".build", "export");
 
 console.log(`Exporting ${mode} HTML\n  deck: ${deckRoot}\n  out:  ${outDir}`);
+mkdirSync(outDir, { recursive: true });
 
 const result = spawnSync(
   "node_modules/.bin/vite",
@@ -73,11 +75,13 @@ const result = spawnSync(
   {
     cwd: engineDir,
     stdio: "inherit",
-    env: { ...process.env, EXPORT_OUT_DIR: outDir, AIDECK_EXPORT_MODE: mode, ["AIDECK_DECK" + "_PATH"]: deckRoot },
+    env: { ...process.env, EXPORT_OUT_DIR: outDir, AIDECK_EXPORT_MODE: mode, ["AIDECK_DECK" + "_PATH"]: deckRoot, ["AIDECK" + "_BLOCKS_PATH"]: resolve(outDir, ".asset-manifest.json") },
   },
 );
 
 if (result.status !== 0) {
+  const failedManifestPath = resolve(outDir, ".asset-manifest.json");
+  if (existsSync(failedManifestPath)) rmSync(failedManifestPath);
   console.error("\nExport failed.");
   process.exit(result.status ?? 1);
 }
@@ -86,8 +90,12 @@ if (result.status !== 0) {
 // app script moved from <head> into <body> as a classic script (see export-html-assembly.mjs).
 const built = resolve(outDir, "export.html");
 const finalFile = resolve(outDir, "index.html");
-writeFileSync(finalFile, moveAppScriptIntoBody(readFileSync(built, "utf8")));
+let assembled = moveAppScriptIntoBody(readFileSync(built, "utf8"));
+const manifestPath = resolve(outDir, ".asset-manifest.json");
+if (mode === "single") assembled = appendSlideDataBlocksFromFile(assembled, manifestPath);
+writeFileSync(finalFile, assembled);
 rmSync(built);
+if (existsSync(manifestPath)) rmSync(manifestPath);
 
 // favicon.svg from public/ is copied but the export head doesn't reference it — drop the orphan.
 const orphanFavicon = resolve(outDir, "favicon.svg");

@@ -28,6 +28,7 @@ export default defineConfig({
   base: "./",
   define: {
     __EXPORT_DECK_ID__: JSON.stringify(deckId),
+    __EXPORT_ASSET_DELIVERY__: JSON.stringify(assetDelivery),
   },
   plugins: [react(), aideckDeckPlugin(undefined, undefined, undefined, undefined, { stripNotes: true, assetDelivery }), viteSingleFile()],
   build: {

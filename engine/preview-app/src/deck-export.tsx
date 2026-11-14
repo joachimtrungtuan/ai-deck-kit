@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { deckAssets } from "virtual:aideck-deck";
 import { resolveSlideAssets } from "./deck-asset-resolver";
 import { goToSlide } from "./slide-transition-runtime";
 import { FixedSlideCanvas } from "./fixed-slide-canvas";
 import { SlideGate } from "./export-slide-gate";
-import { useExportAssetLoader } from "./use-export-asset-loader";
+import { exportAssetTable, useExportAssetLoader } from "./use-export-asset-loader";
 import type { PreviewSource } from "./preview-types";
 import { SlideOverrideLayer } from "./slide-override-layer";
 import { useExportBridge } from "./presenter/use-export-bridge";
@@ -119,6 +118,7 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
         hold={!slideReady}
         slide={activeSlide}
         source={source}
+        assetTable={exportAssetTable()}
       />
       {!slideReady && <SlideGate key={active} slideNumber={active + 1} failures={loader.failurePaths(active)} {...loader.slideProgress(active)} />}
 
@@ -177,8 +177,8 @@ function PrintDeck({ source }: { source: PreviewSource }) {
         <div className="deck-page" key={slide.id ?? slide.type}>
           {ready && (
             <div className={source.deckClass} data-slide-id={slide.id}>
-              <slide.Component {...resolveSlideAssets(slide.props, deckAssets)} />
-              <SlideOverrideLayer override={resolveSlideAssets(slide.override, deckAssets)} />
+              <slide.Component {...resolveSlideAssets(slide.props, exportAssetTable())} />
+              <SlideOverrideLayer override={resolveSlideAssets(slide.override, exportAssetTable())} />
             </div>
           )}
         </div>

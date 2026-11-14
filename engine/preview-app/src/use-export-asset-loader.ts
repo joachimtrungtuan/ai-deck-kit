@@ -1,6 +1,8 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { deckAssets } from "virtual:aideck-deck";
 import { AssetLoader, decodeImage, slideAssetPaths } from "./export-asset-loader.ts";
+import { exportDataBlockSource, getExportAssetTable } from "./export-data-block-source.ts";
+import { getExportImagePayload } from "./export-image-preload-source.ts";
 import type { PreviewSource } from "./preview-types";
 
 /**
@@ -13,7 +15,9 @@ export function useExportAssetLoader(source: PreviewSource, until: "startup" | "
     () =>
       new AssetLoader({
         slidePaths: source.slides.map((slide) => slideAssetPaths([slide.props, slide.override], deckAssets)),
-        getPayload: async (path) => deckAssets[path],
+        getPayload: __EXPORT_ASSET_DELIVERY__ === "embedded"
+          ? (path) => exportDataBlockSource.getPayload(path)
+          : getExportImagePayload,
         decode: decodeImage,
       }),
   );
@@ -37,4 +41,8 @@ export function useExportAssetLoader(source: PreviewSource, until: "startup" | "
     bar?.style.setProperty("--export-loader-progress", `${total === 0 ? 0 : Math.round((done / total) * 100)}%`);
   }, [loader, until, version]);
   return loader;
+}
+
+export function exportAssetTable(): Record<string, string> {
+  return __EXPORT_ASSET_DELIVERY__ === "embedded" ? getExportAssetTable() : deckAssets;
 }

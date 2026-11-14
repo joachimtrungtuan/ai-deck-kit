@@ -149,6 +149,7 @@ try {
   const domDump = join(workDir, "dom.html");
   runToFile(chrome, [
     ...chromeBaseArgs,
+    `--user-data-dir=${workDir}`,
     "--virtual-time-budget=30000",
     "--dump-dom",
     fileUrl,
@@ -168,6 +169,7 @@ try {
   const slidePattern = join(workDir, "slide-%02d.jpg");
   const captureDom = run(chrome, [
     ...chromeBaseArgs,
+    `--user-data-dir=${workDir}`,
     `--window-size=1600,${slideCount * 900}`,
     "--virtual-time-budget=30000",
     "--dump-dom",
