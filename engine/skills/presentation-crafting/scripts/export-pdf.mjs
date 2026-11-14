@@ -24,6 +24,7 @@ import { closeSync, existsSync, mkdtempSync, openSync, readFileSync, rmSync } fr
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { findChrome as findChromeExecutable } from "./find-chrome-executable.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDir, "../../../..");
@@ -108,7 +109,7 @@ if (!existsSync(htmlPath)) {
   process.exit(1);
 }
 
-const chrome = findChrome();
+const chrome = findChromeExecutable({ override: getArg("chrome") });
 if (!chrome) {
   console.error("Error: no Chrome/Chromium found. Install Chrome, or pass --chrome <path> / set CHROME_PATH.");
   process.exit(1);

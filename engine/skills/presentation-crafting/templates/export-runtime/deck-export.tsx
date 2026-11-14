@@ -71,6 +71,10 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
   function initFrame() {
     const doc = frameRef.current?.contentDocument;
     if (!doc) return;
+    doc.defaultView?.addEventListener("securitypolicyviolation", (event) => {
+      const parentRecorder = (window as Window & { __aideckRecordCspViolation?: (event: unknown) => void }).__aideckRecordCspViolation;
+      parentRecorder?.(event);
+    });
     doc.head.querySelectorAll("[data-deck-style]").forEach((n) => n.remove());
     document.head.querySelectorAll("style, link[rel='stylesheet']").forEach((node) => {
       const clone = node.cloneNode(true) as HTMLElement;

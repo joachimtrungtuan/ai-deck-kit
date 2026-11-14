@@ -23,6 +23,8 @@ import { moveAppScriptIntoBody } from "./export-html-assembly.mjs";
 import { appendSlideDataBlocksFromFile } from "./export-html-slide-data-blocks.mjs";
 import { addExportSecurityMeta } from "./export-html-csp-meta.mjs";
 import { scanExternalSources, allowancesForCsp } from "./export-html-source-scan.mjs";
+import { countExportSlides, runHtmlCspHeadlessCheck } from "./export-html-csp-headless-check.mjs";
+import { findChrome } from "./find-chrome-executable.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDir, "../../../..");
@@ -112,6 +114,14 @@ try {
 } finally {
   if (existsSync(manifestPath)) rmSync(manifestPath);
   if (existsSync(built)) rmSync(built);
+}
+
+try {
+  const check = runHtmlCspHeadlessCheck({ htmlPath: finalFile, chrome: findChrome({ override: getArg("chrome") }), slideCount: countExportSlides(finalFile) });
+  if (!check.skipped) console.log(`CSP check passed (normal + print, ${check.elapsedMs}ms).`);
+} catch (error) {
+  console.error(`\nExport CSP check failed.\n${error instanceof Error ? error.message : String(error)}`);
+  process.exit(1);
 }
 
 // favicon.svg from public/ is copied but the export head doesn't reference it — drop the orphan.

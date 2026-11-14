@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-const FRAME_BUSTER = `(function(){document.documentElement.dataset.cspCheck="ran";document.addEventListener("securitypolicyviolation",function(event){var root=document.documentElement;root.dataset.cspViolations=(root.dataset.cspViolations?root.dataset.cspViolations+"|":"")+(event.blockedURI||event.violatedDirective||"unknown");});try{if(window.top===window)return;void window.top.location.href;}catch(error){document.documentElement.dataset.cspFrameBust="refused";try{window.top.location=window.location.href;}catch(navigationError){}}})();`;
+const FRAME_BUSTER = `(function(){var root=document.documentElement,violations=[];function record(event){var item={directive:event.violatedDirective||"unknown-directive",blockedURI:event.blockedURI||"unknown",sourceFile:event.sourceFile||"",line:event.lineNumber||0};violations.push(item);root.dataset.cspViolations=encodeURIComponent(JSON.stringify(violations));}root.dataset.cspCheck="ran";window.__aideckRecordCspViolation=record;document.addEventListener("securitypolicyviolation",record);try{if(window.top===window)return;void window.top.location.href;}catch(error){root.dataset.cspFrameBust="refused";try{window.top.location=window.location.href;}catch(navigationError){}}})();`;
 
 function sha256(text) {
   return `sha256-${createHash("sha256").update(text).digest("base64")}`;
@@ -14,7 +14,7 @@ function attribute(attrs, name) {
   return attrs.match(new RegExp(`\\b${name}\\s*=\\s*[\\\"']([^\\\"']*)`, "i"))?.[1] ?? "";
 }
 
-function collectOverrideCss(html) {
+export function collectOverrideCss(html) {
   const css = [];
   for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
     const attrs = match[1];
@@ -37,6 +37,23 @@ function collectOverrideCss(html) {
     // those override fields as JSON-like `css:"..."` properties; hash the exact decoded strings.
     for (const cssMatch of source.matchAll(/(?:["']?css["']?)\s*:\s*("(?:\\.|[^"\\])*")/g)) {
       try { css.push(JSON.parse(cssMatch[1])); } catch { /* not an override string */ }
+    }
+    for (const cssMatch of source.matchAll(/\bcss:\s*"((?:\\\\.|[^"\\])*)"/g)) {
+      try { css.push(JSON.parse(`"${cssMatch[1]}"`)); } catch { /* not an override string */ }
+    }
+    for (const cssMatch of source.matchAll(/\bcss:\s*"([\s\S]*)"\s*\n\s*reason:/g)) {
+      try { css.push(JSON.parse(`"${cssMatch[1].replaceAll("\\\\", "\\")}"`)); } catch { /* not an override string */ }
+    }
+    for (const line of source.split("\n")) {
+      if (!/^\s*css:\s*"/.test(line)) continue;
+      const firstQuote = line.indexOf('"');
+      const lastQuote = line.lastIndexOf('"');
+      if (lastQuote <= firstQuote) continue;
+      try { css.push(JSON.parse(`"${line.slice(firstQuote + 1, lastQuote).replaceAll("\\\\", "\\")}"`)); } catch { /* not an override string */ }
+    }
+    // Content blocks embed generated diagram/override CSS as YAML literal blocks in the app script.
+    for (const cssMatch of source.matchAll(/\bcss:\s*\|-\n((?:[ \t]{4}[^\n]*(?:\n|$))*)/g)) {
+      css.push(cssMatch[1].split("\n").map((line) => line.startsWith("    ") ? line.slice(4) : line).join("\n").replace(/\n$/, ""));
     }
   }
   return css;
