@@ -361,11 +361,21 @@ template guidance arrives with the engine, not through project guidance sync.
 ## 9. Export and share
 
 ```sh
-aideck export html my-talk   # one self-contained file, opens in any browser
-aideck export pdf my-talk    # flattened PDF (needs Chrome)
+aideck export html my-talk                 # one self-contained file (default)
+aideck export html my-talk --mode web      # index.html + referenced assets/ folder
+aideck export pdf my-talk                  # flattened PDF (needs Chrome)
 ```
 
 Both land in `decks/my-talk.deck/.build/export/`.
+
+`single` is the default and produces one `index.html` that can be opened with
+`file://`. `web` produces a folder containing `index.html` and only the assets
+used by the rendered slides; serve or share that folder as a static site. Both
+exports are built without external runtime dependencies and the page does not
+make external network requests. Web mode may read its adjacent same-origin
+`assets/` files, which is the expected browser load for that delivery format.
+The export scans deck/template sources, embeds Google Fonts at build time, and
+runs a strict CSP check when Chrome/Chromium is available.
 
 To hand the whole deck — content, images and design — to someone else:
 

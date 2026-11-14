@@ -7,8 +7,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test, { after } from "node:test";
 import { collectDeckAssetTable, referencedAssetKeys } from "../../preview-app/deck-asset-table.ts";
+import { assetKeysInString, replaceAssetKeys } from "../../preview-app/src/deck-asset-paths.ts";
 import { resolveSlideAssets } from "../../preview-app/src/deck-asset-resolver.ts";
-import { engineRoot, exportDeck, tableEntryInHtml, workspaceWithDeck } from "./export-deck-fixture.ts";
+import { engineRoot, exportDeck, tableEntryInHtml, workspaceWithDeck, writeSingleSlideDeck } from "./export-deck-fixture.ts";
 
 const table = { "assets/a.png": "data:image/png;base64,AAAA", "assets/b.png": "data:image/png;base64,BBBB" };
 
@@ -65,6 +66,63 @@ test("resolver rewrites quoted references inside override html and css", () => {
     html: `<img src="${table["assets/a.png"]}">`,
     css: `.x{background:url('${table["assets/b.png"]}')}`,
   });
+});
+
+test("asset paths allow spaces and unquoted CSS url references without treating prose as a path", () => {
+  assert.deepEqual(assetKeysInString("assets/my image.png"), ["assets/my image.png"]);
+  assert.deepEqual(assetKeysInString(".x{background:url(assets/my image.png)}"), ["assets/my image.png"]);
+  assert.deepEqual(assetKeysInString("assets/ is where images live"), []);
+  assert.equal(
+    replaceAssetKeys(".x{background:url(assets/my image.png)}", (key) => key === "assets/my image.png" ? "DATA" : undefined),
+    ".x{background:url(DATA)}",
+  );
+});
+
+test("production collection ignores dotted prose and keeps spaced multi-dot files", () => {
+  const work = mkdtempSync(join(tmpdir(), "aideck-asset-grammar-"));
+  after(() => rmSync(work, { recursive: true, force: true }));
+  mkdirSync(join(work, "assets"));
+  writeFileSync(join(work, "assets", "my photo.v1.png"), randomBytes(64));
+  const content = [
+    "## Slide 01 (slide-01)",
+    "```yaml",
+    'caption: "assets/example.txt is a folder"',
+    'imageSrc: "assets/my photo.v1.png"',
+    'override:',
+    '  css: ".probe{background:url(assets/my photo.v1.png)}"',
+    "```",
+  ].join("\n");
+  assert.deepEqual(referencedAssetKeys(content), ["assets/my photo.v1.png"]);
+  assert.deepEqual(Object.keys(collectDeckAssetTable(content, work, new Set())), ["assets/my photo.v1.png"]);
+});
+
+test("a spaced asset and an unquoted CSS URL load in both generated delivery modes", () => {
+  const { work, deck } = workspaceWithDeck();
+  after(() => rmSync(work, { recursive: true, force: true }));
+  const bytes = randomBytes(6000);
+  writeFileSync(join(deck, "assets", "my image.png"), bytes);
+  writeSingleSlideDeck(
+    deck,
+    "2.0.0",
+    [
+      'id: "slide-01"',
+      'type: "full-bleed-image"',
+      'imageSrc: "assets/my image.png"',
+      'override:',
+      '  css: ".probe{background:url(assets/my image.png)}"',
+    ].join("\n"),
+  );
+
+  const single = exportDeck(work, deck, { mode: "single" });
+  assert.equal(single.status, 0, single.output);
+  const singleHtml = readFileSync(join(single.outDir, "index.html"), "utf8");
+  assert.equal(tableEntryInHtml(singleHtml, "assets/my image.png"), `data:image/png;base64,${bytes.toString("base64")}`);
+
+  const web = exportDeck(work, deck, { mode: "web" });
+  assert.equal(web.status, 0, web.output);
+  assert.deepEqual(readFileSync(join(web.outDir, "assets", "my image.png")), bytes);
+  const webHtml = readFileSync(join(web.outDir, "index.html"), "utf8");
+  assert.match(webHtml, /["']assets\/my image\.png["']\s*:\s*["']assets\/my%20image\.png["']/);
 });
 
 test("resolver leaves unknown keys alone and keeps one stable result per props object", () => {
@@ -129,6 +187,7 @@ test("the export build fails on a missing asset path and on a path that leaves a
   for (const [bad, message] of [
     ["assets/not-there.png", /Referenced asset not found: assets\/not-there\.png/],
     ["assets/../../escape.png", /Asset path escapes deck assets\//],
+    ["assets/../../../etc/passwd", /Asset path escapes deck assets\//],
   ] as const) {
     writeFileSync(join(deck, "content.md"), content.replace('imageSrc: "assets/station-ridge.svg"', `imageSrc: "${bad}"`));
     const result = exportDeck(work, deck);

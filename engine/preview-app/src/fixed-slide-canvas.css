@@ -18,3 +18,10 @@
   background: transparent;
   transform-origin: center center;
 }
+
+html[data-still] :is([class*="ld-anim"],[class*="swiss-anim"],[class*="cc-anim"],[class*="primitive-anim"]) {
+  animation: none !important;
+  clip-path: none !important;
+  transform: none !important;
+  opacity: 1 !important;
+}

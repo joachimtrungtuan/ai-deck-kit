@@ -10,7 +10,9 @@ export const outputHelp = `Output commands:
   serve [<deck-id> | deck <id> | template <name> | --deck <id> | --template <name>]
         [--port <port>] [--no-open]
                                       Start the shared Vite preview runtime
-  export html <deck-id>               Build standalone HTML through the existing runtime
+  export html <deck-id> [--mode single|web]
+                                      Build HTML through the existing runtime. single (default) is one
+                                      self-contained file; web adds an assets/ folder beside index.html
   export pdf <deck-id>                Build HTML, then the flattened PDF
   pack <deck> [--out <zip>]           Create a portable zip bundle
   unpack <zip> [--out|--to <dir>] [--force]
@@ -19,9 +21,12 @@ export const outputHelp = `Output commands:
 export function runOutput(args: string[]): void {
   if (!args.length || args.includes("--help")) return console.log(outputHelp);
   const workspace = findWorkspace();
-  const [command, format, deck] = args;
+  const [command, format] = args;
   if (command === "serve") return runServe(workspace, args);
-  if (command === "export" && (format === "html" || format === "pdf")) return runExport(workspace, format, deck);
+  if (command === "export" && (format === "html" || format === "pdf")) {
+    const { deck, mode } = parseExportArgs(args.slice(2));
+    return runExport(workspace, format, deck, mode);
+  }
   if (command === "pack") {
     const { positionals, values } = parseArgsWithOptions(args.slice(1), ["--out"]);
     return runPack(workspace, positionals[0], values.get("--out"));
@@ -135,12 +140,38 @@ export function buildServeViteArgs(options: ServeOptions): string[] {
   return args;
 }
 
-export function runExport(workspace: ReturnType<typeof findWorkspace>, format: string, deck: string | undefined): void {
-  if (!deck) throw new Error(`Usage: aideck export ${format} <deck-id>`);
+export const exportModes = ["single", "web"] as const;
+export type ExportMode = (typeof exportModes)[number];
+
+/** Reads `<deck-id> [--mode single|web]` in either order; rejects unknown flags and modes. */
+export function parseExportArgs(args: string[]): { deck?: string; mode?: ExportMode } {
+  let deck: string | undefined;
+  let mode: ExportMode | undefined;
+  for (let index = 0; index < args.length; index += 1) {
+    const token = args[index];
+    if (token === "--mode") {
+      const value = args[index + 1];
+      if (!value || value.startsWith("--")) throw new Error("--mode requires a value: single or web.");
+      if (!(exportModes as readonly string[]).includes(value)) throw new Error(`--mode must be single or web (got "${value}").`);
+      if (mode) throw new Error("--mode can only be provided once.");
+      mode = value as ExportMode;
+      index += 1;
+      continue;
+    }
+    if (token.startsWith("--")) throw new Error(`Unknown export option: ${token}`);
+    if (deck) throw new Error(`Unexpected export argument: ${token}`);
+    deck = token;
+  }
+  return { ...(deck ? { deck } : {}), ...(mode ? { mode } : {}) };
+}
+
+export function runExport(workspace: ReturnType<typeof findWorkspace>, format: string, deck: string | undefined, mode?: ExportMode): void {
+  if (!deck) throw new Error(`Usage: aideck export ${format} <deck-id>${format === "html" ? " [--mode single|web]" : ""}`);
+  if (format === "pdf" && mode) throw new Error("--mode applies to HTML export only; PDF export always builds the single file.");
   const scriptRoot = join(workspace.engineRoot, "skills", "presentation-crafting", "scripts");
   const htmlScript = join(scriptRoot, "export-standalone-html.mjs");
   const root = deckPath(workspace, deck);
-  const htmlResult = spawnSync(process.execPath, [htmlScript, "--deck", root], { cwd: workspace.root, stdio: "inherit" });
+  const htmlResult = spawnSync(process.execPath, [htmlScript, "--deck", root, ...(mode ? ["--mode", mode] : [])], { cwd: workspace.root, stdio: "inherit" });
   if (htmlResult.status !== 0) throw new Error("HTML export failed.");
   if (format === "pdf") {
     const pdfScript = join(scriptRoot, "export-pdf.mjs");

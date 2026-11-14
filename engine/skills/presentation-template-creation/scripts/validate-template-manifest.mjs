@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { checkTemplateFonts } from "./font-license-check.mjs";
 
 const file = process.argv[2];
 
@@ -57,6 +58,9 @@ if (!Array.isArray(manifest.supportedAnimations) || manifest.supportedAnimations
 
 if (manifest.fonts !== undefined && (!Array.isArray(manifest.fonts) || manifest.fonts.some((family) => typeof family !== "string"))) {
   errors.push("fonts must be an array of font family keys from the engine's font catalog.");
+}
+if (Array.isArray(manifest.fonts)) {
+  errors.push(...checkTemplateFonts(path.dirname(file), manifest).errors);
 }
 
 // Preview fixtures live beside the manifest so a template never edits the engine to add one.

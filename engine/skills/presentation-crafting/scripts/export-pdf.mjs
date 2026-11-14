@@ -24,6 +24,7 @@ import { closeSync, existsSync, mkdtempSync, openSync, readFileSync, rmSync } fr
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { findChrome as findChromeExecutable } from "./find-chrome-executable.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDir, "../../../..");
@@ -32,23 +33,6 @@ const decksDir = resolve(projectRoot, "decks");
 function getArg(name) {
   const i = process.argv.indexOf(`--${name}`);
   return i !== -1 && process.argv[i + 1] ? process.argv[i + 1] : undefined;
-}
-
-function findChrome() {
-  const override = getArg("chrome") ?? process.env.CHROME_PATH;
-  if (override) return override;
-  const candidates = [
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    "/Applications/Chromium.app/Contents/MacOS/Chromium",
-    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-    "/usr/bin/google-chrome",
-    "/usr/bin/google-chrome-stable",
-    "/usr/bin/chromium",
-    "/usr/bin/chromium-browser",
-    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-  ];
-  return candidates.find((p) => existsSync(p));
 }
 
 function findImageMagick() {
@@ -108,7 +92,7 @@ if (!existsSync(htmlPath)) {
   process.exit(1);
 }
 
-const chrome = findChrome();
+const chrome = findChromeExecutable({ override: getArg("chrome") });
 if (!chrome) {
   console.error("Error: no Chrome/Chromium found. Install Chrome, or pass --chrome <path> / set CHROME_PATH.");
   process.exit(1);
@@ -149,11 +133,16 @@ try {
   const domDump = join(workDir, "dom.html");
   runToFile(chrome, [
     ...chromeBaseArgs,
-    "--virtual-time-budget=5000",
+    `--user-data-dir=${workDir}`,
+    "--virtual-time-budget=30000",
     "--dump-dom",
     fileUrl,
   ], domDump);
   const renderedDom = readFileSync(domDump, "utf8");
+  if (!renderedDom.includes('data-export-ready="true"')) {
+    const failure = renderedDom.match(/data-export-error="([^"]*)"/);
+    throw new Error(failure ? `Deck assets failed to load: ${failure[1]}` : "Timed out waiting for deck assets to load.");
+  }
   const slideCount = (renderedDom.match(/class="deck-page"/g) ?? []).length;
   if (slideCount < 1) {
     throw new Error("Could not find any .deck-page nodes in the rendered print deck.");
@@ -162,13 +151,19 @@ try {
   console.log(`  capturing ${slideCount} slides...`);
   const tallPng = join(workDir, "deck.png");
   const slidePattern = join(workDir, "slide-%02d.jpg");
-  run(chrome, [
+  const captureDom = run(chrome, [
     ...chromeBaseArgs,
+    `--user-data-dir=${workDir}`,
     `--window-size=1600,${slideCount * 900}`,
-    "--virtual-time-budget=5000",
+    "--virtual-time-budget=30000",
+    "--dump-dom",
     `--screenshot=${tallPng}`,
     fileUrl,
   ]);
+  if (!captureDom.includes('data-export-ready="true"')) {
+    const failure = captureDom.match(/data-export-error="([^"]*)"/);
+    throw new Error(failure ? `Deck assets failed to load during capture: ${failure[1]}` : "Timed out waiting for deck assets during capture.");
+  }
 
   console.log("  assembling PDF...");
   run(imageMagick, [tallPng, "-crop", "1600x900", "+repage", "-quality", "88", slidePattern]);

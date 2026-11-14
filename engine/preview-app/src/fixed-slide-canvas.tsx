@@ -11,9 +11,6 @@ const SLIDE_HEIGHT = 900;
 
 type DocumentRef = { current: Document | null };
 
-/** Pins every entrance animation on its final state, for static slide previews. */
-export const STILL_FRAME_CSS = '[class*="ld-anim"],[class*="swiss-anim"],[class*="cc-anim"],[class*="primitive-anim"]{animation:none!important;clip-path:none!important;transform:none!important;opacity:1!important}';
-
 // Agentation's annotation schema carries no slide identity, but its forensic output prints the
 // element's full DOM path from <body>, ancestor ids included. Naming the slide wrapper is therefore
 // what makes a pasted annotation say which of 25 slides it belongs to. Mirrors the sidebar label
@@ -30,18 +27,25 @@ function slideDomId(slide: PreviewSlide, slideIndex?: number): string {
 
 export function FixedSlideCanvas({
   documentRef,
+  onFrameDocument,
+  hold = false,
   mountAgentation,
   slide,
   slideIndex,
   source,
   still = false,
+  assetTable = deckAssets,
 }: {
   documentRef?: DocumentRef;
+  onFrameDocument?: (document: Document) => void;
+  /** Keeps the frame but renders no slide in it, so images that are still loading are not requested early. */
+  hold?: boolean;
   mountAgentation?: boolean;
   slide: PreviewSlide;
   slideIndex?: number;
   source: PreviewSource;
   still?: boolean;
+  assetTable?: Record<string, string>;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
@@ -63,18 +67,18 @@ export function FixedSlideCanvas({
   function initFrame() {
     const doc = frameRef.current?.contentDocument;
     if (!doc) return;
+    doc.defaultView?.addEventListener("securitypolicyviolation", (event) => {
+      const parentRecorder = (window as Window & { __aideckRecordCspViolation?: (event: unknown) => void }).__aideckRecordCspViolation;
+      parentRecorder?.(event);
+    });
     doc.head.querySelectorAll("[data-deck-style]").forEach((node) => node.remove());
     document.head.querySelectorAll("style, link[rel='stylesheet']").forEach((node) => {
       const clone = node.cloneNode(true) as HTMLElement;
       clone.setAttribute("data-deck-style", "");
       doc.head.appendChild(clone);
     });
-    if (still) {
-      const freeze = doc.createElement("style");
-      freeze.setAttribute("data-deck-style", "");
-      freeze.textContent = STILL_FRAME_CSS;
-      doc.head.appendChild(freeze);
-    }
+    if (still) doc.documentElement.dataset.still = "";
+    else delete doc.documentElement.dataset.still;
     doc.documentElement.style.background = "#000";
     doc.body.style.margin = "0";
     doc.body.style.background = "#000";
@@ -89,12 +93,13 @@ export function FixedSlideCanvas({
       doc.body.appendChild(script);
     }
     if (documentRef) documentRef.current = doc;
+    onFrameDocument?.(doc);
     setFrameBody(doc.body);
   }
 
   useLayoutEffect(() => {
     initFrame();
-  }, [source]);
+  }, [source, onFrameDocument]);
 
   return (
     <div className="fixed-slide-canvas" ref={containerRef}>
@@ -105,7 +110,7 @@ export function FixedSlideCanvas({
         style={{ transform: `translate(-50%, -50%) scale(${scale})` }}
         title={source.label}
       />
-      {frameBody &&
+      {frameBody && !hold &&
         createPortal(
           <div
             className={source.deckClass}
@@ -118,8 +123,8 @@ export function FixedSlideCanvas({
             key={slide.id ?? slide.type}
             style={{ viewTransitionName: slide.morphAnchors?.[0] }}
           >
-            <slide.Component {...resolveSlideAssets(slide.props, deckAssets)} />
-            <SlideOverrideLayer override={resolveSlideAssets(slide.override, deckAssets)} />
+            <slide.Component {...resolveSlideAssets(slide.props, assetTable)} />
+            <SlideOverrideLayer override={resolveSlideAssets(slide.override, assetTable)} />
           </div>,
           frameBody,
         )}

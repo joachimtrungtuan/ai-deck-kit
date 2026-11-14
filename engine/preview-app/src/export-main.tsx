@@ -36,8 +36,10 @@ if (typeof document !== "undefined") {
   document.title = runtimeDeck.label;
 }
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <DeckExport source={runtimeDeck} />
-  </StrictMode>,
-);
+if (document.documentElement.dataset.cspFrameBust !== "refused") {
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <DeckExport source={runtimeDeck} />
+    </StrictMode>,
+  );
+}

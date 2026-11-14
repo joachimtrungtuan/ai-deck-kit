@@ -107,8 +107,7 @@ then the slide, not wait for the whole deck.
 - **FR-30** Each slide's asset payloads are placed in a `<script type="text/plain" data-slide="N">`
   block. Blocks follow the app script. Because the blocks are not executed, they need no CSP hash.
 - **FR-31** The app reads data blocks as they arrive. Slides 1 to 4 must not wait for the last
-  block to be parsed. This is unverified in Chrome and Safari (OQ-1); failure is a stop condition
-  (section 7).
+  block to be parsed. Browser coverage is recorded in the phase reports.
 - **FR-32** A data block carries asset payloads only, keyed by path. It contains no executable
   content.
 - **FR-33** Payload text is escaped so it cannot close its enclosing script element. The
@@ -121,7 +120,7 @@ then the slide, not wait for the whole deck.
 - **FR-41** Preloading uses `new Image()` followed by `img.decode()`. No `fetch`, XHR, or
   `<link rel="preload">` is used for deck content. The gate rules (section 5) apply unchanged.
 - **FR-42** Web mode's `img-src` includes `'self'` (section 7.3) so that the `assets/` paths load
-  under the policy. Whether `'self'` matches under `file://` is unverified (OQ-4).
+  under the policy. Single mode uses data URLs; web mode uses adjacent same-origin assets.
 
 ## 7. Content Security Policy and Page Hardening
 
@@ -154,10 +153,13 @@ then the slide, not wait for the whole deck.
 
 - **FR-60** `<meta name="referrer" content="no-referrer">` is present in both modes.
 - **FR-61** A small inline frame-busting fallback runs before the app. If the page detects it is
-  framed, it tries to navigate the top window to itself. Why: a fallback only. The HTTP
+  framed cross-origin, it marks the export refused, hides the static shell, and attempts to
+  navigate the top window to itself. The export must remain refused if the browser blocks that
+  navigation; it must not flash the app or remain on an indefinite loader. Same-origin presenter
+  mirror frames and top-level exports render normally. Why: a fallback only. The HTTP
   `frame-ancestors` header is the primary control (FR-62); a sandboxed frame can defeat script.
-  The buster acts only when framed cross-origin, so the presenter's same-origin mirror frame keeps
-  working; the presenter's injected `<style>` is replaced by an attribute selector in the hashed CSS.
+  The presenter's same-origin mirror frame keeps working; the presenter's injected `<style>` is
+  replaced by an attribute selector in the hashed CSS.
 
 ### 7.3 Server-level headers
 
@@ -225,8 +227,8 @@ policy active.
   system Chrome. Chrome is located by the existing `findChrome()` in
   `engine/skills/presentation-crafting/scripts/export-pdf.mjs`, including its `--chrome` and
   `CHROME_PATH` overrides. The check does not add a new browser dependency.
-- **FR-81** The check runs for both modes and records any `securitypolicyviolation` event.
-  The read-back method is a choice; `--dump-dom` is one option (OQ-3).
+- **FR-81** The check runs for both modes and records any `securitypolicyviolation` event. It
+  reads the recorder state from Chrome `--dump-dom` output.
 - **FR-82** Any violation fails the export with a non-zero exit. The message names the directive
   and the blocked URL or hash.
 - **FR-83** If no Chrome is found, the export prints a warning that the CSP check was skipped, and
@@ -277,24 +279,36 @@ Stop and ask the user, rather than deciding, when:
 - A template needs an external origin to render.
 - A strict `style-src` (no `'unsafe-inline'`) breaks a template.
 
-## 14. Open Questions and Unverified Items
+## 14. Open Questions and Evidence
 
-- **OQ-1** Progressive parsing of large `text/plain` blocks is unverified per browser (FR-31). Spike
-  in Chrome and Safari.
+- **OQ-1** Closed by the browser spikes and current export checks: progressive `text/plain`
+  blocks are used for single mode. Keep browser coverage in the focused export tests and the
+  phase reports rather than duplicating test output here.
 - **OQ-2** Closed: only web mode copies `assets/` (FR-15).
-- **OQ-3** How the headless check reads violations back (FR-81). `--dump-dom` is an option, not a
-  decision.
-- **OQ-4** Whether `img-src 'self'` matches under `file://` (FR-42). Unverified.
+- **OQ-3** Closed: the headless check reads the recorder markers and violation payload from
+  Chrome's `--dump-dom` output (FR-81). A missing `data-csp-check=ran` marker fails closed.
+- **OQ-4** Closed for the supported artifact paths: web mode allows `'self'` for its adjacent
+  assets; single mode uses data URLs. Browser evidence is recorded in
+  `plans/261114-0021-progressive-html-export/reports/manual-acceptance.md`.
 - **OQ-5** Closed: `connect-src 'none'` in both modes.
 - **OQ-6** Closed: 15 MB is a soft target (FR-5).
-- **OQ-7** Whether templates use CSS `url()` or string background props that the table lookup
-  (FR-2) would miss.
-- **OQ-8** Whether templates emit `style=""` attributes, which a strict `style-src` would block.
-- **OQ-9** Which existing templates load external fonts (FR-76 applies only to those).
+- **OQ-7** Closed by the asset-reference review and export fixtures: CSS and nested asset
+  references are covered by the source and asset scanners.
+- **OQ-8** Closed by the shipped-template export checks. Inline override CSS is hashed; the
+  native picker path was replaced with a CSP-safe custom picker after Safari evidence.
+- **OQ-9** Closed for current shipped templates: external Google Fonts are embedded at export
+  time and font licence checks remain authoring-validator checks with an export warn-only
+  `fsType` backstop.
 - **OQ-10** Closed: only assets referenced by rendered slides are embedded.
-- **OQ-11** Whether `export-pdf.mjs` runs under the same CSP when it loads `index.html`. If it does,
-  FR-6 and FR-82 must hold for the PDF path too. Unverified.
+- **OQ-11** Closed by the PDF/manual checks: the PDF path loads the generated export and captures
+  every slide image; its current evidence is in the phase reports.
 - **OQ-12** Closed: the app script stays inline with a hash, same build in both modes.
+
+Release evidence is stateful: see the [manual acceptance report](../../plans/261114-0021-progressive-html-export/reports/manual-acceptance.md),
+[final picker review](../../plans/261114-0021-progressive-html-export/reports/review-export-picker.md),
+and [CLI browser-launch verification](../../plans/261114-0021-progressive-html-export/reports/debug-cli-browser-launch.md).
+These retain size-target misses, equivalent acceptance cases, browser revisions, and
+superseding sandbox/native evidence. Publication remains pending the release workflow.
 
 ## 15. Code Owners
 

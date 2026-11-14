@@ -1,0 +1,48 @@
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { deckAssets } from "virtual:aideck-deck";
+import { AssetLoader, decodeImage, slideAssetPaths } from "./export-asset-loader.ts";
+import { exportDataBlockSource, getExportAssetTable } from "./export-data-block-source.ts";
+import { getExportImagePayload } from "./export-image-preload-source.ts";
+import type { PreviewSource } from "./preview-types";
+
+/**
+ * Starts loading the deck's images and keeps the static loader in `export.html` in step: it fills
+ * as the first slides arrive and leaves once `until` is met. The loader sits outside React so it
+ * paints before any script has run.
+ */
+export function useExportAssetLoader(source: PreviewSource, until: "startup" | "all"): AssetLoader {
+  const [loader] = useState(
+    () =>
+      new AssetLoader({
+        slidePaths: source.slides.map((slide) => slideAssetPaths([slide.props, slide.override], deckAssets)),
+        getPayload: __EXPORT_ASSET_DELIVERY__ === "embedded"
+          ? (path) => exportDataBlockSource.getPayload(path)
+          : getExportImagePayload,
+        decode: decodeImage,
+      }),
+  );
+  const version = useSyncExternalStore(loader.subscribe, loader.getVersion);
+  useEffect(() => loader.start(), [loader]);
+  useEffect(() => {
+    const element = document.getElementById("export-loader");
+    if (!element) return;
+    const failed = loader.hasFailure();
+    if (until === "all" ? loader.isAllReady() : loader.isStartupReady()) {
+      document.documentElement.dataset.exportReady = "true";
+      return element.remove();
+    }
+    if (failed) {
+      document.documentElement.dataset.exportError = loader.failurePaths().join(",");
+      return element.remove();
+    }
+    const { done, total } = loader.startupProgress();
+    const bar = element.firstElementChild as HTMLElement | null;
+    bar?.classList.add("is-determinate");
+    bar?.style.setProperty("--export-loader-progress", `${total === 0 ? 0 : Math.round((done / total) * 100)}%`);
+  }, [loader, until, version]);
+  return loader;
+}
+
+export function exportAssetTable(): Record<string, string> {
+  return __EXPORT_ASSET_DELIVERY__ === "embedded" ? getExportAssetTable() : deckAssets;
+}

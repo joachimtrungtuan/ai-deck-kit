@@ -1,7 +1,7 @@
 # AI Deck Kit — Codebase Summary
 
-**Generated:** 2026-09-01
-**Source:** `repomix-output.xml` (Repomix v1.18.0)
+**Generated:** 2026-11-15
+**Source:** `repomix-output.xml` (Repomix v1.19.0)
 
 ## Current Shape
 
@@ -39,6 +39,19 @@ and window-placement logic, export-drift check). `engine/cli/commands/present.ts
 implements `aideck present`. `engine/preview-app/strip-speaker-notes.ts` removes
 notes from export builds.
 
+## HTML Export
+
+`engine/cli/commands/output.ts` owns the public
+`aideck export html <deck-id> [--mode single|web]` surface. The shared
+implementation lives in `engine/skills/presentation-crafting/scripts/` and
+`engine/preview-app/`: source scanning happens before the Vite build, then Google Fonts imports in
+the generated CSS are rewritten to embedded fonts; single mode keeps one self-contained `index.html`, while web
+mode emits `index.html` plus only referenced `assets/`. The runtime loader gates
+the first four slides, then prioritizes a late jump. CSP metadata, frame refusal,
+and the native Chrome headless check are assembled by the export scripts. PDF
+continues to consume the generated HTML and flatten it through Chrome and
+ImageMagick.
+
 ## Runtime Flow
 
 1. The installer checks prerequisites, copies the pinned engine into the project root or a selected subfolder, writes `ai-deck-kit.json` and the `./aideck` wrapper, links the engine skills into the project's agent home, and offers to register the global launcher.
@@ -48,12 +61,17 @@ notes from export builds.
    first, then the installed `engine/templates/<name>.template` bundle.
 4. The shared preview runtime reads the selected bundle's manifest, layout
    index, components, CSS, and deck class generically, then exports standalone
-   HTML or raster PDF.
+   single/web HTML or raster PDF.
 5. `aideck upgrade` replaces only the resolved engine tree, refreshes engine dependencies, and verifies deck-tree preservation without migrating user decks or project templates.
 
 ## Verification Snapshot
 
-The Phase 07/08 implementation has local evidence for lint, TypeScript typecheck, template validation, source-fixture smoke coverage, HTML/PDF export, VIVIMOON validation, and `npm pack --dry-run`. The repository also defines GitHub Actions for CI and tagged release packaging.
+The progressive export implementation has local evidence for lint, TypeScript
+typecheck, template validation, source-fixture smoke coverage, HTML/PDF export,
+native Chrome/Safari/Firefox checks, and `npm pack --dry-run`. The repository
+also defines GitHub Actions for CI and tagged release packaging. Release
+publication remains an external workflow decision; this summary does not claim a
+published v1.5.0.
 
 The local registry-backed clean-install check was not completed because npm DNS resolution returned `ENOTFOUND`. No remote release publication is represented as completed in this summary.
 

@@ -24,6 +24,14 @@ select {
   font: inherit;
 }
 
+.deck-export-empty {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  background: #000;
+  color: #f7f8f8;
+}
+
 /* ---- Screen (interactive) ---- */
 
 .deck-export {
@@ -113,6 +121,41 @@ select {
   cursor: pointer;
 }
 
+.deck-picker {
+  position: relative;
+}
+
+.deck-picker-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  display: grid;
+  min-width: 240px;
+  max-height: 300px;
+  overflow: auto;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: #0f1011;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 45%);
+}
+
+.deck-controls .deck-picker-option {
+  width: 100%;
+  justify-content: start;
+  padding: 7px 8px;
+  border: 0;
+  background: transparent;
+  color: #f7f8f8;
+  font: inherit;
+  text-align: left;
+}
+
+.deck-controls .deck-picker-option[aria-selected="true"],
+.deck-controls .deck-picker-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 /* ---- Print / PDF (?print) ---- */
 
 .print-deck .deck-page {
@@ -174,4 +217,48 @@ select {
     transform: none !important;
     opacity: 1 !important;
   }
+}
+
+/* ---- Slide gate: stands in for a slide whose images are still loading ---- */
+
+.slide-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: #000;
+  color: rgba(247, 248, 248, 0.72);
+  font-variant-numeric: tabular-nums;
+}
+
+.slide-gate-number {
+  font-size: 28px;
+  letter-spacing: 0.12em;
+}
+
+.slide-gate-error {
+  max-width: min(640px, 80vw);
+  color: #ff8d8d;
+  font-size: 14px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.slide-gate-bar {
+  width: min(320px, 60vw);
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.slide-gate-bar > span {
+  display: block;
+  height: 100%;
+  background: #f7f8f8;
+  transition: width 200ms ease;
 }

@@ -18,13 +18,13 @@ Exports .deck to shareable formats (standalone HTML, PDF) and packages .deck as 
 - **Out of scope:** preview rendering (owned by preview), content authoring (owned by presentation).
 
 ## 3. Surfaces
-- **CLI:** `aideck export html <deck-slug> [--out <path>]` (export to self-contained HTML), `aideck export pdf <deck-slug> [--out <path>]` (export to PDF), `aideck pack <deck-slug> [--out <path>]` (create zip), `aideck unpack <zip-path> [--to <dir>]`.
+- **CLI:** `aideck export html <deck-slug> [--mode single|web]` (export HTML to the deck's `.build/export/`; `single` is the default self-contained file), `aideck export pdf <deck-slug>` (export to PDF), `aideck pack <deck-slug> [--out <path>]` (create zip), `aideck unpack <zip-path> [--to <dir>]`.
 - **Skill:** —
 - **Runtime:** existing preview-app serves as rendering engine; Chrome + ImageMagick for PDF rasterization.
 
 ## 4. Inputs & Outputs
 - **Inputs:** `{slug}.deck/` folder (deck.json, content.md, assets/, template/), template manifest.
-- **Outputs:** `{slug}.html` (self-contained bundle), `{slug}.pdf` (flattened raster), `{slug}.zip` (portable archive).
+- **Outputs:** `index.html` (single mode), `index.html` plus referenced `assets/` (web mode), `{slug}.pdf` (flattened raster), `{slug}.zip` (portable archive).
 
 ## 5. Files & Data Touched
 - **Reads:** `decks/{slug}.deck/*`, resolved template bundle (`templates/{template-set}.template/` first, then `engine/templates/{template-set}.template/`), `engine/primitives/`.
@@ -37,10 +37,10 @@ Exports .deck to shareable formats (standalone HTML, PDF) and packages .deck as 
 - `deck-format-spec.md` (bundle portability § 8).
 
 ## 7. Success Criteria
-- [ ] HTML export never makes network requests at view time. `--mode single` is one self-contained file; `--mode web` is a folder (HTML + `assets/`). Fonts may be fetched once at export time and embedded.
+- [ ] HTML export has no external runtime dependency or external network request. `--mode single` is one self-contained file; `--mode web` is a folder containing `index.html` and only rendered-slide assets. Web mode may load those adjacent same-origin assets; that local delivery request is not an external network dependency. Fonts may be fetched once at export time and embedded.
 - [ ] PDF export is flattened raster; morph transitions render as keyframes.
 - [ ] Pack creates reproducible zip; unpack restores `.deck/` with file permissions intact.
-- [ ] Exported pages run without network; work offline (web mode served from any static host or opened locally).
+- [ ] Exported pages work offline. Single mode opens directly; web mode works from a static host or a local folder, subject to the browser's same-origin/file URL rules.
 - [ ] Missing assets or validation errors reported before export starts.
 
 ## 8. Risks & Mitigations

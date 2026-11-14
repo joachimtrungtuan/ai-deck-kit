@@ -1,5 +1,23 @@
 # AI Deck Kit — Project Changelog
 
+## 1.5.0 — 2026-11-15
+
+- **Progressive HTML startup.** HTML export now prioritizes the first four slides,
+  gates until their images are loaded and decoded, and re-prioritizes after a
+  jump to a later slide.
+- **Two delivery modes.** `aideck export html <deck> --mode single|web` keeps
+  single-file output as the default and adds a static web folder containing
+  `index.html` plus only referenced assets.
+- **Hardened exported pages.** Source scanning, Google Fonts embedding, hashed
+  scripts/styles, strict CSP, referrer protection, frame refusal, and the
+  headless CSP check now share one export pipeline.
+- **CSP-safe navigation.** The exported slide picker uses an accessible custom
+  listbox so native-browser inline-style violations do not require a policy
+  relaxation.
+- **Docs.** Updated the export PRD, functional requirements, architecture,
+  presentation-crafting skill, README, and release evidence. Publishing remains
+  approval-pending.
+
 ## 1.4.1 — 2026-11-14
 
 - Standalone HTML export embeds each referenced image once. Slide props keep

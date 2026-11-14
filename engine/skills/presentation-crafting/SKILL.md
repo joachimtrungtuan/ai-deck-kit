@@ -85,7 +85,7 @@ rule forbids.
 5. Validate the canonical bundle with `aideck validate <slug>`. Resolve every manifest/content mismatch before preview or export. When you finish an editing pass, run `aideck verify` for the workspace as a whole — it catches edits that landed outside the deck, including a template edited inside the deck's frozen copy.
 6. Review through the shared runtime with `aideck serve --deck <slug>`. The command prints the deck path and the resolved template before Vite starts — read it back and confirm it is the deck and template you intended.
 7. To rehearse or deliver, run `aideck present <slug>` (add `--export` to present the frozen export). Speaker notes may start with optional `Pacing:` (`FOCUS|BRIEF|SKIM|ON-DEMAND`), `Target:` (e.g. `2m30s`) and `Cue:` lines; `aideck validate` warns on unknown values. Exports strip speaker notes.
-8. When the deck is renderable, export with `aideck export html <slug>` or `aideck export pdf <slug>`, then perform the HTML/PDF visual checks in `references/export-workflow.md`.
+8. When the deck is renderable, export with `aideck export html <slug> [--mode single|web]` or `aideck export pdf <slug>`, then perform the HTML/PDF visual checks in `references/export-workflow.md`. `single` is the default one-file delivery; choose `web` when the handoff should include an `assets/` folder.
 
 ## Re-Syncing A Deck's Template
 
@@ -166,7 +166,7 @@ not migrate content or templates.
 
 - `aideck validate <slug>` checks a `.deck` bundle's `deck.json` manifest against its `content.md` (parity, required fields, override reasons).
 - `aideck deck status [<slug>]` reports how each deck compares to its source template; `aideck deck retemplate <slug> [--to <name>]` re-syncs one deck's frozen snapshot.
-- `aideck export html <slug>` builds one self-contained HTML file. `aideck export pdf <slug>` follows with the flattened PDF pipeline. The export also copies the deck's `assets/` beside the HTML so diagram IR travels with the output.
+- `aideck export html <slug> [--mode single|web]` builds the interactive HTML delivery. Single mode is one self-contained file; web mode writes `index.html` plus only referenced slide assets. The export scans sources, embeds Google Fonts during the build, applies the strict CSP, and runs the headless check when Chrome/Chromium is available. `aideck export pdf <slug>` follows with the flattened PDF pipeline.
 - `scripts/validate-diagram-ir.mjs <file>` checks a diagram IR against the engine diagram schema; `scripts/render-diagram.mjs --ir <file> --animation <name>` renders a slide's diagram `override:` block. See `references/diagram-authoring.md`.
 
 ## Templates

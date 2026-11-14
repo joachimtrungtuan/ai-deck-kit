@@ -20,21 +20,30 @@ const outDir = process.env.EXPORT_OUT_DIR
   ? resolve(process.env.EXPORT_OUT_DIR)
   : resolve(presentationRoot, "..", "decks", `${deckId}.deck`, ".build", "export");
 
+// "single" embeds every asset in the HTML; "web" links the referenced files beside it.
+const assetDelivery = process.env.AIDECK_EXPORT_MODE === "web" ? "linked" : "embedded";
+
 export default defineConfig({
   root: "preview-app",
   base: "./",
   define: {
     __EXPORT_DECK_ID__: JSON.stringify(deckId),
+    __EXPORT_ASSET_DELIVERY__: JSON.stringify(assetDelivery),
   },
-  plugins: [react(), aideckDeckPlugin(undefined, undefined, undefined, undefined, { stripNotes: true }), viteSingleFile()],
+  plugins: [react(), aideckDeckPlugin(undefined, undefined, undefined, undefined, { stripNotes: true, assetDelivery }), viteSingleFile()],
   build: {
     outDir,
     emptyOutDir: true,
     // Force every asset (fonts, svg) to inline as base64 so nothing is fetched at runtime.
     assetsInlineLimit: Number.MAX_SAFE_INTEGER,
     cssCodeSplit: false,
+    // The export page has no module preload to polyfill, and the polyfill carries a fetch call.
+    modulePreload: false,
     rollupOptions: {
       input: resolve(presentationRoot, "preview-app", "export.html"),
+      // A classic script, not an ES module: the build step moves it into <body> so the page can run
+      // while the rest of the file is still streaming in, and a module over file:// is blocked.
+      output: { format: "iife", inlineDynamicImports: true },
     },
   },
 });
