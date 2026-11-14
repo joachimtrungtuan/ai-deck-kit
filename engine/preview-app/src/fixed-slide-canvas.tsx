@@ -27,6 +27,7 @@ function slideDomId(slide: PreviewSlide, slideIndex?: number): string {
 
 export function FixedSlideCanvas({
   documentRef,
+  onFrameDocument,
   hold = false,
   mountAgentation,
   slide,
@@ -36,6 +37,7 @@ export function FixedSlideCanvas({
   assetTable = deckAssets,
 }: {
   documentRef?: DocumentRef;
+  onFrameDocument?: (document: Document) => void;
   /** Keeps the frame but renders no slide in it, so images that are still loading are not requested early. */
   hold?: boolean;
   mountAgentation?: boolean;
@@ -91,12 +93,13 @@ export function FixedSlideCanvas({
       doc.body.appendChild(script);
     }
     if (documentRef) documentRef.current = doc;
+    onFrameDocument?.(doc);
     setFrameBody(doc.body);
   }
 
   useLayoutEffect(() => {
     initFrame();
-  }, [source]);
+  }, [source, onFrameDocument]);
 
   return (
     <div className="fixed-slide-canvas" ref={containerRef}>

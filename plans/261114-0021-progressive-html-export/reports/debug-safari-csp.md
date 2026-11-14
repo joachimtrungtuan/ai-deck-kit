@@ -27,3 +27,11 @@ The affected generated control came from `engine/preview-app/src/deck-export.tsx
 ## Picker interaction follow-up
 
 The native select was replaced by a strict-CSP button/listbox picker. It now supports roving active options, Arrow/Home/End, typeahead, Enter/Space commit, Escape/Tab close, ARIA trigger/listbox relationships, parent/frame outside dismissal, blur dismissal, unique option ids, and empty-slide fallback. Automated gates remain green after this interaction-only change.
+
+## Current-code picker verification (2026-11-15)
+
+The shipped Swiss Modern `presenter-test` deck (7 slides) was rebuilt from the current source into `decks/presenter-test.deck/.build/export/index.html` and served on loopback. Chrome exercised that generated export, not the stale `/tmp/marusei-097` artifact.
+
+All targeted cases passed: open; Arrow navigation with committed state unchanged; End; typeahead (`title`); Enter and Space commit; Escape and Tab close; focus restore after Enter/Escape; outside parent pointer close; global deck-key isolation while open; and click inside the loaded slide iframe close. The temporary server and Chrome process were stopped afterward.
+
+The CLI export's file-URL CSP probe still reports its known local-file runtime failure, but the same generated `index.html` ran successfully over loopback for the interaction proof. No CSP allowance changed.
