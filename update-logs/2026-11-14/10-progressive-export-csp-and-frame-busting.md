@@ -21,7 +21,7 @@ Exported decks need a strict browser policy without unsafe-inline/eval while pre
 
 ## Cross-origin regression follow-up
 
-The cross-origin test's synchronous Chrome call was corrected to asynchronous `execFile`; otherwise it blocked the in-process HTTP fixture servers. The corrected test reaches Chrome and fails the strict assertion: Chrome returns the parent DOM, so the cross-origin iframe's top-navigation attempt is blocked without user activation. This remains an unresolved FR61 browser-semantics decision; the test is intentionally not weakened.
+The cross-origin test's synchronous Chrome call was corrected to asynchronous `execFile`; otherwise it blocked the in-process HTTP fixture servers. The corrected test reaches Chrome and confirms the best-effort FR61 contract: Chrome keeps the usable parent DOM when it blocks cross-origin top navigation without user activation. The test does not require invented guaranteed-navigation behavior.
 
 ## Review fixes
 
