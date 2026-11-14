@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { FixedSlideCanvas, STILL_FRAME_CSS } from "../fixed-slide-canvas";
+import { FixedSlideCanvas } from "../fixed-slide-canvas";
 import type { PreviewSource } from "../preview-types";
 import { goToSlide } from "../slide-transition-runtime";
 import { isExportStateMessage, type ExportGotoMessage } from "./export-bridge-messages";
@@ -71,14 +71,12 @@ function ExportFrame({ exportUrl, index, onState, still }: { exportUrl: string |
 
   useEffect(() => sendGoto(index), [index]);
 
-  // The export is same-origin and navigates by message, so a style added once on load persists.
+  // The export is same-origin and navigates by message; the shipped selector freezes the frame.
   const freeze = () => {
     const doc = frameRef.current?.contentDocument;
-    if (!still || !doc || doc.querySelector("style[data-still-style]")) return;
-    const style = doc.createElement("style");
-    style.dataset.stillStyle = "";
-    style.textContent = STILL_FRAME_CSS;
-    doc.head.appendChild(style);
+    if (!doc) return;
+    if (still) doc.documentElement.dataset.still = "";
+    else delete doc.documentElement.dataset.still;
   };
 
   if (!exportUrl) return <p className="mirror-frame-missing">No export available for this source.</p>;

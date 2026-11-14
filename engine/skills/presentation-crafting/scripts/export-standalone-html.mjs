@@ -21,6 +21,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { moveAppScriptIntoBody } from "./export-html-assembly.mjs";
 import { appendSlideDataBlocksFromFile } from "./export-html-slide-data-blocks.mjs";
+import { addExportSecurityMeta } from "./export-html-csp-meta.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDir, "../../../..");
@@ -94,6 +95,7 @@ const manifestPath = resolve(outDir, ".asset-manifest.json");
 try {
   let assembled = moveAppScriptIntoBody(readFileSync(built, "utf8"));
   if (mode === "single") assembled = appendSlideDataBlocksFromFile(assembled, manifestPath);
+  assembled = addExportSecurityMeta(assembled, { mode });
   writeFileSync(finalFile, assembled);
   rmSync(built);
 } finally {
@@ -116,6 +118,7 @@ if (mode === "single") {
   console.log(`\nDone. Web deck: ${finalFile} with its assets/ folder.`);
   console.log("Open index.html directly, or host the folder on any static server. Keep the folder together.");
 }
+console.log("Server headers note: set frame-ancestors, X-Frame-Options, X-Content-Type-Options: nosniff, and HSTS at the web server.");
 
 function findWorkspaceDecksRoot(start = process.cwd()) {
   let directory = resolve(start);

@@ -11,9 +11,6 @@ const SLIDE_HEIGHT = 900;
 
 type DocumentRef = { current: Document | null };
 
-/** Pins every entrance animation on its final state, for static slide previews. */
-export const STILL_FRAME_CSS = '[class*="ld-anim"],[class*="swiss-anim"],[class*="cc-anim"],[class*="primitive-anim"]{animation:none!important;clip-path:none!important;transform:none!important;opacity:1!important}';
-
 // Agentation's annotation schema carries no slide identity, but its forensic output prints the
 // element's full DOM path from <body>, ancestor ids included. Naming the slide wrapper is therefore
 // what makes a pasted annotation say which of 25 slides it belongs to. Mirrors the sidebar label
@@ -74,12 +71,8 @@ export function FixedSlideCanvas({
       clone.setAttribute("data-deck-style", "");
       doc.head.appendChild(clone);
     });
-    if (still) {
-      const freeze = doc.createElement("style");
-      freeze.setAttribute("data-deck-style", "");
-      freeze.textContent = STILL_FRAME_CSS;
-      doc.head.appendChild(freeze);
-    }
+    if (still) doc.documentElement.dataset.still = "";
+    else delete doc.documentElement.dataset.still;
     doc.documentElement.style.background = "#000";
     doc.body.style.margin = "0";
     doc.body.style.background = "#000";
