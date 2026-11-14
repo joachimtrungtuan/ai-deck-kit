@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { deckAssets } from "virtual:aideck-deck";
+import { resolveSlideAssets } from "./deck-asset-resolver";
 import { goToSlide } from "./slide-transition-runtime";
 import { FixedSlideCanvas } from "./fixed-slide-canvas";
 import type { PreviewSource } from "./preview-types";
@@ -158,8 +160,8 @@ function PrintDeck({ source }: { source: PreviewSource }) {
       {source.slides.map((slide) => (
         <div className="deck-page" key={slide.id ?? slide.type}>
           <div className={source.deckClass} data-slide-id={slide.id}>
-            <slide.Component {...slide.props} />
-            <SlideOverrideLayer override={slide.override} />
+            <slide.Component {...resolveSlideAssets(slide.props, deckAssets)} />
+            <SlideOverrideLayer override={resolveSlideAssets(slide.override, deckAssets)} />
           </div>
         </div>
       ))}

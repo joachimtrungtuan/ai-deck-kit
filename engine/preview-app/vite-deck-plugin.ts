@@ -4,6 +4,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import type { Plugin } from "vite";
 import { isMap, parseDocument } from "yaml";
 import { resolveFontImports } from "../cli/lib/font-catalog.ts";
+import { collectDeckAssetTable, isWithin } from "./deck-asset-table.ts";
 import { stripSpeakerNotes } from "./strip-speaker-notes.ts";
 
 const virtualId = "virtual:aideck-deck";
@@ -96,7 +97,7 @@ export function aideckDeckPlugin(
         ? loadDeckSource(resolve(deckPath), resolve(engineRoot), watchedFiles, stripNotes)
         : templatePath
           ? loadTemplateSource(resolve(templatePath), watchedFiles)
-          : "export const runtimeDeck = null;\nexport const runtimeTemplate = null;";
+          : "export const runtimeDeck = null;\nexport const runtimeTemplate = null;\nexport const deckAssets = {};";
       // Presenter mode mirrors the built export through Vite's /@fs route (same origin, no middleware).
       const exportUrl = deckPath ? `/@fs${join(resolve(deckPath), ".build", "export", "index.html").replaceAll("\\", "/")}` : null;
       const combined = `${loadGallerySource(gallery, watchedFiles)}\n${source}\nexport const runtimeDeckExportUrl = ${JSON.stringify(exportUrl)};\nexport const runtimeServerRunId = ${JSON.stringify(serverRunId)};`;
@@ -269,57 +270,28 @@ function loadDeckSource(root: string, engineRoot: string, watchedFiles: Set<stri
 ${renderFontImports(definition).join("\n")}
 ${renderTemplateStyleImports(definition).join("\n")}
 export const runtimeDeck = { id: ${JSON.stringify(manifest.slug)}, label: ${JSON.stringify(manifest.title)}, deckClass: ${JSON.stringify(definition.deckClass)}, slides: ${sourceExport}, contentSchemaMajor: ${JSON.stringify(contentSchemaMajor(manifest.contentSchemaVersion))}, defaultTransition: ${JSON.stringify(defaultTransition)} };
-export const runtimeTemplate = null;`;
+export const runtimeTemplate = null;
+export const deckAssets = {};`;
   }
   const componentImports = renderComponentImports(definition.imports);
   const componentMap = Object.entries(definition.layouts).map(([type, entry]) => `${JSON.stringify(type)}: ${entry.component}`);
   const resolvedManifest = { ...manifest, defaults: { ...manifest.defaults, transition: defaultTransition } };
   const rawContent = readFileSync(contentPath, "utf8");
-  const content = inlineDeckAssets(stripNotes ? stripSpeakerNotes(rawContent) : rawContent, root, watchedFiles);
+  const content = stripNotes ? stripSpeakerNotes(rawContent) : rawContent;
+  const assetTable = collectDeckAssetTable(content, root, watchedFiles);
   return `${componentImports.join("\n")}
 ${renderFontImports(definition).join("\n")}
 ${renderTemplateStyleImports(definition).join("\n")}
 import { createManifestDeckSource } from ${JSON.stringify(join(process.cwd(), "preview-app/src/manifest-deck-source.tsx"))};
 const components = { ${componentMap.join(", ")} };
 export const runtimeDeck = createManifestDeckSource(${JSON.stringify(resolvedManifest)}, ${JSON.stringify(content)}, ${JSON.stringify(definition.deckClass)}, components);
-export const runtimeTemplate = null;`;
+export const runtimeTemplate = null;
+export const deckAssets = ${JSON.stringify(assetTable)};`;
 }
 
 function contentSchemaMajor(version: unknown): number {
   const match = typeof version === "string" ? /^(\d+)\.\d+\.\d+$/.exec(version) : undefined;
   return match ? Number(match[1]) : 1;
-}
-
-const assetMimeTypes: Record<string, string> = {
-  png: "image/png",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  gif: "image/gif",
-  svg: "image/svg+xml",
-  webp: "image/webp",
-  avif: "image/avif",
-};
-
-/**
- * `content.md` references images as deck-relative `assets/<file>` paths (per the deck-format spec)
- * so they travel with the portable `.deck` bundle. Neither the dev server nor the export build has
- * a route or asset pipeline that resolves that path, so — same as the manual workaround decks
- * already use for generated art — inline each referenced file as a base64 data URI at load time.
- * This runs identically for `aideck serve` and `aideck export`, since both share this plugin.
- */
-export function inlineDeckAssets(content: string, deckRoot: string, watchedFiles: Set<string>): string {
-  const assetsRoot = resolve(deckRoot, "assets");
-  return content.replace(/(["'])assets\/([^"']+)\1/g, (match, quote: string, relPath: string) => {
-    const filePath = resolve(assetsRoot, relPath);
-    if (!isWithin(assetsRoot, filePath)) throw new Error(`Asset path escapes deck assets/: ${relPath}`);
-    if (!existsSync(filePath)) throw new Error(`Referenced asset not found: assets/${relPath} (deck: ${deckRoot})`);
-    watchedFiles.add(filePath);
-    const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
-    const mime = assetMimeTypes[ext];
-    if (!mime) throw new Error(`Unsupported asset type ".${ext}" for assets/${relPath}`);
-    const data = readFileSync(filePath).toString("base64");
-    return `${quote}data:${mime};base64,${data}${quote}`;
-  });
 }
 
 /**
@@ -395,6 +367,7 @@ ${renderFontImports(definition).join("\n")}
 ${renderTemplateStyleImports(definition).join("\n")}
 const previewProps = ${JSON.stringify(definition.previewProps)};
 export const runtimeDeck = null;
+export const deckAssets = {};
 export const runtimeTemplate = {
   id: ${JSON.stringify(manifest.name)},
   label: ${JSON.stringify(manifest.displayName)},
@@ -532,11 +505,6 @@ function deckTemplateRoot(root: string, engineRoot: string, templateName?: strin
     throw new Error(`Deck "${root}" has no template snapshot and template "${templateName}" was not found. Run: aideck deck retemplate <slug> --to <template>`);
   }
   return found;
-}
-
-function isWithin(root: string, file: string): boolean {
-  const path = relative(root, resolve(file));
-  return path === "" || (!path.startsWith("..") && !path.startsWith("/"));
 }
 
 function generatedSource(root: string, slug: string): string | undefined {

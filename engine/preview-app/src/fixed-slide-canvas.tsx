@@ -1,5 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { deckAssets } from "virtual:aideck-deck";
+import { resolveSlideAssets } from "./deck-asset-resolver";
 import type { PreviewSlide, PreviewSource } from "./preview-types";
 import { SlideOverrideLayer } from "./slide-override-layer";
 import "./fixed-slide-canvas.css";
@@ -116,8 +118,8 @@ export function FixedSlideCanvas({
             key={slide.id ?? slide.type}
             style={{ viewTransitionName: slide.morphAnchors?.[0] }}
           >
-            <slide.Component {...slide.props} />
-            <SlideOverrideLayer override={slide.override} />
+            <slide.Component {...resolveSlideAssets(slide.props, deckAssets)} />
+            <SlideOverrideLayer override={resolveSlideAssets(slide.override, deckAssets)} />
           </div>,
           frameBody,
         )}

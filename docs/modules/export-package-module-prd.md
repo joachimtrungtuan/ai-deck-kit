@@ -8,6 +8,8 @@ depends_on: ["presentation", "preview"]
 
 # Module PRD: Export & Package
 
+> Functional requirements for progressive, de-duplicated, CSP-hardened HTML export (`--mode single|web`): [export-progressive-html-functional-requirements.md](./export-progressive-html-functional-requirements.md).
+
 ## 1. Purpose
 Exports .deck to shareable formats (standalone HTML, PDF) and packages .deck as portable zip archive. Uses existing export runtime (React → HTML, Chrome rasterization → PDF).
 
@@ -35,10 +37,10 @@ Exports .deck to shareable formats (standalone HTML, PDF) and packages .deck as 
 - `deck-format-spec.md` (bundle portability § 8).
 
 ## 7. Success Criteria
-- [ ] HTML export is self-contained (no external CDN, all assets bundled).
+- [ ] HTML export never makes network requests at view time. `--mode single` is one self-contained file; `--mode web` is a folder (HTML + `assets/`). Fonts may be fetched once at export time and embedded.
 - [ ] PDF export is flattened raster; morph transitions render as keyframes.
 - [ ] Pack creates reproducible zip; unpack restores `.deck/` with file permissions intact.
-- [ ] Exports run without network; work offline.
+- [ ] Exported pages run without network; work offline (web mode served from any static host or opened locally).
 - [ ] Missing assets or validation errors reported before export starts.
 
 ## 8. Risks & Mitigations
