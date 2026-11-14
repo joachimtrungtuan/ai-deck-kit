@@ -1,4 +1,8 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { test } from "node:test";
 import { AssetLoader, slideAssetPaths } from "../../preview-app/src/export-asset-loader.ts";
 
@@ -159,4 +163,42 @@ test("slideAssetPaths finds table assets in props and overrides and ignores unkn
     table,
   );
   assert.deepEqual(paths.sort(), ["assets/a.png", "assets/b.png"]);
+});
+
+test("PDF capture waits for a delayed real browser readiness marker", (t) => {
+  const chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+  const imageMagick = "/opt/homebrew/bin/magick";
+  if (!existsSync(chrome) || !existsSync(imageMagick)) {
+    t.skip("Chrome and ImageMagick are required for the transport regression");
+    return;
+  }
+  const work = mkdtempSync(join(tmpdir(), "aideck-pdf-readiness-"));
+  try {
+    const html = join(work, "delayed.html");
+    const output = join(work, "delayed.pdf");
+    writeFileSync(html, `<!doctype html><style>*{box-sizing:border-box}html,body{margin:0;background:#000}.deck-page{width:1600px;height:900px;background:#123;color:#fff;font:48px sans-serif}</style><div class="print-deck"><div class="deck-page">ready</div></div><script>setTimeout(() => document.documentElement.dataset.exportReady = "true", 250)</script>`);
+    execFileSync(process.execPath, [resolve("engine/skills/presentation-crafting/scripts/export-pdf.mjs"), "--html", html, "--out", output, "--chrome", chrome, "--imagemagick", imageMagick], { encoding: "utf8" });
+    assert.ok(existsSync(output));
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
+});
+
+test("PDF capture rejects a delayed browser asset error marker", (t) => {
+  const chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+  const imageMagick = "/opt/homebrew/bin/magick";
+  if (!existsSync(chrome) || !existsSync(imageMagick)) {
+    t.skip("Chrome and ImageMagick are required for the transport regression");
+    return;
+  }
+  const work = mkdtempSync(join(tmpdir(), "aideck-pdf-error-"));
+  try {
+    const html = join(work, "error.html");
+    const output = join(work, "error.pdf");
+    writeFileSync(html, `<!doctype html><div class="deck-page" style="width:1600px;height:900px">error</div><script>setTimeout(() => document.documentElement.dataset.exportError = "assets/broken.png", 150)</script>`);
+    assert.throws(() => execFileSync(process.execPath, [resolve("engine/skills/presentation-crafting/scripts/export-pdf.mjs"), "--html", html, "--out", output, "--chrome", chrome, "--imagemagick", imageMagick], { encoding: "utf8", stdio: "pipe" }), /status 1|PDF export failed/);
+    assert.equal(existsSync(output), false);
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
 });

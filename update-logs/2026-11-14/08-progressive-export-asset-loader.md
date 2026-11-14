@@ -30,3 +30,4 @@ Throttled browser proof for loader visibility and early jump gating remains sche
 - An early jump reserves a priority request so the target can begin before the first four startup assets finish.
 - PDF capture now requires `data-export-ready="true"`, reports asset failures or readiness timeout, and uses a 30-second bounded wait for both DOM synchronization and screenshot capture.
 - Regression coverage now includes early jumps and failed-asset readiness.
+- The screenshot Chrome invocation now emits and verifies its own readiness/error DOM marker before its PNG is accepted; a prior process cannot mask a slower second load.
