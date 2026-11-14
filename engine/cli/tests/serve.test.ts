@@ -11,7 +11,8 @@ import { buildServeViteArgs, parseServeArgs } from "../commands/output.ts";
 import { createTemplate, elementAnimationCatalogV1, listTemplates, migrateLegacyRegisteredTemplates, resolveTemplate, validateMotionTokens, validateTemplateBundle, validateTemplateManifest, type TemplateManifest } from "../lib/templates.ts";
 import type { Workspace } from "../lib/types.ts";
 import { resolveFontImports } from "../lib/font-catalog.ts";
-import { aideckDeckPlugin, inlineDeckAssets, readSlideYamlBlock, replaceSlideYamlBlock, resolveGeneratedTemplateImport, templatePreviewSlideId } from "../../preview-app/vite-deck-plugin.ts";
+import { collectDeckAssetTable } from "../../preview-app/deck-asset-table.ts";
+import { aideckDeckPlugin, readSlideYamlBlock, replaceSlideYamlBlock, resolveGeneratedTemplateImport, templatePreviewSlideId } from "../../preview-app/vite-deck-plugin.ts";
 
 const projectRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const cli = join(projectRoot, "engine", "cli", "index.mjs");
@@ -92,33 +93,37 @@ test("generated deck sources resolve legacy unsuffixed installed template import
   );
 });
 
-test("inlineDeckAssets rewrites assets/ references in content.md to base64 data URIs", () => {
-  const root = mkdtempSync(join(tmpdir(), "aideck-inline-assets-test-"));
+function slideFence(yaml: string): string {
+  return `## Slide 01 (slide-01)\n\n\`\`\`yaml\n${yaml}\n\`\`\`\n`;
+}
+
+test("collectDeckAssetTable maps each rendered assets/ reference to one base64 data URI", () => {
+  const root = mkdtempSync(join(tmpdir(), "aideck-asset-table-test-"));
   mkdirSync(join(root, "assets"), { recursive: true });
   writeFileSync(join(root, "assets", "diagram.png"), Buffer.from("fake-png-bytes"));
   const watched = new Set<string>();
 
-  const output = inlineDeckAssets(`imageSrc: "assets/diagram.png"\n`, root, watched);
+  const table = collectDeckAssetTable(slideFence(`type: "image-text-split"\nimageSrc: "assets/diagram.png"`), root, watched);
 
   const expected = Buffer.from("fake-png-bytes").toString("base64");
-  assert.equal(output, `imageSrc: "data:image/png;base64,${expected}"\n`);
+  assert.deepEqual(table, { "assets/diagram.png": `data:image/png;base64,${expected}` });
   assert.ok(watched.has(join(root, "assets", "diagram.png")));
 });
 
-test("inlineDeckAssets rejects asset paths that escape the deck's assets/ folder", () => {
-  const root = mkdtempSync(join(tmpdir(), "aideck-inline-assets-test-"));
+test("collectDeckAssetTable rejects asset paths that escape the deck's assets/ folder", () => {
+  const root = mkdtempSync(join(tmpdir(), "aideck-asset-table-test-"));
   mkdirSync(join(root, "assets"), { recursive: true });
   assert.throws(
-    () => inlineDeckAssets(`imageSrc: "assets/../../../etc/passwd"\n`, root, new Set()),
+    () => collectDeckAssetTable(slideFence(`imageSrc: "assets/../../../etc/passwd"`), root, new Set()),
     /escapes deck assets\//,
   );
 });
 
-test("inlineDeckAssets reports a clear error for a missing referenced asset", () => {
-  const root = mkdtempSync(join(tmpdir(), "aideck-inline-assets-test-"));
+test("collectDeckAssetTable reports a clear error for a missing referenced asset", () => {
+  const root = mkdtempSync(join(tmpdir(), "aideck-asset-table-test-"));
   mkdirSync(join(root, "assets"), { recursive: true });
   assert.throws(
-    () => inlineDeckAssets(`imageSrc: "assets/missing.png"\n`, root, new Set()),
+    () => collectDeckAssetTable(slideFence(`imageSrc: "assets/missing.png"`), root, new Set()),
     /Referenced asset not found: assets\/missing\.png/,
   );
 });
@@ -335,7 +340,8 @@ test("manifest deck sources use unified item metadata and expose overrides", () 
   assert.match(source, /items: \(\{ metadata \}\) => arrayMeta<SlideItem>\(metadata, "items"\)/);
   assert.match(source, /title: \(\{ metadata \}\) => textMeta\(metadata, "title"\)/);
   assert.match(source, /body: layoutPropReaders\.description/);
-  assert.match(source, /authoringSlideYamlKeys = \["status", "intent", "animation", "transition", "assets", "icons"\]/);
+  assert.match(readFileSync(join(projectRoot, "engine", "preview-app", "src", "authoring-slide-yaml-keys.ts"), "utf8"), /authoringSlideYamlKeys = \["status", "intent", "animation", "transition", "assets", "icons"\]/);
+  assert.match(source, /import \{ authoringSlideYamlKeys \} from "\.\/authoring-slide-yaml-keys"/);
   assert.match(source, /navigationSlideYamlKeys = \["tocTitle"\]/);
   assert.match(source, /recognizedSlideYamlKeys = new Set\(\["id", "type", "override", \.\.\.authoringSlideYamlKeys, \.\.\.navigationSlideYamlKeys, \.\.\.Object\.keys\(layoutPropReaders\)\]\)/);
   assert.match(source, /override: objectMeta<SlideOverride>\(metadata, "override"\)/);

@@ -1,6 +1,7 @@
 import { parse as parseYaml } from "yaml";
 import type { ComponentType } from "react";
 import type { PreviewSlide, PreviewSource, SlideOverride } from "./preview-types";
+import { authoringSlideYamlKeys } from "./authoring-slide-yaml-keys";
 
 type Manifest = {
   title: string;
@@ -29,11 +30,6 @@ type ReaderContext = { index: number; manifest: Manifest; metadata: Record<strin
 const layoutPropReaders: Record<string, (context: ReaderContext) => unknown> = {
   kicker: ({ metadata }) => textMeta(metadata, "kicker"), title: ({ metadata }) => textMeta(metadata, "title") ?? "Untitled", description: ({ metadata }) => textMeta(metadata, "description"), items: ({ metadata }) => arrayMeta<SlideItem>(metadata, "items") ?? [], leftTitle: ({ metadata }) => textMeta(metadata, "leftTitle"), rightTitle: ({ metadata }) => textMeta(metadata, "rightTitle"), tableColumns: ({ metadata }) => arrayMeta<string>(metadata, "tableColumns"), tableRows: ({ metadata }) => arrayMeta<string[]>(metadata, "tableRows"), tableColumnWidths: ({ metadata }) => arrayMeta<number | string>(metadata, "tableColumnWidths"), code: ({ metadata }) => textMeta(metadata, "code"), language: ({ metadata }) => textMeta(metadata, "language"), highlightLines: ({ metadata }) => arrayMeta<number>(metadata, "highlightLines"), commands: ({ metadata }) => arrayMeta<{ prompt: string; output?: string }>(metadata, "commands"), flowSteps: ({ metadata }) => arrayMeta<{ from: string; to: string; label: string; icon?: string }>(metadata, "flowSteps"), method: ({ metadata }) => textMeta(metadata, "method"), path: ({ metadata }) => textMeta(metadata, "path"), requestExample: ({ metadata }) => textMeta(metadata, "requestExample"), responseExample: ({ metadata }) => textMeta(metadata, "responseExample"), layoutVariant: ({ metadata }) => textMeta(metadata, "layoutVariant"), backgroundVariant: ({ metadata }) => textMeta(metadata, "backgroundVariant"), highlightPhrase: ({ metadata }) => textMeta(metadata, "highlightPhrase"), courseName: ({ metadata, manifest }) => textMeta(metadata, "courseName") ?? manifest.title, lessonName: ({ metadata }) => textMeta(metadata, "lessonName"), sectionName: ({ metadata }) => textMeta(metadata, "sectionName"), imageSrc: ({ metadata }) => textMeta(metadata, "imageSrc"), imageAlt: ({ metadata }) => textMeta(metadata, "imageAlt"), imagePosition: ({ metadata }) => textMeta(metadata, "imagePosition"), images: ({ metadata }) => arrayMeta(metadata, "images"), caption: ({ metadata }) => textMeta(metadata, "caption"), source: ({ metadata }) => textMeta(metadata, "source"), attribution: ({ metadata }) => textMeta(metadata, "attribution"), metric: ({ metadata }) => textMeta(metadata, "metric"), metricLabel: ({ metadata }) => textMeta(metadata, "metricLabel"), chartData: ({ metadata }) => arrayMeta(metadata, "chartData"), stats: ({ metadata }) => arrayMeta(metadata, "stats"), regionSeries: ({ metadata }) => arrayMeta(metadata, "regionSeries"), index: ({ metadata }) => numberMeta(metadata, "index"), recommendedColumn: ({ metadata }) => numberMeta(metadata, "recommendedColumn"), context: ({ metadata }) => textMeta(metadata, "context"), decision: ({ metadata }) => textMeta(metadata, "decision"), consequences: ({ metadata }) => arrayMeta<string>(metadata, "consequences"),
 };
-
-/** Authoring keys the deck contract owns: the validator requires them and the CLI scaffolds
- * them, but the renderer reads them from deck.json rather than from the slide fence. They are
- * recognized so the editor does not flag them as unread. */
-const authoringSlideYamlKeys = ["status", "intent", "animation", "transition", "assets", "icons"];
 
 /** Navigation-only keys: read into the slide record for the slide list, never passed to layouts,
  * so they cannot appear on the slide itself. */
