@@ -21,6 +21,7 @@ import { useExportBridge } from "./presenter/use-export-bridge";
 export function DeckExport({ source }: { source: PreviewSource }) {
   const isPrint =
     typeof window !== "undefined" && new URLSearchParams(window.location.search).has("print");
+  if (!source.slides.length && !isPrint) return <div className="deck-export-empty" role="status">No slides to present.</div>;
   return isPrint ? <PrintDeck source={source} /> : <ScreenDeck source={source} />;
 }
 
@@ -32,6 +33,12 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
   const activeSlide = slides[active];
   const [jumpValue, setJumpValue] = useState("1");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerActive, setPickerActive] = useState(0);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const optionRefs = useRef<Record<number, HTMLButtonElement | null>>({});
+  const typeaheadRef = useRef("");
+  const typeaheadTimer = useRef<number | null>(null);
   // Embedded in the presenter's mirror frame, the on-slide controls would only be noise.
   const [controlsVisible, setControlsVisible] = useState(() => window.parent === window);
   const frameDocumentRef = useRef<Document | null>(null);
@@ -56,6 +63,29 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
     });
   };
 
+  useEffect(() => setActive((current) => Math.max(0, Math.min(current, total - 1))), [total]);
+  useEffect(() => { if (pickerOpen) { setPickerActive(active); optionRefs.current[active]?.focus(); } }, [pickerOpen]);
+  useEffect(() => { if (pickerOpen) optionRefs.current[pickerActive]?.focus(); }, [pickerActive, pickerOpen]);
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const close = (event: Event) => {
+      const target = event.target as Node | null;
+      if (!target || !pickerRef.current?.contains(target)) setPickerOpen(false);
+    };
+    const frameDocument = frameDocumentRef.current;
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("focusin", close);
+    frameDocument?.addEventListener("pointerdown", close);
+    frameDocument?.addEventListener("focusin", close);
+    window.addEventListener("blur", () => setPickerOpen(false), { once: true });
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("focusin", close);
+      frameDocument?.removeEventListener("pointerdown", close);
+      frameDocument?.removeEventListener("focusin", close);
+    };
+  }, [pickerOpen]);
+
   useEffect(() => setJumpValue(String(active + 1)), [active]);
 
   const summaries = useMemo(() => slides.map((slide, index) => ({ id: slide.id ?? String(index), tocTitle: slide.tocTitle, type: slide.type })), [slides]);
@@ -64,7 +94,7 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "SELECT")) return;
+      if (target && (target.tagName === "INPUT" || target.closest?.(".deck-picker"))) return;
       if (event.shiftKey && event.code === "KeyI") {
         event.preventDefault();
         setControlsVisible((visible) => !visible);
@@ -109,6 +139,16 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
     else setJumpValue(String(active + 1));
   }
 
+  function closePicker(focusTrigger = true) {
+    setPickerOpen(false);
+    if (focusTrigger) requestAnimationFrame(() => triggerRef.current?.focus());
+  }
+
+  function commitPicker(index: number) {
+    closePicker();
+    go(index);
+  }
+
   const slideLabel = (slide: typeof activeSlide, index: number) => `${String(index + 1).padStart(2, "0")} — ${slide.tocTitle ? `${slide.tocTitle} · ${slide.type}` : slide.type}`;
 
   return (
@@ -147,12 +187,26 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
           />
           / {total}
         </span>
-        <div className="deck-picker">
-          <button type="button" className="deck-select" aria-label="Choose slide" aria-haspopup="listbox" aria-expanded={pickerOpen} onClick={() => setPickerOpen((open) => !open)} onKeyDown={(event) => { if (event.key === "Escape") setPickerOpen(false); }}>
+        <div className="deck-picker" ref={pickerRef}>
+          <button id="deck-picker-trigger" ref={triggerRef} type="button" className="deck-select" aria-label="Choose slide" aria-haspopup="listbox" aria-expanded={pickerOpen} aria-controls="deck-picker-options" onClick={() => { setPickerActive(active); setPickerOpen((open) => !open); }} onKeyDown={(event) => { if (["Enter", " ", "ArrowDown"].includes(event.key)) { event.preventDefault(); setPickerActive(active); setPickerOpen(true); } }}>
             {slideLabel(activeSlide, active)}
           </button>
-          {pickerOpen && <div className="deck-picker-menu" role="listbox" aria-label="Slides">
-            {slides.map((slide, index) => <button key={slide.id ?? slide.type} type="button" role="option" aria-selected={index === active} className="deck-picker-option" onClick={() => { setPickerOpen(false); go(index); }}>{slideLabel(slide, index)}</button>)}
+          {pickerOpen && <div id="deck-picker-options" className="deck-picker-menu" role="listbox" aria-labelledby="deck-picker-trigger" aria-activedescendant={`deck-picker-option-${pickerActive}`} onKeyDown={(event) => {
+            if (event.key === "Escape") { event.preventDefault(); closePicker(); return; }
+            if (event.key === "Tab") { setPickerOpen(false); return; }
+            if (["ArrowDown", "ArrowRight"].includes(event.key)) { event.preventDefault(); setPickerActive((index) => (index + 1) % total); return; }
+            if (["ArrowUp", "ArrowLeft"].includes(event.key)) { event.preventDefault(); setPickerActive((index) => (index - 1 + total) % total); return; }
+            if (event.key === "Home" || event.key === "End") { event.preventDefault(); setPickerActive(event.key === "Home" ? 0 : total - 1); return; }
+            if (event.key === "Enter" || event.key === " ") { event.preventDefault(); commitPicker(pickerActive); return; }
+            if (event.key.length === 1 && /\S/.test(event.key)) {
+              typeaheadRef.current += event.key.toLowerCase();
+              if (typeaheadTimer.current) window.clearTimeout(typeaheadTimer.current);
+              typeaheadTimer.current = window.setTimeout(() => { typeaheadRef.current = ""; }, 700);
+              const match = slides.findIndex((slide, index) => slideLabel(slide, index).toLowerCase().includes(typeaheadRef.current));
+              if (match >= 0) setPickerActive(match);
+            }
+          }}>
+            {slides.map((slide, index) => <button id={`deck-picker-option-${index}`} ref={(element) => { optionRefs.current[index] = element; }} key={`${slide.id ?? slide.type}-${index}`} type="button" role="option" tabIndex={index === pickerActive ? 0 : -1} aria-selected={index === pickerActive} className="deck-picker-option" onClick={() => commitPicker(index)}>{slideLabel(slide, index)}</button>)}
           </div>}
         </div>
         <button type="button" aria-label="Next slide" onClick={() => go(active + 1)} disabled={active === total - 1}>

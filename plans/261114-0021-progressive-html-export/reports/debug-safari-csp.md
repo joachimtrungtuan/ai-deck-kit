@@ -22,4 +22,8 @@ The affected generated control came from `engine/preview-app/src/deck-export.tsx
 
 ## Unresolved questions
 
-- Fresh native Safari normal single/web rerun against the externally owned Marusei source should confirm zero events after the native-select replacement.
+- Fresh native Safari 0974 artifact rerun (`/tmp/marusei-097-artifacts/runtime.jsonl`) confirms normal single/web and print modes report zero CSP violations; Firefox web/print also report zero.
+
+## Picker interaction follow-up
+
+The native select was replaced by a strict-CSP button/listbox picker. It now supports roving active options, Arrow/Home/End, typeahead, Enter/Space commit, Escape/Tab close, ARIA trigger/listbox relationships, parent/frame outside dismissal, blur dismissal, unique option ids, and empty-slide fallback. Automated gates remain green after this interaction-only change.

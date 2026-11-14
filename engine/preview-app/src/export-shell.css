@@ -24,6 +24,14 @@ select {
   font: inherit;
 }
 
+.deck-export-empty {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  background: #000;
+  color: #f7f8f8;
+}
+
 /* ---- Screen (interactive) ---- */
 
 .deck-export {
