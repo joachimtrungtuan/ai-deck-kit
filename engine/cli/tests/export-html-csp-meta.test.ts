@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { createServer } from "node:http";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { addExportSecurityMeta, exportFrameBusterScript, hashInlineContent } from "../../skills/presentation-crafting/scripts/export-html-csp-meta.mjs";
+import { exportDeck, workspaceWithDeck } from "./export-deck-fixture.ts";
 
 const app = "console.log('app')";
 const css = ".deck{color:red}";
@@ -19,6 +20,19 @@ async function waitForObservation(read: () => string | null): Promise<string> {
     await new Promise((resolve) => setTimeout(resolve, 25));
   }
   throw new Error("Browser fixture did not report child-frame state.");
+}
+
+const frameObserver = `!function report(){var root=document.getElementById("root"),loader=document.getElementById("export-loader"),report={refused:document.documentElement.dataset.cspFrameBust||"",loader:loader?getComputedStyle(loader).display:"missing",root:root?getComputedStyle(root).display:"missing",mount:root?root.children.length:-1,ready:document.documentElement.dataset.exportReady||""};window.parent.postMessage({type:"aideck-frame-observation",report:report},"*");if(!report.refused&&!report.ready)setTimeout(report,100)}();`;
+
+function instrumentGeneratedExport(html: string): string {
+  const observerHash = `'${hashInlineContent(frameObserver)}'`;
+  const policyPattern = /(<meta\s+http-equiv="Content-Security-Policy"\s+content=")([^"]+)/i;
+  const withObserverHash = html.replace(policyPattern, (_match, prefix: string, policy: string) => [prefix, policy.replace("script-src ", `script-src ${observerHash} `)].join("") + `"`);
+  return withObserverHash.replace("</body>", `<script>${frameObserver}</script></body>`);
+}
+
+function frameParentPage(childUrl: string): string {
+  return `<!doctype html><html><body><div id="parent-marker">parent</div><iframe src="${childUrl}"></iframe><script>window.addEventListener("message",function(event){if(event.data&&event.data.type==="aideck-frame-observation"){document.documentElement.dataset.frameReport=encodeURIComponent(JSON.stringify(event.data.report));}});</script></body></html>`;
 }
 
 test("security metadata is ordered and hashes exact executable/style content", () => {
@@ -156,4 +170,75 @@ test("same-origin iframe keeps rendering after the frame-buster check", async (t
     rmSync(work, { recursive: true, force: true });
     server.close();
   }
+});
+
+test("generated export wiring refuses cross-origin frames and renders same-origin frames", { timeout: 120_000 }, async (t) => {
+  const chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+  if (!existsSync(chrome)) {
+    t.skip("Chrome is required for generated export frame wiring");
+    return;
+  }
+  const { work, deck } = workspaceWithDeck();
+  try {
+    const built = exportDeck(work, deck, { mode: "single" });
+    assert.equal(built.status, 0, built.output);
+    const generated = instrumentGeneratedExport(readFileSync(join(built.outDir, "index.html"), "utf8"));
+    const serve = (html: string) => createServer((request, response) => {
+      if (request.url === "/index.html" || request.url === "/") {
+        response.setHeader("Content-Type", "text/html");
+        response.end(html);
+      } else { response.statusCode = 404; response.end(); }
+    });
+    const listen = (server: ReturnType<typeof createServer>) => new Promise<void>((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(0, "127.0.0.1", () => resolve());
+    });
+    const run = async (crossOrigin: boolean): Promise<Record<string, string | number>> => {
+      const child = serve(generated);
+      const parent = crossOrigin ? serve(frameParentPage("PLACEHOLDER")) : child;
+      try {
+        await listen(child);
+        if (crossOrigin) {
+          const childPort = (child.address() as { port: number }).port;
+          parent.removeAllListeners("request");
+          parent.on("request", (request, response) => {
+            if (request.url === "/parent") {
+              response.setHeader("Content-Type", "text/html");
+              response.end(frameParentPage(`http://127.0.0.1:${childPort}/index.html`));
+            } else { response.statusCode = 404; response.end(); }
+          });
+        } else {
+          const childPort = (child.address() as { port: number }).port;
+          child.removeAllListeners("request");
+          child.on("request", (request, response) => {
+            if (request.url === "/parent") {
+              response.setHeader("Content-Type", "text/html");
+              response.end(frameParentPage(`http://127.0.0.1:${childPort}/index.html`));
+            } else if (request.url === "/index.html" || request.url === "/") {
+              response.setHeader("Content-Type", "text/html");
+              response.end(generated);
+            } else { response.statusCode = 404; response.end(); }
+          });
+        }
+        if (crossOrigin) await listen(parent);
+        const parentPort = (parent.address() as { port: number }).port;
+        const output = await new Promise<string>((resolve, reject) => {
+          execFile(chrome, ["--headless=new", "--no-sandbox", "--disable-gpu", `--user-data-dir=${mkdtempSync(join(tmpdir(), "aideck-generated-frame-"))}`, "--virtual-time-budget=15000", "--dump-dom", `http://127.0.0.1:${parentPort}/parent`], { encoding: "utf8", timeout: 30_000, maxBuffer: 2 * 1024 * 1024 }, (error, stdout, stderr) => error ? reject(new Error(`${error.message}\n${stderr}`)) : resolve(stdout));
+        });
+        const encoded = output.match(/data-frame-report="([^"]+)"/)?.[1];
+        assert.ok(encoded, `generated frame report missing\n${output.slice(-1000)}`);
+        return JSON.parse(decodeURIComponent(encoded)) as Record<string, string | number>;
+      } finally { child.close(); if (crossOrigin) parent.close(); }
+    };
+    const refused = await run(true);
+    assert.equal(refused.refused, "refused");
+    assert.equal(refused.loader, "none");
+    assert.equal(refused.root, "none");
+    assert.equal(refused.mount, 0);
+    const allowed = await run(false);
+    assert.equal(allowed.refused, "");
+    assert.equal(allowed.root, "block");
+    assert.ok(Number(allowed.mount) > 0);
+    assert.equal(allowed.ready, "true");
+  } finally { rmSync(work, { recursive: true, force: true }); }
 });
