@@ -24,3 +24,17 @@ test("source scan rejects HTTP and never emits wildcard origins", () => {
   assert.equal(result.allowances.some(({ origin }) => origin.includes("*")), false);
   rmSync(root, { recursive: true, force: true });
 });
+
+test("source scan rejects non-HTTP and protocol-relative src/href values in HTML and JSON", () => {
+  const root = mkdtempSync(join(tmpdir(), "aideck-scan-"));
+  writeFileSync(join(root, "layout.html"), '<img src="//cdn.example.com/image.png"><script src="ftp://cdn.example.com/app.js"></script><iframe href="mailto:test@example.com"></iframe>');
+  writeFileSync(join(root, "preview-props.json"), JSON.stringify({ src: "//cdn.example.com/video.mp4", href: "ftp://cdn.example.com/frame" }));
+  const result = scanExternalSources({ deckRoot: root });
+  assert.equal(result.allowances.length, 0);
+  assert.equal(result.errors.length, 5);
+  assert.match(result.errors.join("\n"), /\/\/cdn\.example\.com\/image\.png/);
+  assert.match(result.errors.join("\n"), /ftp:\/\/cdn\.example\.com\/app\.js/);
+  assert.match(result.errors.join("\n"), /mailto:test@example\.com/);
+  assert.match(result.errors.join("\n"), /ftp:\/\/cdn\.example\.com\/frame/);
+  rmSync(root, { recursive: true, force: true });
+});

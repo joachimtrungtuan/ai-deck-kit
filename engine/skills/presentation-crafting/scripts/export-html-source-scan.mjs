@@ -3,7 +3,12 @@ import path from "node:path";
 
 const URL_RE = /(?:url\(\s*|@import\s+)(["']?)(https?:\/\/[^\s)'" ]+)\1/gi;
 const NON_HTTP_URL_RE = /url\(\s*["']?((?:[a-z][a-z0-9+.-]*:|\/\/)[^\s)'" ]+)["']?\s*\)/gi;
-const ATTR_RE = /\b(?:src|href)\s*=\s*(["'])(https?:\/\/[^"']+)\1/gi;
+const ATTR_RE = /\b(src|href)\s*=\s*(["'])([^"']+)\2/gi;
+const PROPERTY_RE = /["']?\b(src|href)\b["']?\s*:\s*(["'])([^"']+)\2/gi;
+
+function isExternalUrl(raw) {
+  return /^(?:\/\/|[a-z][a-z0-9+.-]*:)/i.test(raw) && !/^data:/i.test(raw);
+}
 
 /** Scan only the deck, resolved template and manifest; returns exact-origin CSP allowances. */
 export function scanExternalSources({ deckRoot, templateRoot, templateManifestPath, layoutRoots = [] } = {}) {
@@ -13,7 +18,10 @@ export function scanExternalSources({ deckRoot, templateRoot, templateManifestPa
   const add = (directive, raw, source) => {
     let url;
     try { url = new URL(raw); } catch { errors.push(`Unclassifiable external source "${raw}" in ${source}.`); return; }
-    if (!/^https?:$/.test(url.protocol)) return;
+    if (!/^https?:$/.test(url.protocol)) {
+      errors.push(`Unclassifiable external source "${raw}" in ${source}.`);
+      return;
+    }
     if (url.protocol === "http:") { errors.push(`HTTP external source is not allowed: ${raw} in ${source}.`); return; }
     if (!directive) { errors.push(`Unclassifiable external source "${raw}" in ${source}.`); return; }
     const origin = url.origin;
@@ -36,14 +44,19 @@ export function scanExternalSources({ deckRoot, templateRoot, templateManifestPa
       }
     }
     for (const match of text.matchAll(ATTR_RE)) {
-      const attr = text.slice(Math.max(0, (match.index ?? 0) - 24), match.index ?? 0).match(/(src|href)\s*=\s*$/i)?.[1];
+      const attr = match[1].toLowerCase();
+      const raw = match[3];
+      if (!isExternalUrl(raw)) continue;
       const before = text.slice(Math.max(0, (match.index ?? 0) - 80), match.index ?? 0);
-      const directive = /<script\b/i.test(before) ? "script-src" : attr === "src" ? (/\.(?:mp4|webm|mp3|wav)(?:[?#]|$)/i.test(match[2]) ? "media-src" : "img-src") : "frame-src";
-      add(directive, match[2], file);
+      const directive = /<script\b/i.test(before) ? "script-src" : attr === "src" ? (/\.(?:mp4|webm|mp3|wav)(?:[?#]|$)/i.test(raw) ? "media-src" : "img-src") : "frame-src";
+      add(directive, raw, file);
     }
-    for (const match of text.matchAll(/\b(src|href)\s*:\s*["'](https?:\/\/[^"']+)["']/gi)) {
-      const directive = match[1].toLowerCase() === "href" ? "frame-src" : (/\.(?:mp4|webm|mp3|wav)(?:[?#]|$)/i.test(match[2]) ? "media-src" : "img-src");
-      add(directive, match[2], file);
+    for (const match of text.matchAll(PROPERTY_RE)) {
+      const attr = match[1].toLowerCase();
+      const raw = match[3];
+      if (!isExternalUrl(raw)) continue;
+      const directive = attr === "href" ? "frame-src" : (/\.(?:mp4|webm|mp3|wav)(?:[?#]|$)/i.test(raw) ? "media-src" : "img-src");
+      add(directive, raw, file);
     }
   };
   const walk = (root) => {
