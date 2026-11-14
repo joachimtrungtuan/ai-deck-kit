@@ -8,13 +8,17 @@ export function readFontFsType(input) {
   try {
     let data = bytes;
     if (data.subarray(0, 4).toString() === "wOFF") {
+      if (data.length < 44 || data.readUInt32BE(8) > data.length || data.readUInt32BE(8) < 44) return null;
       const flavor = data.readUInt32BE(4); const length = data.readUInt32BE(16); const numTables = data.readUInt16BE(12);
-      for (let i = 0; i < numTables; i++) { const p = 44 + i * 20; const tag = data.subarray(p, p + 4).toString(); if (tag !== "OS/2") continue; const off = data.readUInt32BE(p + 4); const compLength = data.readUInt32BE(p + 8); const originalLength = data.readUInt32BE(p + 12); const raw = data.subarray(off, off + compLength); data = compLength === originalLength ? raw : inflateSync(raw); return data.readUInt16BE(8); }
+      if (44 + numTables * 20 > data.length) return null;
+      for (let i = 0; i < numTables; i++) { const p = 44 + i * 20; const tag = data.subarray(p, p + 4).toString(); const off = data.readUInt32BE(p + 4); const compLength = data.readUInt32BE(p + 8); const originalLength = data.readUInt32BE(p + 12); if (off > data.length || compLength > data.length - off || originalLength < 10) return null; if (tag !== "OS/2") continue; const raw = data.subarray(off, off + compLength); data = compLength === originalLength ? raw : inflateSync(raw); return data.length >= 10 ? data.readUInt16BE(8) : null; }
       return null;
     }
     if (data.subarray(0, 4).toString() === "wOF2") return readWoff2FsType(data);
+    if (!["\0\x01\0\0", "OTTO", "true", "typ1"].includes(data.subarray(0, 4).toString("latin1")) || data.length < 12) return null;
     const numTables = data.readUInt16BE(4);
-    for (let i = 0; i < numTables; i++) { const p = 12 + i * 16; if (data.subarray(p, p + 4).toString() === "OS/2") { const off = data.readUInt32BE(p + 8); return data.readUInt16BE(off + 8); } }
+    if (12 + numTables * 16 > data.length) return null;
+    for (let i = 0; i < numTables; i++) { const p = 12 + i * 16; if (data.subarray(p, p + 4).toString() === "OS/2") { const off = data.readUInt32BE(p + 8); const length = data.readUInt32BE(p + 12); if (off > data.length || length < 10 || length > data.length - off) return null; return data.readUInt16BE(off + 8); } }
     return null;
   } catch { return null; }
 }
@@ -35,9 +39,12 @@ function readWoff2FsType(bytes) {
       const transformedLength = transformed ? readBase128(bytes, () => cursor++) : originalLength;
       records.push({ tag, originalLength, transformedLength });
     }
-    const compressed = brotliDecompressSync(bytes.subarray(cursor, cursor + bytes.readUInt32BE(20)));
+    const compressedLength = bytes.readUInt32BE(20);
+    if (cursor > bytes.length || compressedLength > bytes.length - cursor) return null;
+    const compressed = brotliDecompressSync(bytes.subarray(cursor, cursor + compressedLength));
     let offset = 0;
     for (const record of records) {
+      if (record.transformedLength > compressed.length - offset) return null;
       const table = compressed.subarray(offset, offset + record.transformedLength);
       offset += record.transformedLength;
       if (record.tag === "OS/2") return table.length >= 10 ? table.readUInt16BE(8) : null;

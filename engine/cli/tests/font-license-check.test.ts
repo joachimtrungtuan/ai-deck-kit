@@ -24,3 +24,12 @@ test("malformed local font is rejected", () => {
   assert.ok(result.errors.some((error) => error.includes("unreadable")));
   rmSync(root, { recursive: true, force: true });
 });
+
+test("malformed SFNT table bounds are unreadable", () => {
+  const bytes = Buffer.alloc(40);
+  bytes.writeUInt32BE(0x00010000, 0);
+  bytes.writeUInt16BE(1, 4);
+  bytes.write("OS/2", 12, 4, "ascii");
+  bytes.writeUInt32BE(28, 20);
+  assert.equal(readFontFsType(bytes), null);
+});

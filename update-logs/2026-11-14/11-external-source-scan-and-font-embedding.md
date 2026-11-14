@@ -10,3 +10,8 @@ offline failure, and warn-only restricted export behavior. Shipped template vali
 scanner test suite pass. The read-only Marusei scratch export reached Vite but stopped on its
 consumer layout's unresolved `react/jsx-runtime` dependency; this is an existing external-template
 dependency boundary, not a scanner/CSP failure.
+
+Review follow-up: Google embedding is now export-only; malformed SFNT/WOFF/WOFF2 bounds return
+unreadable; protocol-relative and non-HTTP CSS resources fail classification; production transform
+tests assert no Google CDN URL remains and font URLs are data URLs. Full suite still reports the
+environmental Chrome PDF and loopback failures.

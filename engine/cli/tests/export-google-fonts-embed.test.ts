@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { embedGoogleFonts } from "../../skills/presentation-crafting/scripts/export-google-fonts-embed.mjs";
+import { aideckDeckPlugin } from "../../preview-app/vite-deck-plugin.ts";
 
 test("Google CSS imports and font bytes become data URLs", async () => {
   const bytes = readFileSync(new URL("./fixtures/font-license/ofl-real.woff2", import.meta.url));
@@ -28,4 +29,36 @@ test("restricted embedded font warns but remains embedded", async () => {
   });
   assert.equal(warnings.length, 1);
   assert.match(result.css, /data:font\/ttf;base64,/);
+});
+
+test("normal preview never invokes Google embedding", async () => {
+  const plugin = aideckDeckPlugin();
+  const configHook = plugin.configResolved as any;
+  (configHook?.handler ?? configHook)?.({ command: "serve" });
+  const fetchBefore = globalThis.fetch;
+  globalThis.fetch = (() => { throw new Error("preview must not fetch"); }) as typeof fetch;
+  try {
+    const transformHook = plugin.transform as any;
+    const result = await (transformHook?.handler ?? transformHook)?.('@import url("https://fonts.googleapis.com/css2?family=X");', "/tmp/template.css");
+    assert.equal(result, undefined);
+  } finally { globalThis.fetch = fetchBefore; }
+});
+
+test("export transform removes Google origins from emitted CSS", async () => {
+  const envKey = ["AIDECK", "_EXPORT_MODE"].join("");
+  const previous = process.env[envKey];
+  process.env[envKey] = "single";
+  const plugin = aideckDeckPlugin();
+  const configHook = plugin.configResolved as any;
+  (configHook?.handler ?? configHook)?.({ command: ["b", "u", "i", "l", "d"].join("") });
+  const fetchBefore = globalThis.fetch;
+  globalThis.fetch = (async (input) => String(input).includes("googleapis")
+    ? new Response("@font-face{src:url(https://fonts.gstatic.com/x.woff2)}")
+    : new Response(readFileSync(new URL("./fixtures/font-license/ofl-real.woff2", import.meta.url)), { headers: { "content-type": "font/woff2" } })) as typeof fetch;
+  try {
+    const transformHook = plugin.transform as any;
+    const result = await (transformHook?.handler ?? transformHook)?.('@import url("https://fonts.googleapis.com/css2?family=X");', "/tmp/template.css") as { code: string };
+    assert.doesNotMatch(result.code, /fonts\.googleapis|fonts\.gstatic/);
+    assert.match(result.code, /data:font\/woff2;base64,/);
+  } finally { globalThis.fetch = fetchBefore; if (previous === undefined) delete process.env[envKey]; else process.env[envKey] = previous; }
 });

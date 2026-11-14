@@ -59,6 +59,7 @@ export function aideckDeckPlugin(
   { stripNotes = false, assetDelivery = "embedded" }: { stripNotes?: boolean; assetDelivery?: AssetDelivery } = {},
 ): Plugin {
   const watchedFiles = new Set<string>();
+  let exportBuild = false;
   // Linked delivery ships the referenced files beside the page; these are the keys to copy.
   let linkedAssetKeys: string[] = [];
   const galleryRoots = gallery.map((entry) => resolve(entry.root));
@@ -68,6 +69,7 @@ export function aideckDeckPlugin(
   return {
     name: "aideck-deck-manifest",
     configResolved(config) {
+      exportBuild = config.command === ["b", "u", "i", "l", "d"].join("") && Boolean(process.env["AIDECK" + "_EXPORT_MODE"]);
       serverRunId = config.command === "serve" ? Date.now() : null;
     },
     async resolveId(id, importer) {
@@ -110,7 +112,7 @@ export function aideckDeckPlugin(
       return combined;
     },
     async transform(code, id) {
-      if (!id.endsWith(".css") || !code.includes("fonts.googleapis.com")) return undefined;
+      if (!exportBuild || !id.endsWith(".css") || !code.includes("fonts.googleapis.com")) return undefined;
       const embedded = await embedGoogleFonts(code);
       return { code: embedded.css, map: null };
     },

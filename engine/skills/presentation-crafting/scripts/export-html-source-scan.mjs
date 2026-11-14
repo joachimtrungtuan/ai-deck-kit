@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const URL_RE = /(?:url\(\s*|@import\s+)(["']?)(https?:\/\/[^\s)'" ]+)\1/gi;
+const NON_HTTP_URL_RE = /url\(\s*["']?((?:[a-z][a-z0-9+.-]*:|\/\/)[^\s)'" ]+)["']?\s*\)/gi;
 const ATTR_RE = /\b(?:src|href)\s*=\s*(["'])(https?:\/\/[^"']+)\1/gi;
 
 /** Scan only the deck, resolved template and manifest; returns exact-origin CSP allowances. */
@@ -28,6 +29,10 @@ export function scanExternalSources({ deckRoot, templateRoot, templateManifestPa
         const before = text.slice(Math.max(0, (match.index ?? 0) - 180), match.index ?? 0);
         const directive = /@font-face[\s\S]*?\{[^}]*$/i.test(before) || /\.(?:woff2?|ttf|otf)(?:[?#]|$)/i.test(raw) ? "font-src" : "style-src";
         add(directive, raw, file);
+      }
+      for (const match of text.matchAll(NON_HTTP_URL_RE)) {
+        if (/^(?:data:|#|[./]|https?:)/i.test(match[1])) continue;
+        errors.push(`Unclassifiable external source "${match[1]}" in ${file}.`);
       }
     }
     for (const match of text.matchAll(ATTR_RE)) {
