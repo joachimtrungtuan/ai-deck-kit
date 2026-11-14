@@ -18,7 +18,7 @@ Exports .deck to shareable formats (standalone HTML, PDF) and packages .deck as 
 - **Out of scope:** preview rendering (owned by preview), content authoring (owned by presentation).
 
 ## 3. Surfaces
-- **CLI:** `aideck export html <deck-slug> [--out <path>]` (export to self-contained HTML), `aideck export pdf <deck-slug> [--out <path>]` (export to PDF), `aideck pack <deck-slug> [--out <path>]` (create zip), `aideck unpack <zip-path> [--to <dir>]`.
+- **CLI:** `aideck export html <deck-slug> [--mode single|web]` (export HTML to the deck's `.build/export/`; `single` is the default self-contained file), `aideck export pdf <deck-slug>` (export to PDF), `aideck pack <deck-slug> [--out <path>]` (create zip), `aideck unpack <zip-path> [--to <dir>]`.
 - **Skill:** —
 - **Runtime:** existing preview-app serves as rendering engine; Chrome + ImageMagick for PDF rasterization.
 

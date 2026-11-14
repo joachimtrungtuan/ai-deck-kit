@@ -25,9 +25,21 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDir, "../../../..");
 const engineDir = resolve(scriptDir, "../../..");
 
+/** Reads `--name value` or `--name=value`; a flag given without a value exits with an error instead of being ignored. */
 function getArg(name) {
-  const i = process.argv.indexOf(`--${name}`);
-  return i !== -1 && process.argv[i + 1] ? process.argv[i + 1] : undefined;
+  const flag = `--${name}`;
+  for (let i = 0; i < process.argv.length; i++) {
+    const token = process.argv[i];
+    if (token.startsWith(`${flag}=`)) return token.slice(flag.length + 1);
+    if (token !== flag) continue;
+    const value = process.argv[i + 1];
+    if (!value || value.startsWith("--")) {
+      console.error(`Error: ${flag} requires a value.`);
+      process.exit(1);
+    }
+    return value;
+  }
+  return undefined;
 }
 
 const exportModes = ["single", "web"];

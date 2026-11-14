@@ -68,7 +68,8 @@ export type AssetDelivery = "embedded" | "linked";
 /**
  * Builds the shared asset table for a deck: one entry per distinct file the slides actually render.
  * Embedded delivery maps each key to a base64 data URI, stored once and looked up at render time;
- * linked delivery maps each key to its own relative path, so the page points at a file beside it.
+ * linked delivery maps each key to its own URL-encoded relative path, so the page points at a file beside it
+ * (the file itself keeps its raw name; `#`, `?` and `%` in a name would otherwise end the URL path early).
  * Files only named in the authoring `assets:` list never reach the export.
  */
 export function collectDeckAssetTable(
@@ -90,7 +91,7 @@ export function collectDeckAssetTable(
     const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
     const mime = assetMimeTypes[ext];
     if (!mime) throw new Error(`Unsupported asset type ".${ext}" for assets/${relPath}`);
-    table[key] = delivery === "linked" ? key : `data:${mime};base64,${readFileSync(filePath).toString("base64")}`;
+    table[key] = delivery === "linked" ? key.split("/").map(encodeURIComponent).join("/") : `data:${mime};base64,${readFileSync(filePath).toString("base64")}`;
   }
   return table;
 }

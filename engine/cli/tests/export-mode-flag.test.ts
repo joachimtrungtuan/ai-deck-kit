@@ -5,8 +5,9 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { join } from "node:path";
 import test, { after } from "node:test";
 import { runExport, parseExportArgs } from "../commands/output.ts";
+import type { Workspace } from "../lib/types.ts";
 import { appScriptIsClassicInBody, moveAppScriptIntoBody } from "../../skills/presentation-crafting/scripts/export-html-assembly.mjs";
-import { exportDeck, workspaceWithDeck } from "./export-deck-fixture.ts";
+import { engineRoot, exportDeck, workspaceWithDeck } from "./export-deck-fixture.ts";
 
 test("export arguments read the deck and optional mode in either order", () => {
   assert.deepEqual(parseExportArgs(["talk"]), { deck: "talk" });
@@ -56,6 +57,45 @@ test("an unknown mode stops the export script before anything is built", () => {
   assert.notEqual(result.status, 0);
   assert.match(result.output, /--mode must be one of single, web \(got "fast"\)/);
   assert.equal(existsSync(result.outDir), false);
+});
+
+test("the export script reads --mode=<value> and stops on a --mode with no value", () => {
+  const { work, deck } = workspaceWithDeck();
+  after(() => rmSync(work, { recursive: true, force: true }));
+  const web = exportDeck(work, deck, { modeArgs: ["--mode=web"] });
+  assert.equal(web.status, 0, web.output);
+  assert.equal(existsSync(join(web.outDir, "assets")), true, "--mode=web builds the web layout");
+
+  const missing = exportDeck(work, deck, { out: "missing", modeArgs: ["--mode"] });
+  assert.notEqual(missing.status, 0);
+  assert.match(missing.output, /--mode requires a value/);
+  assert.equal(existsSync(missing.outDir), false);
+
+  const followedByFlag = exportDeck(work, deck, { out: "followed", modeArgs: ["--mode", "--out", join(work, "followed")] });
+  assert.notEqual(followedByFlag.status, 0);
+  assert.match(followedByFlag.output, /--mode requires a value/);
+
+  const badInline = exportDeck(work, deck, { out: "bad-inline", modeArgs: ["--mode=fast"] });
+  assert.notEqual(badInline.status, 0);
+  assert.match(badInline.output, /--mode must be one of single, web \(got "fast"\)/);
+  assert.equal(existsSync(badInline.outDir), false);
+});
+
+test("the CLI export forwards --mode to the export script", () => {
+  const { work, deck } = workspaceWithDeck();
+  after(() => rmSync(work, { recursive: true, force: true }));
+  const workspace: Workspace = {
+    root: work,
+    pointerPath: join(work, "ai-deck-kit.json"),
+    pointer: { engineRoot, decksRoot: work, engineVersion: "0.0.0" },
+    engineRoot,
+    decksRoot: work,
+  };
+  const built = join(deck, ".build", "export");
+  runExport(workspace, "html", deck, "web");
+  assert.equal(existsSync(join(built, "assets")), true, "web mode links assets beside the page");
+  runExport(workspace, "html", deck);
+  assert.deepEqual(listFiles(built), ["index.html"], "no mode keeps the single file");
 });
 
 /** Lists every file under `dir` as a posix-style path relative to it. */

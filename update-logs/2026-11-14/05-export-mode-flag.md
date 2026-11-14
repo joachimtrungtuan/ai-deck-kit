@@ -19,3 +19,11 @@
 - Web `index.html` is still large because fonts are embedded (font work is a later phase). Loader and CSP are not in this change.
 - `file://` behaviour of the web output was not checked here (manual check belongs to the verification phase). Over http, the app renders and `assets/*.svg` load.
 - Docs still describing the old assets copy or lacking the flag: `SKILL.md` (export section), `references/export-workflow.md`, README; left for the docs phase.
+
+## Review fixes
+
+- **Linked asset URLs are encoded.** In web mode the asset table now maps each key to its path with every segment passed through `encodeURIComponent` (`assets/a#b.svg` -> `assets/a%23b.svg`). The emitted file keeps its raw name; only the URL is encoded, so `#`, `?` and `%` in a file name no longer cut the URL short. New `export-asset-url-encoding.test.ts` runs a real web and single export on files named with `#` and `%` (and checks the `?` mapping directly). File names with spaces were not exercised: a whole-string `assets/` reference cannot contain whitespace, so only quoted override references could carry one.
+- **`--mode` parsing in the export script.** `getArg` now accepts `--name=value`, and a flag with no value (trailing, or followed by another flag) exits non-zero with `--mode requires a value.` instead of silently building single mode. Unknown values still fail before any build. `export-deck-fixture.ts` gained a `modeArgs` option so tests can pass the flag exactly as typed.
+- **CLI forwarding is tested.** `runExport` is exercised against a real workspace object: `web` produces the `assets/` folder, no mode produces the lone `index.html`.
+- **Docs.** `docs/modules/export-package-module-prd.md` listed `[--out <path>]` for `export html|pdf`, which the CLI never accepted; it now shows `[--mode single|web]` for HTML and nothing for PDF.
+- `engine/cli` TypeScript is unchanged, so `dist` is unchanged (`build:check` passes).
