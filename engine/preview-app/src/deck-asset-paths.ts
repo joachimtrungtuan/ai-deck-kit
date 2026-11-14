@@ -9,7 +9,7 @@ const cssUrlAssetPattern = /url\(\s*(assets\/[^)"']+?)\s*\)/g;
 
 /** Keep the original compact-path grammar, and add spaced paths only when they look like file names. */
 const wholeAssetPattern = /^assets\/[^\s"']+$/;
-const spacedAssetPattern = /^assets\/(?=\S)(?=[^"']*\.[^/"']+$)[^"']+$/;
+const spacedAssetPattern = /^assets\/(?=\S)(?=[^"']*\.[^\s/"']+$)[^"']+$/;
 
 function isAssetKey(value: string): boolean {
   return wholeAssetPattern.test(value) || spacedAssetPattern.test(value);

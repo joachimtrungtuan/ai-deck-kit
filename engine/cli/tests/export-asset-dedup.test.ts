@@ -78,6 +78,24 @@ test("asset paths allow spaces and unquoted CSS url references without treating 
   );
 });
 
+test("production collection ignores dotted prose and keeps spaced multi-dot files", () => {
+  const work = mkdtempSync(join(tmpdir(), "aideck-asset-grammar-"));
+  after(() => rmSync(work, { recursive: true, force: true }));
+  mkdirSync(join(work, "assets"));
+  writeFileSync(join(work, "assets", "my photo.v1.png"), randomBytes(64));
+  const content = [
+    "## Slide 01 (slide-01)",
+    "```yaml",
+    'caption: "assets/example.txt is a folder"',
+    'imageSrc: "assets/my photo.v1.png"',
+    'override:',
+    '  css: ".probe{background:url(assets/my photo.v1.png)}"',
+    "```",
+  ].join("\n");
+  assert.deepEqual(referencedAssetKeys(content), ["assets/my photo.v1.png"]);
+  assert.deepEqual(Object.keys(collectDeckAssetTable(content, work, new Set())), ["assets/my photo.v1.png"]);
+});
+
 test("a spaced asset and an unquoted CSS URL load in both generated delivery modes", () => {
   const { work, deck } = workspaceWithDeck();
   after(() => rmSync(work, { recursive: true, force: true }));
