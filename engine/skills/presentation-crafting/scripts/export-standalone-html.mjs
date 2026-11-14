@@ -1,20 +1,25 @@
 #!/usr/bin/env node
-// Build a deck into a standalone, self-contained HTML file (JS + CSS + fonts inlined as base64).
-// The result opens by double-click over file:// with no server. Layouts, elements, and the
-// template's CSS entrance animations are preserved because the same React source, design-system.css,
-// and any optional template animation stylesheet are bundled. The deck's assets/ folder (including
-// regenerable diagram IR) is copied alongside so the export is re-renderable from itself.
+// Export a deck as HTML that opens by double-click over file:// with no server.
+// Layouts, elements, and the template's CSS entrance animations are preserved because the same
+// React source, design-system.css, and any optional template animation stylesheet are bundled.
+//
+// Two delivery modes, the same app script in both:
+//   single (default)  One self-contained index.html: JS, CSS, fonts and every rendered asset inlined.
+//   web               index.html plus an assets/ folder holding only the files the slides reference.
+//                     Host the folder on any static server; no server configuration is written.
 //
 // Usage:
-//   node engine/skills/presentation-crafting/scripts/export-standalone-html.mjs --deck <deck-path-or-slug> [--out <dir>]
+//   node engine/skills/presentation-crafting/scripts/export-standalone-html.mjs --deck <deck-path-or-slug> [--out <dir>] [--mode single|web]
 //
 //   --deck   Deck bundle path or workspace deck slug (required).
 //   --out    Output directory. Defaults to the selected deck's .build/export/.
+//   --mode   single (default) or web.
 
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, readFileSync, renameSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { moveAppScriptIntoBody } from "./export-html-assembly.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDir, "../../../..");
@@ -23,6 +28,13 @@ const engineDir = resolve(scriptDir, "../../..");
 function getArg(name) {
   const i = process.argv.indexOf(`--${name}`);
   return i !== -1 && process.argv[i + 1] ? process.argv[i + 1] : undefined;
+}
+
+const exportModes = ["single", "web"];
+const mode = getArg("mode") ?? "single";
+if (!exportModes.includes(mode)) {
+  console.error(`Error: --mode must be one of ${exportModes.join(", ")} (got "${mode}").`);
+  process.exit(1);
 }
 
 const deckInput = getArg("deck");
@@ -41,7 +53,7 @@ const outDir = getArg("out")
   ? resolve(getArg("out"))
   : resolve(deckRoot, ".build", "export");
 
-console.log(`Building standalone HTML export\n  deck: ${deckRoot}\n  out:  ${outDir}`);
+console.log(`Exporting ${mode} HTML\n  deck: ${deckRoot}\n  out:  ${outDir}`);
 
 const result = spawnSync(
   "node_modules/.bin/vite",
@@ -49,21 +61,21 @@ const result = spawnSync(
   {
     cwd: engineDir,
     stdio: "inherit",
-    env: { ...process.env, EXPORT_OUT_DIR: outDir, ["AIDECK_DECK" + "_PATH"]: deckRoot },
+    env: { ...process.env, EXPORT_OUT_DIR: outDir, AIDECK_EXPORT_MODE: mode, ["AIDECK_DECK" + "_PATH"]: deckRoot },
   },
 );
 
 if (result.status !== 0) {
-  console.error("\nExport build failed.");
+  console.error("\nExport failed.");
   process.exit(result.status ?? 1);
 }
 
-// vite names the output after the input html (export.html). Standalone deliverable should be index.html.
+// vite names the output after the input html (export.html). The deliverable is index.html, with the
+// app script moved from <head> into <body> as a classic script (see export-html-assembly.mjs).
 const built = resolve(outDir, "export.html");
 const finalFile = resolve(outDir, "index.html");
-if (existsSync(built)) {
-  renameSync(built, finalFile);
-}
+writeFileSync(finalFile, moveAppScriptIntoBody(readFileSync(built, "utf8")));
+rmSync(built);
 
 // favicon.svg from public/ is copied but the export head doesn't reference it — drop the orphan.
 const orphanFavicon = resolve(outDir, "favicon.svg");
@@ -71,16 +83,15 @@ if (existsSync(orphanFavicon)) {
   rmSync(orphanFavicon);
 }
 
-// The deck's assets payload — including regenerable source artifacts such as
-// assets/diagrams/*.json — ships next to the HTML (report decision: deck assets are
-// excluded from nothing, so an export can be re-rendered from itself).
-const deckAssets = resolve(deckRoot, "assets");
-if (existsSync(deckAssets)) {
-  cpSync(deckAssets, resolve(outDir, "assets"), { recursive: true });
+// Single mode is the one HTML file alone: assets are already inside it. Web mode's assets/ folder is
+// emitted by the vite step with only the files the slides reference, so nothing is copied here.
+if (mode === "single") {
+  console.log(`\nDone. Standalone deck: ${finalFile}`);
+  console.log("Open it directly in a browser (double-click) — no server required.");
+} else {
+  console.log(`\nDone. Web deck: ${finalFile} with its assets/ folder.`);
+  console.log("Open index.html directly, or host the folder on any static server. Keep the folder together.");
 }
-
-console.log(`\nDone. Standalone deck: ${finalFile}`);
-console.log("Open it directly in a browser (double-click) — no server required.");
 
 function findWorkspaceDecksRoot(start = process.cwd()) {
   let directory = resolve(start);

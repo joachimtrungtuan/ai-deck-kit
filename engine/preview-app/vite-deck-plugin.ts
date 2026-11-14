@@ -4,7 +4,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import type { Plugin } from "vite";
 import { isMap, parseDocument } from "yaml";
 import { resolveFontImports } from "../cli/lib/font-catalog.ts";
-import { collectDeckAssetTable, isWithin } from "./deck-asset-table.ts";
+import { collectDeckAssetTable, isWithin, type AssetDelivery } from "./deck-asset-table.ts";
 import { stripSpeakerNotes } from "./strip-speaker-notes.ts";
 
 const virtualId = "virtual:aideck-deck";
@@ -53,9 +53,11 @@ export function aideckDeckPlugin(
   templatePath = process.env[templatePathKey],
   engineRoot = process.env[engineRootKey] ?? process.cwd(),
   gallery = parseGallery(),
-  { stripNotes = false }: { stripNotes?: boolean } = {},
+  { stripNotes = false, assetDelivery = "embedded" }: { stripNotes?: boolean; assetDelivery?: AssetDelivery } = {},
 ): Plugin {
   const watchedFiles = new Set<string>();
+  // Linked delivery ships the referenced files beside the page; these are the keys to copy.
+  let linkedAssetKeys: string[] = [];
   const galleryRoots = gallery.map((entry) => resolve(entry.root));
   // Identifies one dev-server process, so per-server presenter preferences can expire with it.
   let serverRunId: number | null = null;
@@ -94,7 +96,7 @@ export function aideckDeckPlugin(
       if (id !== resolvedVirtualId) return undefined;
       watchedFiles.clear();
       const source = deckPath
-        ? loadDeckSource(resolve(deckPath), resolve(engineRoot), watchedFiles, stripNotes)
+        ? loadDeckSource(resolve(deckPath), resolve(engineRoot), watchedFiles, { stripNotes, assetDelivery, onAssetKeys: (keys) => { linkedAssetKeys = keys; } })
         : templatePath
           ? loadTemplateSource(resolve(templatePath), watchedFiles)
           : "export const runtimeDeck = null;\nexport const runtimeTemplate = null;\nexport const deckAssets = {};";
@@ -103,6 +105,13 @@ export function aideckDeckPlugin(
       const combined = `${loadGallerySource(gallery, watchedFiles)}\n${source}\nexport const runtimeDeckExportUrl = ${JSON.stringify(exportUrl)};\nexport const runtimeServerRunId = ${JSON.stringify(serverRunId)};`;
       watchedFiles.forEach((file) => this.addWatchFile(file));
       return combined;
+    },
+    // Linked delivery: the page points at files, so the referenced ones are emitted beside it.
+    generateBundle() {
+      if (assetDelivery !== "linked" || !deckPath) return;
+      for (const key of linkedAssetKeys) {
+        this.emitFile({ type: "asset", fileName: key, source: readFileSync(join(resolve(deckPath), key)) });
+      }
     },
     handleHotUpdate({ file, server }) {
       if (!watchedFiles.has(resolve(file))) return;
@@ -249,7 +258,9 @@ export function resolveGeneratedTemplateImport(
   return existsSync(migrated) ? migrated : undefined;
 }
 
-function loadDeckSource(root: string, engineRoot: string, watchedFiles: Set<string>, stripNotes: boolean): string {
+type DeckSourceOptions = { stripNotes: boolean; assetDelivery: AssetDelivery; onAssetKeys: (keys: string[]) => void };
+
+function loadDeckSource(root: string, engineRoot: string, watchedFiles: Set<string>, { stripNotes, assetDelivery, onAssetKeys }: DeckSourceOptions): string {
   const manifestPath = join(root, "deck.json");
   const contentPath = join(root, "content.md");
   if (!existsSync(manifestPath) || !existsSync(contentPath)) throw new Error(`Deck must contain deck.json and content.md: ${root}`);
@@ -278,7 +289,8 @@ export const deckAssets = {};`;
   const resolvedManifest = { ...manifest, defaults: { ...manifest.defaults, transition: defaultTransition } };
   const rawContent = readFileSync(contentPath, "utf8");
   const content = stripNotes ? stripSpeakerNotes(rawContent) : rawContent;
-  const assetTable = collectDeckAssetTable(content, root, watchedFiles);
+  const assetTable = collectDeckAssetTable(content, root, watchedFiles, assetDelivery);
+  onAssetKeys(Object.keys(assetTable));
   return `${componentImports.join("\n")}
 ${renderFontImports(definition).join("\n")}
 ${renderTemplateStyleImports(definition).join("\n")}

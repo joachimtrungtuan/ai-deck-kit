@@ -62,12 +62,21 @@ export function referencedAssetKeys(content: string): string[] {
   return [...keys];
 }
 
+/** How the export carries asset bytes: inside the HTML as data URIs, or as files the HTML links to. */
+export type AssetDelivery = "embedded" | "linked";
+
 /**
- * Builds the shared asset table for a deck: one base64 data URI per distinct file the slides
- * actually render. A file referenced by many slides is stored once and looked up at render time,
- * and files only named in the authoring `assets:` list never reach the export.
+ * Builds the shared asset table for a deck: one entry per distinct file the slides actually render.
+ * Embedded delivery maps each key to a base64 data URI, stored once and looked up at render time;
+ * linked delivery maps each key to its own relative path, so the page points at a file beside it.
+ * Files only named in the authoring `assets:` list never reach the export.
  */
-export function collectDeckAssetTable(content: string, deckRoot: string, watchedFiles: Set<string>): Record<string, string> {
+export function collectDeckAssetTable(
+  content: string,
+  deckRoot: string,
+  watchedFiles: Set<string>,
+  delivery: AssetDelivery = "embedded",
+): Record<string, string> {
   const assetsRoot = resolve(deckRoot, "assets");
   const table: Record<string, string> = {};
   for (const key of referencedAssetKeys(content)) {
@@ -81,7 +90,7 @@ export function collectDeckAssetTable(content: string, deckRoot: string, watched
     const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
     const mime = assetMimeTypes[ext];
     if (!mime) throw new Error(`Unsupported asset type ".${ext}" for assets/${relPath}`);
-    table[key] = `data:${mime};base64,${readFileSync(filePath).toString("base64")}`;
+    table[key] = delivery === "linked" ? key : `data:${mime};base64,${readFileSync(filePath).toString("base64")}`;
   }
   return table;
 }

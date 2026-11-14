@@ -30,9 +30,14 @@ export function writeSingleSlideDeck(deck: string, schemaVersion: string, fence:
 }
 
 /** Runs the real export build and returns the process result plus the output directory. */
-export function exportDeck(work: string, deck: string): { status: number | null; output: string; outDir: string } {
-  const outDir = join(work, "out");
-  const result = spawnSync(process.execPath, [exportScript, "--deck", deck, "--out", outDir], { encoding: "utf8" });
+export function exportDeck(
+  work: string,
+  deck: string,
+  options: { mode?: string; out?: string } = {},
+): { status: number | null; output: string; outDir: string } {
+  const outDir = join(work, options.out ?? "out");
+  const modeArgs = options.mode === undefined ? [] : ["--mode", options.mode];
+  const result = spawnSync(process.execPath, [exportScript, "--deck", deck, "--out", outDir, ...modeArgs], { encoding: "utf8" });
   return { status: result.status, output: result.stdout + result.stderr, outDir };
 }
 
