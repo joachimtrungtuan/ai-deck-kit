@@ -11,6 +11,16 @@ const app = "console.log('app')";
 const css = ".deck{color:red}";
 const override = ".override { color: blue; }";
 
+async function waitForObservation(read: () => string | null): Promise<string> {
+  const deadline = Date.now() + 2000;
+  while (Date.now() < deadline) {
+    const value = read();
+    if (value) return value;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  throw new Error("Browser fixture did not report child-frame state.");
+}
+
 test("security metadata is ordered and hashes exact executable/style content", () => {
   const html = `<html><head>\n<meta charset="UTF-8" />\n<style>${css}</style>\n</head><body><div id="root"></div><script>${app}</script><script type="text/plain" data-slide="1">${JSON.stringify({ override: { css: override } })}</script></body></html>`;
   const secured = addExportSecurityMeta(html, { mode: "single" });
@@ -42,9 +52,15 @@ test("cross-origin iframe buster tolerates browser-blocked top navigation", asyn
     t.skip("Chrome is required for the cross-origin iframe regression");
     return;
   }
-  const child = createServer((_request, response) => {
+  let observation: string | null = null;
+  const child = createServer((request, response) => {
+    if (request.url?.startsWith("/report?")) {
+      observation = request.url.slice("/report?".length);
+      response.end("ok");
+      return;
+    }
     response.setHeader("Content-Type", "text/html");
-    response.end(`<!doctype html><html><head><style>html[data-csp-frame-bust="refused"] #export-loader,html[data-csp-frame-bust="refused"] #root{display:none}</style></head><body><div id="export-loader">loader</div><div id="root"></div><script>${exportFrameBusterScript}</script><script>if(document.documentElement.dataset.cspFrameBust!=="refused"){document.body.insertAdjacentHTML("beforeend",'<div id="child-marker">child</div>')}</script></body></html>`);
+    response.end(`<!doctype html><html><head><style>html[data-csp-frame-bust="refused"] #export-loader,html[data-csp-frame-bust="refused"] #root{display:none}</style></head><body><div id="export-loader">loader</div><div id="root"></div><script>${exportFrameBusterScript}</script><script>const state=new URLSearchParams({refused:document.documentElement.dataset.cspFrameBust||"",loader:getComputedStyle(document.querySelector("#export-loader")).display,root:getComputedStyle(document.querySelector("#root")).display,marker:document.querySelector("#child-marker")?"present":"absent"});fetch("/report?"+state).catch(()=>{});if(document.documentElement.dataset.cspFrameBust!=="refused"){document.body.insertAdjacentHTML("beforeend",'<div id="child-marker">child</div>')}</script></body></html>`);
   });
   const parent = createServer((_request, response) => {
     response.setHeader("Content-Type", "text/html");
@@ -78,9 +94,11 @@ test("cross-origin iframe buster tolerates browser-blocked top navigation", asyn
     // Chromium intentionally blocks a cross-origin iframe's top navigation without user
     // activation; the parent remains usable while the child export refuses to render.
     assert.match(dom, /id="parent-marker"/);
-    assert.match(dom, /data-csp-frame-bust="refused"/);
-    assert.doesNotMatch(dom, /id="child-marker"/);
-    assert.match(dom, /id="export-loader"/);
+    const report = await waitForObservation(() => observation);
+    assert.match(report, /refused=refused/);
+    assert.match(report, /loader=none/);
+    assert.match(report, /root=none/);
+    assert.match(report, /marker=absent/);
   } finally {
     rmSync(work, { recursive: true, force: true });
     child.close();
@@ -94,13 +112,19 @@ test("same-origin iframe keeps rendering after the frame-buster check", async (t
     t.skip("Chrome is required for the same-origin iframe regression");
     return;
   }
+  let observation: string | null = null;
   const server = createServer((request, response) => {
+    if (request.url?.startsWith("/report?")) {
+      observation = request.url.slice("/report?".length);
+      response.end("ok");
+      return;
+    }
     response.setHeader("Content-Type", "text/html");
     if (request.url === "/parent") {
       response.end(`<!doctype html><html><body><div id="parent-marker">parent</div><iframe src="/child"></iframe></body></html>`);
       return;
     }
-    response.end(`<!doctype html><html><body><div id="root"></div><script>${exportFrameBusterScript}</script><script>if(document.documentElement.dataset.cspFrameBust!=="refused"){document.body.insertAdjacentHTML("beforeend",'<div id="child-marker">child</div>')}</script></body></html>`);
+    response.end(`<!doctype html><html><body><div id="root"></div><script>${exportFrameBusterScript}</script><script>if(document.documentElement.dataset.cspFrameBust!=="refused"){document.body.insertAdjacentHTML("beforeend",'<div id="child-marker">child</div>')}const state=new URLSearchParams({refused:document.documentElement.dataset.cspFrameBust||"",root:getComputedStyle(document.querySelector("#root")).display,marker:document.querySelector("#child-marker")?"present":"absent"});fetch("/report?"+state).catch(()=>{});</script></body></html>`);
   });
   const listen = () => new Promise<void>((resolve, reject) => {
     server.once("error", reject);
@@ -124,8 +148,10 @@ test("same-origin iframe keeps rendering after the frame-buster check", async (t
       });
     });
     assert.match(dom, /id="parent-marker"/);
-    assert.match(dom, /id="child-marker"/);
-    assert.doesNotMatch(dom, /data-csp-frame-bust="refused"/);
+    const report = await waitForObservation(() => observation);
+    assert.doesNotMatch(report, /refused=refused/);
+    assert.match(report, /root=block/);
+    assert.match(report, /marker=present/);
   } finally {
     rmSync(work, { recursive: true, force: true });
     server.close();

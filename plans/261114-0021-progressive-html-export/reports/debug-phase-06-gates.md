@@ -41,8 +41,8 @@ Fixture: shipped `swiss-modern` template via `decks/presenter-test.deck`; Chrome
 - Marusei Google Fonts handling remains Phase 07 scope; not stripped or widened here.
 - Firefox and Safari strict-CSP browser evidence remains covered by prior spike limitations, not this gate.
 
-## Cross-origin regression follow-up
+## Cross-origin refusal regression follow-up
 
 The original cross-origin test used `execFileSync` while its HTTP fixtures lived in the same Node process. That blocked the event loop, so Chrome could not receive the fixture response; the earlier timeout was incorrectly attributed to the environment. The test now uses asynchronous `execFile` and fails Chrome errors/timeouts (skipping only missing Chrome or explicit localhost `EPERM`).
 
-With the corrected harness and escalated execution, Chrome returns in ~1s and the fixtures serve. The DOM remains the parent (`parent-marker`) rather than navigating to the child (`child-marker`), matching FR-61's best-effort fallback and Chromium's documented user-activation intervention. The regression now asserts no runtime failure or blank parent page; no guaranteed-navigation behavior is assumed.
+With the corrected harness and escalated execution, Chrome returns in ~1s and the fixtures serve. `--dump-dom` cannot inspect nested frames, so the fixture now reports child state to its own HTTP server after the real production buster runs. Cross-origin report proves `refused=refused`, loader/root computed display `none`, and no marker/mount. Same-origin report proves no refusal, root display `block`, and rendered marker present. Parent DOM remains usable in both cases. No guaranteed-navigation behavior is assumed.
