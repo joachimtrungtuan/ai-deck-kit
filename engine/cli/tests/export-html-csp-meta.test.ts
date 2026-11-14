@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFile } from "node:child_process";
 import { createServer } from "node:http";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -66,13 +66,15 @@ test("cross-origin iframe buster navigates the top window in Chrome", async (t) 
   const work = mkdtempSync(join(tmpdir(), "aideck-frame-buster-"));
   try {
     const parentPort = (parent.address() as { port: number }).port;
-    let dom = "";
-    try {
-      dom = execFileSync(chrome, ["--headless=new", "--no-sandbox", "--disable-gpu", `--user-data-dir=${work}`, "--dump-dom", `http://127.0.0.1:${parentPort}/parent`], { encoding: "utf8", timeout: 10000 });
-    } catch (error) {
-      t.skip(`Chrome could not run in this environment: ${error instanceof Error ? error.message : String(error)}`);
-      return;
-    }
+    const dom = await new Promise<string>((resolve, reject) => {
+      execFile(chrome, ["--headless=new", "--no-sandbox", "--disable-gpu", `--user-data-dir=${work}`, "--dump-dom", `http://127.0.0.1:${parentPort}/parent`], { encoding: "utf8", timeout: 10000, maxBuffer: 2 * 1024 * 1024 }, (error, stdout, stderr) => {
+        if (error) {
+          reject(new Error(`Chrome cross-origin regression failed: ${error.message}${stderr ? `\n${stderr}` : ""}`));
+          return;
+        }
+        resolve(stdout);
+      });
+    });
     assert.match(dom, /id="child-marker"/);
     assert.doesNotMatch(dom, /id="parent-marker"/);
   } finally {

@@ -40,3 +40,9 @@ Fixture: shipped `swiss-modern` template via `decks/presenter-test.deck`; Chrome
 
 - Marusei Google Fonts handling remains Phase 07 scope; not stripped or widened here.
 - Firefox and Safari strict-CSP browser evidence remains covered by prior spike limitations, not this gate.
+
+## Cross-origin regression follow-up
+
+The original cross-origin test used `execFileSync` while its HTTP fixtures lived in the same Node process. That blocked the event loop, so Chrome could not receive the fixture response; the earlier timeout was incorrectly attributed to the environment. The test now uses asynchronous `execFile` and fails Chrome errors/timeouts (skipping only missing Chrome or explicit localhost `EPERM`).
+
+With the corrected harness and escalated execution, Chrome returns in ~1s and the fixtures serve, but the DOM remains the parent (`parent-marker`) rather than navigating to the child (`child-marker`). This is real evidence that Chrome blocks the cross-origin iframe's top-level navigation attempt without user activation. The assertion remains strict and currently fails; no product behavior or test expectation was weakened. Phase 06 needs an explicit decision on whether FR61 requires guaranteed navigation or only a best-effort frame-buster attempt under modern browser intervention.

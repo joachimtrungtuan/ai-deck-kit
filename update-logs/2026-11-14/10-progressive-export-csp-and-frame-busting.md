@@ -19,6 +19,10 @@ Exported decks need a strict browser policy without unsafe-inline/eval while pre
 - Shipped `presenter-test` strict browser checks: single and web exports report `data-csp-check="ran"`, `data-export-ready="true"`, no violation marker; presenter export has the same result in both mirror iframes; `?print` reports the same and generated PDF has 7 pages.
 - Marusei Google font handling remains Phase 07 scope.
 
+## Cross-origin regression follow-up
+
+The cross-origin test's synchronous Chrome call was corrected to asynchronous `execFile`; otherwise it blocked the in-process HTTP fixture servers. The corrected test reaches Chrome and fails the strict assertion: Chrome returns the parent DOM, so the cross-origin iframe's top-navigation attempt is blocked without user activation. This remains an unresolved FR61 browser-semantics decision; the test is intentionally not weakened.
+
 ## Review fixes
 
 - Replaced cross-origin `Location.replace` method access with permitted top-level `location` assignment and a fail-safe `data-csp-frame-bust="blocked"` marker when navigation is blocked.
