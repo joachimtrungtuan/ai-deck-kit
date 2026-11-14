@@ -1,5 +1,9 @@
 # Template Authoring Workflow
 
+Template validation also checks bundled font files for readable OS/2 embedding permissions. Engine
+catalog families and Google Fonts imports carry their recorded open-licence provenance; restricted
+or unreadable local font files fail before export.
+
 Build order and file checklist for a new template set. Mirror an existing set (e.g. `engine/templates/swiss-modern.template/`) structurally at every step.
 
 ## Build Order

@@ -22,6 +22,7 @@ import { fileURLToPath } from "node:url";
 import { moveAppScriptIntoBody } from "./export-html-assembly.mjs";
 import { appendSlideDataBlocksFromFile } from "./export-html-slide-data-blocks.mjs";
 import { addExportSecurityMeta } from "./export-html-csp-meta.mjs";
+import { scanExternalSources, allowancesForCsp } from "./export-html-source-scan.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDir, "../../../..");
@@ -68,6 +69,16 @@ const outDir = getArg("out")
   : resolve(deckRoot, ".build", "export");
 
 console.log(`Exporting ${mode} HTML\n  deck: ${deckRoot}\n  out:  ${outDir}`);
+const templateRoot = resolve(deckRoot, "template");
+const templateManifestPath = resolve(templateRoot, "template-manifest.json");
+const sourceScan = scanExternalSources({ deckRoot, templateRoot, templateManifestPath });
+if (sourceScan.errors.length) {
+  console.error("External-source scan failed:");
+  sourceScan.errors.forEach((error) => console.error(`- ${error}`));
+  process.exit(1);
+}
+const cspAllowances = allowancesForCsp({ allowances: sourceScan.allowances.filter(({ origin }) => !["https://fonts.googleapis.com", "https://fonts.gstatic.com"].includes(origin)) });
+for (const allowance of sourceScan.allowances) console.log(`CSP allowance: ${allowance.directive} ${allowance.origin} (${allowance.source})`);
 mkdirSync(outDir, { recursive: true });
 
 const result = spawnSync(
@@ -95,7 +106,7 @@ const manifestPath = resolve(outDir, ".asset-manifest.json");
 try {
   let assembled = moveAppScriptIntoBody(readFileSync(built, "utf8"));
   if (mode === "single") assembled = appendSlideDataBlocksFromFile(assembled, manifestPath);
-  assembled = addExportSecurityMeta(assembled, { mode });
+  assembled = addExportSecurityMeta(assembled, { mode, allowances: cspAllowances });
   writeFileSync(finalFile, assembled);
   rmSync(built);
 } finally {

@@ -23,6 +23,11 @@ decks need no registry entry or source import.
 
 ## Standalone HTML
 
+Before Vite builds, export scans the deck and resolved template for external resource URLs. HTTP,
+wildcard, or unclassifiable resource requests stop the export; each exact-origin allowance is
+printed. Google Fonts CSS and font bytes are downloaded during export and embedded as data URLs,
+so the resulting CSP contains no Google CDN origin.
+
 ```bash
 aideck export html <deck-id>
 ```

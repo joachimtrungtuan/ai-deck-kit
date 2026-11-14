@@ -1,5 +1,9 @@
 # Quality Gate
 
+The final gate includes the external-source scan and pinned-template font licence check. Resolve
+every HTTP, wildcard, or unclassifiable resource before handoff; export warnings for restricted
+fonts are informational only because authoring validation is the blocking check.
+
 Run this checklist before handing off a deck.
 
 ## Content

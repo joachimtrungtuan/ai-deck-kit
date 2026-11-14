@@ -6,6 +6,7 @@ import { isMap, parseDocument } from "yaml";
 import { resolveFontImports } from "../cli/lib/font-catalog.ts";
 import { collectDeckAssetTable, isWithin, referencedAssetKeysBySlide, type AssetDelivery } from "./deck-asset-table.ts";
 import { stripSpeakerNotes } from "./strip-speaker-notes.ts";
+import { embedGoogleFonts } from "../skills/presentation-crafting/scripts/export-google-fonts-embed.mjs";
 
 const virtualId = "virtual:aideck-deck";
 const resolvedVirtualId = `\0${virtualId}`;
@@ -107,6 +108,11 @@ export function aideckDeckPlugin(
       const combined = `${loadGallerySource(gallery, watchedFiles)}\n${source}\nexport const runtimeDeckExportUrl = ${JSON.stringify(exportUrl)};\nexport const runtimeServerRunId = ${JSON.stringify(serverRunId)};`;
       watchedFiles.forEach((file) => this.addWatchFile(file));
       return combined;
+    },
+    async transform(code, id) {
+      if (!id.endsWith(".css") || !code.includes("fonts.googleapis.com")) return undefined;
+      const embedded = await embedGoogleFonts(code);
+      return { code: embedded.css, map: null };
     },
     // Linked delivery: the page points at files, so the referenced ones are emitted beside it.
     generateBundle() {

@@ -13,6 +13,7 @@ import { parse as parseYaml } from "yaml";
 import * as PhosphorIcons from "@phosphor-icons/react";
 import { validateDiagramIr } from "./validate-diagram-ir.mjs";
 import { validateSlideMediaProps } from "./validate-slide-media-props.mjs";
+import { checkTemplateFonts } from "../../presentation-template-creation/scripts/font-license-check.mjs";
 
 const deckDir = process.argv[2];
 
@@ -98,6 +99,9 @@ if (manifest.template?.set) {
     }
     if (manifest.slideTypeCatalog && templateManifest.slideTypeCatalog && manifest.slideTypeCatalog !== templateManifest.slideTypeCatalog) {
       errors.push(`deck.json: slideTypeCatalog mismatch, deck=${manifest.slideTypeCatalog}, template=${templateManifest.slideTypeCatalog}.`);
+    }
+    if (templateManifest && templateManifestPath === path.join(deckDir, "template", "template-manifest.json")) {
+      errors.push(...checkTemplateFonts(path.dirname(templateManifestPath), templateManifest).errors.map((error) => `deck template: ${error}`));
     }
   }
 }
