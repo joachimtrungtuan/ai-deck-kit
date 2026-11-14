@@ -6,6 +6,10 @@ function sha256(text) {
   return `sha256-${createHash("sha256").update(text).digest("base64")}`;
 }
 
+function cspSource(value) {
+  return value.startsWith("sha256-") ? `'${value}'` : value;
+}
+
 function attribute(attrs, name) {
   return attrs.match(new RegExp(`\\b${name}\\s*=\\s*[\\\"']([^\\\"']*)`, "i"))?.[1] ?? "";
 }
@@ -69,7 +73,7 @@ export function addExportSecurityMeta(html, { mode = "single", allowances = {} }
     ["form-action", ["'none'"]],
     ["object-src", ["'none'"]],
   ];
-  const policy = directives.map(([name, values]) => `${name} ${values.join(" ")}`).join("; ");
+  const policy = directives.map(([name, values]) => `${name} ${values.map(cspSource).join(" ")}`).join("; ");
   const security = `    <meta http-equiv="Content-Security-Policy" content="${policy}" />\n    <meta name="referrer" content="no-referrer" />\n    <script>${FRAME_BUSTER}</script>\n`;
   const charset = html.match(/<meta\b[^>]*charset=[^>]*>/i);
   if (!charset || charset.index === undefined) throw new Error("Export security: charset meta is required.");

@@ -13,4 +13,8 @@ Exported decks need a strict browser policy without unsafe-inline/eval while pre
 
 ## Validation
 
-Focused CSP/export tests, typecheck, lint, build:check, and validate pass. Full npm test and browser CSP/PDF evidence remain to the orchestrator's final gate/manual phase; Marusei Google font handling remains Phase 07 scope.
+- Fixed CSP hash-source serialization: SHA-256 sources are quoted per CSP syntax; focused policy assertions updated.
+- `npm test` — 205/205 pass (escalated run; sandbox-only Chrome/Vite failures were `Chrome failed` and `listen EPERM`).
+- `npm run build:check`, `npm run lint`, `npm run typecheck`, `npm run validate` — pass.
+- Shipped `presenter-test` strict browser checks: single and web exports report `data-csp-check="ran"`, `data-export-ready="true"`, no violation marker; presenter export has the same result in both mirror iframes; `?print` reports the same and generated PDF has 7 pages.
+- Marusei Google font handling remains Phase 07 scope.

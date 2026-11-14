@@ -13,9 +13,9 @@ test("security metadata is ordered and hashes exact executable/style content", (
   assert.ok(secured.indexOf("http-equiv=\"Content-Security-Policy\"") < secured.indexOf("name=\"referrer\""));
   assert.ok(secured.indexOf("name=\"referrer\"") < secured.indexOf("<script>(function"));
   const policy = secured.match(/content="([^"]+)"/)?.[1] ?? "";
-  assert.ok(policy.includes(`script-src ${hashInlineContent(app)} ${hashInlineContent(exportFrameBusterScript)}`));
-  assert.ok(policy.includes(`style-src ${hashInlineContent(css)} ${hashInlineContent(override)}`));
-  assert.ok(policy.includes(hashInlineContent(override)));
+  assert.ok(policy.includes(`script-src '${hashInlineContent(app)}' '${hashInlineContent(exportFrameBusterScript)}'`));
+  assert.ok(policy.includes(`style-src '${hashInlineContent(css)}' '${hashInlineContent(override)}'`));
+  assert.ok(policy.includes(`'${hashInlineContent(override)}'`));
   assert.doesNotMatch(policy, /unsafe-(?:inline|eval)/);
   assert.doesNotMatch(policy, /(?:frame-ancestors|sandbox|report-uri)/);
   assert.match(policy, /connect-src 'none'/);
