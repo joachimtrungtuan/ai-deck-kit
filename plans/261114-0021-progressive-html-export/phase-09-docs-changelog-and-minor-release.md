@@ -4,7 +4,7 @@
 - All FRs (documentation of behaviour), decision a (PRD §7 reconciliation). CLAUDE.md "Releases", "Update Logs", AGENTS.md lockstep.
 
 ## Overview
-Priority P1. Status in-progress (documentation complete; local 1.5.0 preparation and publication pending). Last phase.
+Priority P1. Status in-progress (documentation and local 1.5.0 preparation complete; publication pending). Last phase.
 
 ## Requirements
 - `docs/modules/export-package-module-prd.md` §7 reworded per decision a (single = self-contained; web = folder; export may fetch fonts at build time; page never requests network).
@@ -35,12 +35,12 @@ No new tests; full suite must pass.
 - [x] SKILL.md
 - [x] Changelog draft
 - [x] Documentation review and update log
-- [ ] Merge + lockstep bump + annotated tag on main
+- [x] Merge + lockstep bump + annotated tag on main
 - [ ] Published release notes after successful Engine Release workflow
 - [ ] Publication-result update log
 
 ## Reconciled evidence — 2026-11-15
-Documentation approved in [review-phase-09-docs.md](reports/review-phase-09-docs.md). All five gates passed at source `15b453c` (228/228 tests). [Manual acceptance](reports/manual-acceptance.md) records AC-1..10; [CLI diagnosis](reports/debug-cli-browser-launch.md) closes the managed-sandbox launch concern. Reviewed documentation is pending explicit staging/commit. Version remains 1.4.1 on the feature branch; 1.5.0 merge/bump/tag have not occurred. External publication requires user approval; do not claim released.
+Documentation approved in [review-phase-09-docs.md](reports/review-phase-09-docs.md). All five gates passed at source `15b453c` (228/228 tests). [Manual acceptance](reports/manual-acceptance.md) records AC-1..10; [CLI diagnosis](reports/debug-cli-browser-launch.md) closes the managed-sandbox launch concern. Reviewed documentation committed as `4e0bcda`. Local main merge, 1.5.0 version bump and annotated tag are complete; see [local verification](reports/local-release-verification.md). External publication requires user approval; do not claim released.
 
 ## Risks / rollback
 Workflow failure after tag → fix on `main`, cut 1.5.1; never re-tag a pushed tag.

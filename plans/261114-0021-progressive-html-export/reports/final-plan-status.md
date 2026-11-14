@@ -1,8 +1,8 @@
 # Final plan status — 2026-11-15
 
-Overall in-progress: 7/9 phases complete; 53/57 tasks (93.0%; CLI integer 92).
+Overall in-progress: 7/9 phases complete; 54/57 tasks (94.7%).
 
-Phases 02–08 complete. Phase 01 code/local 1.4.1 preparation complete, publication pending (local main 72a606b; annotated v1.4.1 commit 324532d). Phase 09 docs approved; local 1.5.0 merge/bump/tag and publication pending. Final appendices of review-phase-04 through review-phase-08 supersede historical findings. [Docs review](review-phase-09-docs.md) approved.
+Phases 02–08 complete. Phase 01 code/local 1.4.1 preparation complete, publication pending (local main 72a606b; annotated v1.4.1 commit 324532d). Phase 09 docs and local 1.5.0 merge/bump/tag complete; publication pending. [Local release verification](local-release-verification.md) records package and real install/upgrade proof. Final appendices of review-phase-04 through review-phase-08 supersede historical findings. [Docs review](review-phase-09-docs.md) approved.
 
 ## Acceptance mapping
 
@@ -25,15 +25,15 @@ Accepted controller evidence at source 15b453c: 228/228 tests and build:check/li
 
 ## Remaining release work
 
-1. Explicitly commit reviewed docs and plan/journal/log files; preserve unrelated November 14 end-session note.
-2. Prepare local 1.5.0 merge to main, lockstep bump, changelog consistency and annotated tag; run required release gates after merge/version edits.
+1. DONE: reviewed documentation committed; unrelated November 14 end-session note preserved.
+2. DONE: main merge, lockstep 1.5.0 bump, annotated tag, required gates, actual pack and scratch install/upgrade verified.
 3. User approval required before GitHub writes. Publish prepared 1.4.1 then 1.5.0 in correct ancestry/order; push main before tags, let Engine Release create releases, verify workflow/assets, then edit release notes. Never create releases manually.
 4. Record actual workflow/publication results and close Phase 01/09 remaining boxes only when verified; reindex/read back.
 
-Finish these release obligations: installing users need versioned artifacts, so implementation completion alone cannot close this plan. No publication, source, version, merge or tag changes made here.
+Finish these release obligations: installing users need versioned artifacts, so implementation completion alone cannot close this plan. No external publication performed; local release work is recorded in the verification report.
 
 ## Validation
 
-Canonical ak plan check completed 02–08; validate valid; status in-progress, 7/9 phases, 53/57 tasks. Temporary AgentKit store reindexed. No explicit global journal.auto=false; local journal required. AgentWiki/social publishing skipped.
+Canonical ak plan check completed 02–08; validate valid; status in-progress, 7/9 phases, 54/57 tasks after local release checkbox readback. Temporary AgentKit store reindexed. No explicit global journal.auto=false; local journal required. AgentWiki/social publishing skipped.
 
 Unresolved questions: none in implementation; external publication awaits user approval.
