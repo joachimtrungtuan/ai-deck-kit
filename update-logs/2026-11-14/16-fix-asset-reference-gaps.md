@@ -2,7 +2,7 @@
 
 ## What changed
 
-- Allowed rendered asset keys whose file names contain spaces while retaining a file-like extension guard so prose such as `assets/ is where images live` is not collected.
+- Allowed rendered asset keys whose file names contain spaces while retaining the original compact-path grammar (including extensionless and traversal-shaped paths), with a file-like extension guard only for spaced paths so prose such as `assets/ is where images live` is not collected.
 - Added shared collection and replacement support for unquoted CSS `url(assets/<file>)` references.
 - Added focused path/resolver coverage and real single/web export coverage for a spaced PNG plus unquoted CSS URL.
 

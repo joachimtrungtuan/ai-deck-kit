@@ -169,6 +169,7 @@ test("the export build fails on a missing asset path and on a path that leaves a
   for (const [bad, message] of [
     ["assets/not-there.png", /Referenced asset not found: assets\/not-there\.png/],
     ["assets/../../escape.png", /Asset path escapes deck assets\//],
+    ["assets/../../../etc/passwd", /Asset path escapes deck assets\//],
   ] as const) {
     writeFileSync(join(deck, "content.md"), content.replace('imageSrc: "assets/station-ridge.svg"', `imageSrc: "${bad}"`));
     const result = exportDeck(work, deck);

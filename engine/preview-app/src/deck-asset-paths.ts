@@ -7,11 +7,12 @@
 export const embeddedAssetPattern = /(["'])(assets\/[^"']+)\1/g;
 const cssUrlAssetPattern = /url\(\s*(assets\/[^)"']+?)\s*\)/g;
 
-/** A whole-string reference has a file-like basename, so prose that merely starts with "assets/" is left alone. */
-const wholeAssetPattern = /^assets\/(?=\S)(?=[^"']*\.[^/"']+$)[^"']+$/;
+/** Keep the original compact-path grammar, and add spaced paths only when they look like file names. */
+const wholeAssetPattern = /^assets\/[^\s"']+$/;
+const spacedAssetPattern = /^assets\/(?=\S)(?=[^"']*\.[^/"']+$)[^"']+$/;
 
 function isAssetKey(value: string): boolean {
-  return wholeAssetPattern.test(value);
+  return wholeAssetPattern.test(value) || spacedAssetPattern.test(value);
 }
 
 /** Every asset key (`assets/<file>`) a single string refers to. */
