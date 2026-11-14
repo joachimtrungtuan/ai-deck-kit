@@ -18,3 +18,8 @@ Exported decks need a strict browser policy without unsafe-inline/eval while pre
 - `npm run build:check`, `npm run lint`, `npm run typecheck`, `npm run validate` — pass.
 - Shipped `presenter-test` strict browser checks: single and web exports report `data-csp-check="ran"`, `data-export-ready="true"`, no violation marker; presenter export has the same result in both mirror iframes; `?print` reports the same and generated PDF has 7 pages.
 - Marusei Google font handling remains Phase 07 scope.
+
+## Review fixes
+
+- Replaced cross-origin `Location.replace` method access with permitted top-level `location` assignment and a fail-safe `data-csp-frame-bust="blocked"` marker when navigation is blocked.
+- Added a real Chrome cross-origin iframe regression serving parent/child origins and asserting top-window navigation; it skips here because localhost binding is denied by the sandbox.

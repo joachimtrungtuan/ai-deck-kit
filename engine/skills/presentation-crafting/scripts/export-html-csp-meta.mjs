@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-const FRAME_BUSTER = `(function(){document.documentElement.dataset.cspCheck="ran";document.addEventListener("securitypolicyviolation",function(event){var root=document.documentElement;root.dataset.cspViolations=(root.dataset.cspViolations?root.dataset.cspViolations+"|":"")+(event.blockedURI||event.violatedDirective||"unknown");});try{if(window.top===window)return;void window.top.location.href;}catch(error){window.top.location.replace(window.location.href);}})();`;
+const FRAME_BUSTER = `(function(){document.documentElement.dataset.cspCheck="ran";document.addEventListener("securitypolicyviolation",function(event){var root=document.documentElement;root.dataset.cspViolations=(root.dataset.cspViolations?root.dataset.cspViolations+"|":"")+(event.blockedURI||event.violatedDirective||"unknown");});try{if(window.top===window)return;void window.top.location.href;}catch(error){try{window.top.location=window.location.href;}catch(navigationError){document.documentElement.dataset.cspFrameBust="blocked";}}})();`;
 
 function sha256(text) {
   return `sha256-${createHash("sha256").update(text).digest("base64")}`;

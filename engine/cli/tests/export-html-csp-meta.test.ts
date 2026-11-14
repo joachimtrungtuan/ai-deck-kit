@@ -1,4 +1,9 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { createServer } from "node:http";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 import { addExportSecurityMeta, exportFrameBusterScript, hashInlineContent } from "../../skills/presentation-crafting/scripts/export-html-csp-meta.mjs";
 
@@ -29,4 +34,50 @@ test("web mode permits same-origin images while single mode does not", () => {
   assert.match(web, /img-src data: 'self'/);
   assert.doesNotMatch(single, /img-src data: 'self'/);
   assert.ok(web.includes(hashInlineContent(override)));
+});
+
+test("cross-origin iframe buster navigates the top window in Chrome", async (t) => {
+  const chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+  if (!existsSync(chrome)) {
+    t.skip("Chrome is required for the cross-origin iframe regression");
+    return;
+  }
+  const child = createServer((_request, response) => {
+    response.setHeader("Content-Type", "text/html");
+    response.end(`<!doctype html><html><body><div id="child-marker">child</div><script>${exportFrameBusterScript}</script></body></html>`);
+  });
+  const parent = createServer((_request, response) => {
+    response.setHeader("Content-Type", "text/html");
+    response.end(`<!doctype html><html><body><div id="parent-marker">parent</div><iframe src="http://127.0.0.1:${(child.address() as { port: number }).port}/child"></iframe></body></html>`);
+  });
+  const listen = (server: ReturnType<typeof createServer>) => new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => resolve());
+  });
+  try {
+    await listen(child);
+    await listen(parent);
+  } catch (error) {
+    child.close(); parent.close();
+    if ((error as NodeJS.ErrnoException).code === "EPERM") t.skip("localhost binding is unavailable in this environment");
+    else throw error;
+    return;
+  }
+  const work = mkdtempSync(join(tmpdir(), "aideck-frame-buster-"));
+  try {
+    const parentPort = (parent.address() as { port: number }).port;
+    let dom = "";
+    try {
+      dom = execFileSync(chrome, ["--headless=new", "--no-sandbox", "--disable-gpu", `--user-data-dir=${work}`, "--dump-dom", `http://127.0.0.1:${parentPort}/parent`], { encoding: "utf8", timeout: 10000 });
+    } catch (error) {
+      t.skip(`Chrome could not run in this environment: ${error instanceof Error ? error.message : String(error)}`);
+      return;
+    }
+    assert.match(dom, /id="child-marker"/);
+    assert.doesNotMatch(dom, /id="parent-marker"/);
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+    child.close();
+    parent.close();
+  }
 });
