@@ -3,9 +3,10 @@
  * as a deck asset reference: a string that is entirely a deck-relative `assets/<file>` path, or a
  * quoted `assets/<file>` inside a longer string (an override's html or css).
  */
-export const embeddedAssetPattern = /(["'])(assets\/[^"']+)\1/g;
+export const embeddedAssetPattern = /(["'])(assets\/[^\s"'][^"']*)\1/g;
 
-const wholeAssetPattern = /^assets\/[^"'\n]+$/;
+/** A whole-string reference has a file name and no whitespace, so prose that merely starts with "assets/" is left alone. */
+const wholeAssetPattern = /^assets\/[^\s"']+$/;
 
 /** Every asset key (`assets/<file>`) a single string refers to. */
 export function assetKeysInString(value: string): string[] {

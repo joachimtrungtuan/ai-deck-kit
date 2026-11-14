@@ -14,9 +14,27 @@ const assetMimeTypes: Record<string, string> = {
   avif: "image/avif",
 };
 
-function isWithin(root: string, file: string): boolean {
-  const path = relative(root, file);
+export function isWithin(root: string, file: string): boolean {
+  const path = relative(root, resolve(file));
   return path === "" || (!path.startsWith("..") && !isAbsolute(path));
+}
+
+/**
+ * Fallback for a fence that is not valid YAML: the lenient legacy parser still renders its
+ * `key: value` lines, so scan them the same way. Authoring-only keys (and their indented
+ * continuation lines) are skipped; outer quotes on a value are dropped.
+ */
+function lenientFenceValues(yamlText: string): string[] {
+  const values: string[] = [];
+  let authoring = false;
+  for (const line of yamlText.split("\n")) {
+    const top = line.match(/^([A-Za-z][\w-]*):\s*(.*)$/);
+    if (top) authoring = authoringSlideYamlKeys.includes(top[1]);
+    if (authoring) continue;
+    const value = (top ? top[2] : line.replace(/^\s*-\s+/, "").replace(/^\s*[\w-]+:\s+/, "")).trim();
+    values.push(/^(["']).*\1$/.test(value) ? value.slice(1, -1) : value);
+  }
+  return values;
 }
 
 /** The slide fence's render props: parsed YAML minus the authoring-only keys the renderer never reads. */
@@ -27,7 +45,7 @@ function slideRenderProps(section: string): unknown[] {
   try {
     parsed = parseYaml(yamlText);
   } catch {
-    return [];
+    return lenientFenceValues(yamlText);
   }
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return [];
   return Object.entries(parsed as Record<string, unknown>)

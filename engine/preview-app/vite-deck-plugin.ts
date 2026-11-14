@@ -4,7 +4,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import type { Plugin } from "vite";
 import { isMap, parseDocument } from "yaml";
 import { resolveFontImports } from "../cli/lib/font-catalog.ts";
-import { collectDeckAssetTable } from "./deck-asset-table.ts";
+import { collectDeckAssetTable, isWithin } from "./deck-asset-table.ts";
 import { stripSpeakerNotes } from "./strip-speaker-notes.ts";
 
 const virtualId = "virtual:aideck-deck";
@@ -505,11 +505,6 @@ function deckTemplateRoot(root: string, engineRoot: string, templateName?: strin
     throw new Error(`Deck "${root}" has no template snapshot and template "${templateName}" was not found. Run: aideck deck retemplate <slug> --to <template>`);
   }
   return found;
-}
-
-function isWithin(root: string, file: string): boolean {
-  const path = relative(root, resolve(file));
-  return path === "" || (!path.startsWith("..") && !path.startsWith("/"));
 }
 
 function generatedSource(root: string, slug: string): string | undefined {
