@@ -31,6 +31,7 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
   const [active, setActive] = useState(0);
   const activeSlide = slides[active];
   const [jumpValue, setJumpValue] = useState("1");
+  const [pickerOpen, setPickerOpen] = useState(false);
   // Embedded in the presenter's mirror frame, the on-slide controls would only be noise.
   const [controlsVisible, setControlsVisible] = useState(() => window.parent === window);
   const frameDocumentRef = useRef<Document | null>(null);
@@ -108,6 +109,8 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
     else setJumpValue(String(active + 1));
   }
 
+  const slideLabel = (slide: typeof activeSlide, index: number) => `${String(index + 1).padStart(2, "0")} — ${slide.tocTitle ? `${slide.tocTitle} · ${slide.type}` : slide.type}`;
+
   return (
     <div className="deck-export" onContextMenu={(event) => {
       event.preventDefault();
@@ -144,18 +147,14 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
           />
           / {total}
         </span>
-        <select
-          className="deck-select"
-          aria-label="Choose slide"
-          value={active}
-          onChange={(e) => go(Number(e.target.value))}
-        >
-          {slides.map((slide, index) => (
-            <option key={slide.id ?? slide.type} value={index}>
-            {String(index + 1).padStart(2, "0")} — {slide.tocTitle ? `${slide.tocTitle} · ${slide.type}` : slide.type}
-            </option>
-          ))}
-        </select>
+        <div className="deck-picker">
+          <button type="button" className="deck-select" aria-label="Choose slide" aria-haspopup="listbox" aria-expanded={pickerOpen} onClick={() => setPickerOpen((open) => !open)} onKeyDown={(event) => { if (event.key === "Escape") setPickerOpen(false); }}>
+            {slideLabel(activeSlide, active)}
+          </button>
+          {pickerOpen && <div className="deck-picker-menu" role="listbox" aria-label="Slides">
+            {slides.map((slide, index) => <button key={slide.id ?? slide.type} type="button" role="option" aria-selected={index === active} className="deck-picker-option" onClick={() => { setPickerOpen(false); go(index); }}>{slideLabel(slide, index)}</button>)}
+          </div>}
+        </div>
         <button type="button" aria-label="Next slide" onClick={() => go(active + 1)} disabled={active === total - 1}>
           ›
         </button>
