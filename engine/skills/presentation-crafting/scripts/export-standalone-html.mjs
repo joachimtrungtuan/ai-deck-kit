@@ -90,12 +90,16 @@ if (result.status !== 0) {
 // app script moved from <head> into <body> as a classic script (see export-html-assembly.mjs).
 const built = resolve(outDir, "export.html");
 const finalFile = resolve(outDir, "index.html");
-let assembled = moveAppScriptIntoBody(readFileSync(built, "utf8"));
 const manifestPath = resolve(outDir, ".asset-manifest.json");
-if (mode === "single") assembled = appendSlideDataBlocksFromFile(assembled, manifestPath);
-writeFileSync(finalFile, assembled);
-rmSync(built);
-if (existsSync(manifestPath)) rmSync(manifestPath);
+try {
+  let assembled = moveAppScriptIntoBody(readFileSync(built, "utf8"));
+  if (mode === "single") assembled = appendSlideDataBlocksFromFile(assembled, manifestPath);
+  writeFileSync(finalFile, assembled);
+  rmSync(built);
+} finally {
+  if (existsSync(manifestPath)) rmSync(manifestPath);
+  if (existsSync(built)) rmSync(built);
+}
 
 // favicon.svg from public/ is copied but the export head doesn't reference it — drop the orphan.
 const orphanFavicon = resolve(outDir, "favicon.svg");

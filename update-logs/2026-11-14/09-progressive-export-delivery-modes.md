@@ -17,3 +17,10 @@
 ## Follow-ups
 
 Progressive first-paint manual verification through the Marusei trickle server and Safari remains scheduled for the final manual phase. CSP hashing/metadata is intentionally deferred to phase 06.
+
+## Review fixes
+
+- The data-block observer now waits for a following sibling before parsing, rescans all blocks on mutations, and flushes the final block at `DOMContentLoaded`; malformed blocks are not permanently discarded after an early parse attempt.
+- Payload waiters now retain reject callbacks and fail clearly on malformed blocks or missing paths after the document stream closes, preventing indefinite slide gates and PDF waits.
+- Post-Vite assembly and intermediate-file cleanup now run under `try/finally`, including failures while moving scripts, appending blocks, or writing the final HTML.
+- Added deterministic coverage for incomplete-block deferral and final-block flushing.
