@@ -118,3 +118,27 @@ test("the export build fails on a missing asset path and on a path that leaves a
     assert.match(result.stdout + result.stderr, message);
   }
 });
+
+test("the export build fails on a symlink in assets/ that points outside the deck", () => {
+  const { work, deck } = workspaceWithDeck();
+  after(() => rmSync(work, { recursive: true, force: true }));
+  const secret = join(work, "outside-secret.png");
+  writeFileSync(secret, randomBytes(2000));
+  symlinkSync(secret, join(deck, "assets", "linked-out.png"));
+  const content = readFileSync(join(deck, "content.md"), "utf8");
+  writeFileSync(join(deck, "content.md"), content.replace('imageSrc: "assets/station-ridge.svg"', 'imageSrc: "assets/linked-out.png"'));
+  const outDir = join(work, "out");
+  const result = spawnSync(process.execPath, [exportScript, "--deck", deck, "--out", outDir], { encoding: "utf8" });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stdout + result.stderr, /Asset path escapes deck assets\/: linked-out\.png/);
+});
+
+test("collecting assets follows a symlink that stays inside the deck", () => {
+  const work = mkdtempSync(join(tmpdir(), "aideck-asset-link-"));
+  after(() => rmSync(work, { recursive: true, force: true }));
+  const assets = join(work, "assets");
+  cpSync(join(engineRoot, "examples", "showcase.deck", "assets"), assets, { recursive: true });
+  symlinkSync(join(assets, "station-ridge.svg"), join(assets, "alias.svg"));
+  const content = ["## Slide 01 (slide-01)", "```yaml", 'imageSrc: "assets/alias.svg"', "```"].join("\n");
+  assert.deepEqual(Object.keys(collectDeckAssetTable(content, work, new Set())), ["assets/alias.svg"]);
+});

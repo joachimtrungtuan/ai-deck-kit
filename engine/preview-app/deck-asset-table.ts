@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { authoringSlideYamlKeys } from "./src/authoring-slide-yaml-keys.ts";
@@ -57,6 +57,8 @@ export function collectDeckAssetTable(content: string, deckRoot: string, watched
     const filePath = resolve(assetsRoot, relPath);
     if (!isWithin(assetsRoot, filePath)) throw new Error(`Asset path escapes deck assets/: ${relPath}`);
     if (!existsSync(filePath)) throw new Error(`Referenced asset not found: assets/${relPath} (deck: ${deckRoot})`);
+    // A symlink inside assets/ must not carry a file from outside the deck into the export.
+    if (!isWithin(realpathSync(assetsRoot), realpathSync(filePath))) throw new Error(`Asset path escapes deck assets/: ${relPath}`);
     watchedFiles.add(filePath);
     const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
     const mime = assetMimeTypes[ext];
