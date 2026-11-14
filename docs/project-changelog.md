@@ -1,5 +1,22 @@
 # AI Deck Kit — Project Changelog
 
+## 1.4.1 — 2026-11-14
+
+- Standalone HTML export embeds each referenced image once. Slide props keep
+  plain `assets/` paths; the build adds one shared table of data URIs and a
+  runtime resolver swaps them in per slide, instead of copying the image for
+  every use. A 40-slide reference deck exports at 15.8 MB instead of 29.5 MB.
+- Only assets referenced by rendered slide props are embedded. Authoring-only
+  keys (`assets:` lists) and speaker notes no longer add anything to the file.
+- The export build fails on a missing asset and on an asset that escapes the
+  deck folder, whether through `../` or a symlink inside `assets/`.
+- Legacy v1 slide fences that are not valid YAML still keep their images, and
+  prose such as "assets/ is where images live" is not read as an asset path.
+- Docs: progressive HTML export functional requirements
+  (`docs/modules/export-progressive-html-functional-requirements.md`) and the
+  recorded product decisions; the export module PRD now separates single-file
+  and web-mode offline claims.
+
 ## 1.4.0 — 2026-10-30
 
 - Presenter layout: a draggable splitter between the slides and notes columns
