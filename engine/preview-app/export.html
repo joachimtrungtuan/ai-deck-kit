@@ -4,8 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Presentation</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #000; }
+      #export-loader { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: #000; }
+      #export-loader > div { position: relative; width: min(320px, 60vw); height: 3px; overflow: hidden; border-radius: 2px; background: rgba(255, 255, 255, 0.16); }
+      #export-loader > div > span { position: absolute; top: 0; bottom: 0; left: 0; width: 40%; border-radius: 2px; background: #f7f8f8; animation: export-loader-slide 1.2s ease-in-out infinite; }
+      #export-loader > div.is-determinate > span { width: var(--export-loader-progress, 0%); animation: none; transition: width 200ms ease; }
+      @keyframes export-loader-slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+      @media (prefers-reduced-motion: reduce) { #export-loader > div > span { animation: none; width: 40%; } }
+    </style>
   </head>
   <body>
+    <div id="export-loader" role="status" aria-label="Loading"><div role="progressbar"><span></span></div></div>
     <div id="root"></div>
     <script type="module" src="/src/export-main.tsx"></script>
   </body>

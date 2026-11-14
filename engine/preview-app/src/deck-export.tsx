@@ -3,6 +3,8 @@ import { deckAssets } from "virtual:aideck-deck";
 import { resolveSlideAssets } from "./deck-asset-resolver";
 import { goToSlide } from "./slide-transition-runtime";
 import { FixedSlideCanvas } from "./fixed-slide-canvas";
+import { SlideGate } from "./export-slide-gate";
+import { useExportAssetLoader } from "./use-export-asset-loader";
 import type { PreviewSource } from "./preview-types";
 import { SlideOverrideLayer } from "./slide-override-layer";
 import { useExportBridge } from "./presenter/use-export-bridge";
@@ -33,9 +35,17 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
   // Embedded in the presenter's mirror frame, the on-slide controls would only be noise.
   const [controlsVisible, setControlsVisible] = useState(() => window.parent === window);
   const frameDocumentRef = useRef<Document | null>(null);
+  const loader = useExportAssetLoader(source, "startup");
+  const slideReady = loader.isSlideReady(active);
 
   const go = (next: number) => {
     const index = Math.max(0, Math.min(total - 1, next));
+    loader.prioritise(index);
+    // A slide still loading is gated instead of animated into: there is nothing to transition to yet.
+    if (!loader.isSlideReady(index)) {
+      setActive(index);
+      return;
+    }
     goToSlide({
       frameDocument: frameDocumentRef.current,
       from: slides[active],
@@ -106,9 +116,11 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
     }}>
       <FixedSlideCanvas
         documentRef={frameDocumentRef}
+        hold={!slideReady}
         slide={activeSlide}
         source={source}
       />
+      {!slideReady && <SlideGate key={active} slideNumber={active + 1} {...loader.slideProgress(active)} />}
 
       <nav className={`deck-controls${controlsVisible ? "" : " is-hidden"}`} aria-label="Slide navigation">
         <button type="button" aria-label="Previous slide" onClick={() => go(active - 1)} disabled={active === 0}>
@@ -154,15 +166,21 @@ function ScreenDeck({ source }: { source: PreviewSource }) {
 
 // Print/PDF capture layout: every slide stacked at native 1600x900, one per page. The flattened PDF
 // exporter screenshots this layout, then crops each .deck-page into a PDF page.
+// The pages exist at once so the exporter can count them; their slides mount only after every image
+// has loaded, so the capture never catches a half-loaded deck.
 function PrintDeck({ source }: { source: PreviewSource }) {
+  const loader = useExportAssetLoader(source, "all");
+  const ready = loader.isAllReady();
   return (
     <div className="print-deck print-deck-capture">
       {source.slides.map((slide) => (
         <div className="deck-page" key={slide.id ?? slide.type}>
-          <div className={source.deckClass} data-slide-id={slide.id}>
-            <slide.Component {...resolveSlideAssets(slide.props, deckAssets)} />
-            <SlideOverrideLayer override={resolveSlideAssets(slide.override, deckAssets)} />
-          </div>
+          {ready && (
+            <div className={source.deckClass} data-slide-id={slide.id}>
+              <slide.Component {...resolveSlideAssets(slide.props, deckAssets)} />
+              <SlideOverrideLayer override={resolveSlideAssets(slide.override, deckAssets)} />
+            </div>
+          )}
         </div>
       ))}
     </div>

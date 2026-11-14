@@ -175,3 +175,39 @@ select {
     opacity: 1 !important;
   }
 }
+
+/* ---- Slide gate: stands in for a slide whose images are still loading ---- */
+
+.slide-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: #000;
+  color: rgba(247, 248, 248, 0.72);
+  font-variant-numeric: tabular-nums;
+}
+
+.slide-gate-number {
+  font-size: 28px;
+  letter-spacing: 0.12em;
+}
+
+.slide-gate-bar {
+  width: min(320px, 60vw);
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.slide-gate-bar > span {
+  display: block;
+  height: 100%;
+  background: #f7f8f8;
+  transition: width 200ms ease;
+}

@@ -30,6 +30,7 @@ function slideDomId(slide: PreviewSlide, slideIndex?: number): string {
 
 export function FixedSlideCanvas({
   documentRef,
+  hold = false,
   mountAgentation,
   slide,
   slideIndex,
@@ -37,6 +38,8 @@ export function FixedSlideCanvas({
   still = false,
 }: {
   documentRef?: DocumentRef;
+  /** Keeps the frame but renders no slide in it, so images that are still loading are not requested early. */
+  hold?: boolean;
   mountAgentation?: boolean;
   slide: PreviewSlide;
   slideIndex?: number;
@@ -105,7 +108,7 @@ export function FixedSlideCanvas({
         style={{ transform: `translate(-50%, -50%) scale(${scale})` }}
         title={source.label}
       />
-      {frameBody &&
+      {frameBody && !hold &&
         createPortal(
           <div
             className={source.deckClass}
