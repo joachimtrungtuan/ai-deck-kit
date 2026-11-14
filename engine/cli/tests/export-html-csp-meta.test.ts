@@ -44,7 +44,7 @@ test("cross-origin iframe buster tolerates browser-blocked top navigation", asyn
   }
   const child = createServer((_request, response) => {
     response.setHeader("Content-Type", "text/html");
-    response.end(`<!doctype html><html><body><div id="child-marker">child</div><script>${exportFrameBusterScript}</script></body></html>`);
+    response.end(`<!doctype html><html><head><style>html[data-csp-frame-bust="refused"] #export-loader,html[data-csp-frame-bust="refused"] #root{display:none}</style></head><body><div id="export-loader">loader</div><div id="root"></div><script>${exportFrameBusterScript}</script><script>if(document.documentElement.dataset.cspFrameBust!=="refused"){document.body.insertAdjacentHTML("beforeend",'<div id="child-marker">child</div>')}</script></body></html>`);
   });
   const parent = createServer((_request, response) => {
     response.setHeader("Content-Type", "text/html");
@@ -75,13 +75,59 @@ test("cross-origin iframe buster tolerates browser-blocked top navigation", asyn
         resolve(stdout);
       });
     });
-    // FR-61 is a best-effort fallback. Chromium intentionally blocks a cross-origin
-    // iframe's top navigation without user activation; the parent must remain usable.
+    // Chromium intentionally blocks a cross-origin iframe's top navigation without user
+    // activation; the parent remains usable while the child export refuses to render.
     assert.match(dom, /id="parent-marker"/);
+    assert.match(dom, /data-csp-frame-bust="refused"/);
     assert.doesNotMatch(dom, /id="child-marker"/);
+    assert.match(dom, /id="export-loader"/);
   } finally {
     rmSync(work, { recursive: true, force: true });
     child.close();
     parent.close();
+  }
+});
+
+test("same-origin iframe keeps rendering after the frame-buster check", async (t) => {
+  const chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+  if (!existsSync(chrome)) {
+    t.skip("Chrome is required for the same-origin iframe regression");
+    return;
+  }
+  const server = createServer((request, response) => {
+    response.setHeader("Content-Type", "text/html");
+    if (request.url === "/parent") {
+      response.end(`<!doctype html><html><body><div id="parent-marker">parent</div><iframe src="/child"></iframe></body></html>`);
+      return;
+    }
+    response.end(`<!doctype html><html><body><div id="root"></div><script>${exportFrameBusterScript}</script><script>if(document.documentElement.dataset.cspFrameBust!=="refused"){document.body.insertAdjacentHTML("beforeend",'<div id="child-marker">child</div>')}</script></body></html>`);
+  });
+  const listen = () => new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => resolve());
+  });
+  try {
+    await listen();
+  } catch (error) {
+    server.close();
+    if ((error as NodeJS.ErrnoException).code === "EPERM") t.skip("localhost binding is unavailable in this environment");
+    else throw error;
+    return;
+  }
+  const work = mkdtempSync(join(tmpdir(), "aideck-same-origin-frame-"));
+  try {
+    const port = (server.address() as { port: number }).port;
+    const dom = await new Promise<string>((resolve, reject) => {
+      execFile(chrome, ["--headless=new", "--no-sandbox", "--disable-gpu", `--user-data-dir=${work}`, "--dump-dom", `http://127.0.0.1:${port}/parent`], { encoding: "utf8", timeout: 10000, maxBuffer: 2 * 1024 * 1024 }, (error, stdout, stderr) => {
+        if (error) reject(new Error(`Chrome same-origin regression failed: ${error.message}${stderr ? `\n${stderr}` : ""}`));
+        else resolve(stdout);
+      });
+    });
+    assert.match(dom, /id="parent-marker"/);
+    assert.match(dom, /id="child-marker"/);
+    assert.doesNotMatch(dom, /data-csp-frame-bust="refused"/);
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+    server.close();
   }
 });

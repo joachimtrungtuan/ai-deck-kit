@@ -12,6 +12,7 @@
       #export-loader > div.is-determinate > span { width: var(--export-loader-progress, 0%); animation: none; transition: width 200ms ease; }
       @keyframes export-loader-slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
       @media (prefers-reduced-motion: reduce) { #export-loader > div > span { animation: none; width: 40%; } }
+      html[data-csp-frame-bust="refused"] #export-loader, html[data-csp-frame-bust="refused"] #root { display: none !important; }
     </style>
   </head>
   <body>

@@ -6,6 +6,8 @@
 - Phase 07: shared `fsType` reader (`font-license-check.mjs`), wired into `validate-template-manifest.mjs` (FR-78) and `validate-slide-content.mjs` (FR-79); export backstop warn-only (FR-77).
 - FR doc: FR-5/AC-1 soft target; FR-15 assets copy web-only; FR-77 warn-only; new FR-78/79; FR-61 cross-origin-only buster note; OQ-2/5/6/10/12 closed; §13 stop list trimmed.
 - PRD §7: "self-contained / offline" reworded for single vs web mode and export-time font fetch.
+- FR-61 supplemental decision: after a cross-origin frame attempts top navigation, refuse rendering
+  even when the browser blocks navigation; same-origin presenter mirrors and top-level exports stay normal.
 
 **Why**
 User answered a–h. Departures from recommendation: d (soft, not hard 15 MB) and g (licence checked at template/deck authoring, not blocked at export).

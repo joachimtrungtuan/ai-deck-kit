@@ -154,10 +154,13 @@ then the slide, not wait for the whole deck.
 
 - **FR-60** `<meta name="referrer" content="no-referrer">` is present in both modes.
 - **FR-61** A small inline frame-busting fallback runs before the app. If the page detects it is
-  framed, it tries to navigate the top window to itself. Why: a fallback only. The HTTP
+  framed cross-origin, it marks the export refused, hides the static shell, and attempts to
+  navigate the top window to itself. The export must remain refused if the browser blocks that
+  navigation; it must not flash the app or remain on an indefinite loader. Same-origin presenter
+  mirror frames and top-level exports render normally. Why: a fallback only. The HTTP
   `frame-ancestors` header is the primary control (FR-62); a sandboxed frame can defeat script.
-  The buster acts only when framed cross-origin, so the presenter's same-origin mirror frame keeps
-  working; the presenter's injected `<style>` is replaced by an attribute selector in the hashed CSS.
+  The presenter's same-origin mirror frame keeps working; the presenter's injected `<style>` is
+  replaced by an attribute selector in the hashed CSS.
 
 ### 7.3 Server-level headers
 
