@@ -216,6 +216,7 @@ select {
 .slide-gate-bar > span {
   display: block;
   height: 100%;
+  width: var(--slide-gate-progress, 0%);
   background: #f7f8f8;
   transition: width 200ms ease;
 }

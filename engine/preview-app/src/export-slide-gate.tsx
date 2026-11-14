@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // A load that finishes inside this window never flashes the gate.
 const GATE_DELAY_MS = 150;
@@ -12,12 +12,16 @@ export function SlideGate({ slideNumber, done, total, failures = [] }: { slideNu
   }, []);
   if (!visible) return null;
   const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+  const progressRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    progressRef.current?.style.setProperty("--slide-gate-progress", `${percent}%`);
+  }, [percent]);
   return (
     <div className="slide-gate" role="status" aria-live="polite">
       <span className="slide-gate-number">{String(slideNumber).padStart(2, "0")}</span>
       {failures.length > 0 && <span className="slide-gate-error">Unable to load: {failures.join(", ")}</span>}
       <div className="slide-gate-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
-        <span style={{ width: `${percent}%` }} />
+        <span ref={progressRef} />
       </div>
     </div>
   );
