@@ -151,7 +151,7 @@ try {
   console.log(`  capturing ${slideCount} slides...`);
   const tallPng = join(workDir, "deck.png");
   const slidePattern = join(workDir, "slide-%02d.jpg");
-  const captureDom = run(chrome, [
+  runToFile(chrome, [
     ...chromeBaseArgs,
     `--user-data-dir=${workDir}`,
     `--window-size=1600,${slideCount * 900}`,
@@ -159,7 +159,8 @@ try {
     "--dump-dom",
     `--screenshot=${tallPng}`,
     fileUrl,
-  ]);
+  ], domDump);
+  const captureDom = readFileSync(domDump, "utf8");
   if (!captureDom.includes('data-export-ready="true"')) {
     const failure = captureDom.match(/data-export-error="([^"]*)"/);
     throw new Error(failure ? `Deck assets failed to load during capture: ${failure[1]}` : "Timed out waiting for deck assets during capture.");

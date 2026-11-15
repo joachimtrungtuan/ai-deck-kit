@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { closeSync, existsSync, mkdirSync, mkdtempSync, openSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -90,9 +90,18 @@ export function runHtmlCspHeadlessCheck({ htmlPath, chrome: chromeOverride, slid
       const profile = mkdtempSync(resolve(tmpdir(), "aideck-csp-check-"));
       try {
         const url = `${pathToFileURL(resolve(htmlPath)).href}${suffix}`;
-        const result = spawnSync(chrome, [...baseArgs, `--user-data-dir=${profile}`, `--virtual-time-budget=${budget}`, "--dump-dom", url], { encoding: "utf8", maxBuffer: 32 * 1024 * 1024, timeout: budget + 10000 });
+        // Stream the DOM to a file: decks with embedded assets dump tens of MB, which overflows a pipe buffer.
+        const dumpPath = join(profile, "dom-dump.html");
+        const dumpFd = openSync(dumpPath, "w");
+        let spawned;
+        try {
+          spawned = spawnSync(chrome, [...baseArgs, `--user-data-dir=${profile}`, `--virtual-time-budget=${budget}`, "--dump-dom", url], { encoding: "utf8", stdio: ["ignore", dumpFd, "pipe"], maxBuffer: 16 * 1024 * 1024, timeout: budget + 10000 });
+        } finally {
+          closeSync(dumpFd);
+        }
+        const result = { ...spawned, stdout: readFileSync(dumpPath, "utf8") };
         if (!chromeDumpIsJudgeable(result)) {
-          const details = [result.error?.message, result.stderr?.trim(), result.stdout?.trim()].filter(Boolean).join("\n");
+          const details = [result.error?.message, result.stderr?.trim(), result.stdout.trim().slice(0, 2000)].filter(Boolean).join("\n");
           throw new Error(`Chrome CSP check failed for ${url}${details ? `:\n${details}` : " (runtime failure)"}`);
         }
         checkDom(result.stdout ?? "", url);

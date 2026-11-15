@@ -77,3 +77,12 @@ test("a timed-out Chrome run is judged only when it dumped the finished recorder
   assert.equal(chromeDumpIsJudgeable({ status: 0, stdout: "" }), true);
   assert.equal(chromeDumpIsJudgeable({ status: 1, stdout: "<html><body>crashed</body></html>" }), false);
 });
+
+test("a DOM dump larger than a pipe buffer is still judged", () => {
+  const { root, path } = fixture("<!doctype html><html><body>ok</body></html>");
+  try {
+    const embedded = "A".repeat(40 * 1024 * 1024);
+    const big = fakeChrome(root, `<html data-csp-check="ran" data-export-ready="true"><body><img src="data:image/png;base64,${embedded}"></body></html>`, 0);
+    assert.equal(runHtmlCspHeadlessCheck({ htmlPath: path, chrome: big }).skipped, false);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
