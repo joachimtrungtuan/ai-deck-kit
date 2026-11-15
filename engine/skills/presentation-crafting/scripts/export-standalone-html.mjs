@@ -23,7 +23,7 @@ import { moveAppScriptIntoBody } from "./export-html-assembly.mjs";
 import { appendSlideDataBlocksFromFile } from "./export-html-slide-data-blocks.mjs";
 import { addExportSecurityMeta } from "./export-html-csp-meta.mjs";
 import { scanExternalSources, allowancesForCsp } from "./export-html-source-scan.mjs";
-import { embedGoogleFonts } from "./export-google-fonts-embed.mjs";
+import { embedGoogleFontsInStyleBlocks } from "./export-google-fonts-embed.mjs";
 import { countExportSlides, runHtmlCspHeadlessCheck } from "./export-html-csp-headless-check.mjs";
 import { findChrome } from "./find-chrome-executable.mjs";
 
@@ -107,14 +107,7 @@ const built = resolve(outDir, "export.html");
 const finalFile = resolve(outDir, "index.html");
 const manifestPath = resolve(outDir, ".asset-manifest.json");
 try {
-  let builtHtml = readFileSync(built, "utf8");
-  const styleBlocks = /<style([^>]*)>([\s\S]*?)<\/style>/gi;
-  const styles = [...builtHtml.matchAll(styleBlocks)];
-  for (const match of styles) {
-    if (!match[2].includes("fonts.googleapis.com")) continue;
-    const embedded = await embedGoogleFonts(match[2]);
-    builtHtml = builtHtml.replace(match[0], `<style${match[1]}>${embedded.css}</style>`);
-  }
+  const builtHtml = await embedGoogleFontsInStyleBlocks(readFileSync(built, "utf8"));
   let assembled = moveAppScriptIntoBody(builtHtml);
   if (mode === "single") assembled = appendSlideDataBlocksFromFile(assembled, manifestPath);
   assembled = addExportSecurityMeta(assembled, { mode, allowances: cspAllowances });

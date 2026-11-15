@@ -282,6 +282,7 @@ existing v1 decks stay on v1 indefinitely.
 - every `items[].column`, when present, is `left` or `right`;
 - `override.reason` is non-empty when any of `override.layout`, `override.animation`, `override.css`, or `override.html` is set;
 - `override.css` must not contain an unescaped `</style>` and `override.html` must not contain `<script`;
+- `override.css` must not reference Google Fonts (`fonts.googleapis.com` / `fonts.gstatic.com`): the HTML export cannot load remote fonts from an override, so declare the font in template CSS or manifest `fonts`;
 - a diagram override (CSS carrying the `render-diagram.mjs` generator marker) must reference an existing `assets/diagrams/*.json` whose content hash still matches the rendered output, must pass diagram IR v1 validation, must keep its unique scope class on the html root, and must set `override.layout`/`override.animation` to `"none"`;
 - `chartData[]` entries are objects with a non-empty string `label` (unique across the series — bars are keyed by it) and a finite numeric `value`; a quoted number fails;
 - `images[].src` and `imageSrc` resolve to a file that exists inside the bundle; absolute paths and paths escaping the bundle fail; a missing `alt`/`imageAlt` warns;
