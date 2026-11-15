@@ -111,7 +111,20 @@ select {
   text-align: center;
 }
 
+/* The picker trigger and its options are buttons too: undo the square prev/next sizing above so a
+   slide label sizes to its text and truncates on one line instead of wrapping inside a 32px box. */
+.deck-controls .deck-select,
+.deck-controls .deck-picker-option {
+  display: block;
+  height: auto;
+  overflow: hidden;
+  line-height: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .deck-controls .deck-select {
+  width: auto;
   max-width: 200px;
   padding: 6px 8px;
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -131,6 +144,7 @@ select {
   bottom: calc(100% + 8px);
   display: grid;
   min-width: 240px;
+  max-width: min(420px, calc(100vw - 40px));
   max-height: 300px;
   overflow: auto;
   padding: 4px;
@@ -142,7 +156,6 @@ select {
 
 .deck-controls .deck-picker-option {
   width: 100%;
-  justify-content: start;
   padding: 7px 8px;
   border: 0;
   background: transparent;
