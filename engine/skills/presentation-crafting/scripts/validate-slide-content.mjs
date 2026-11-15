@@ -404,6 +404,9 @@ function validateContentV2({ manifest, content, templateManifest, manifestSlides
         if (css.includes("</style>")) {
           errors.push(`${label}: override.css must not contain "</style>" — escape it or move the rule out of the override.`);
         }
+        if (/fonts\.(googleapis|gstatic)\.com/i.test(css)) {
+          errors.push(`${label}: override.css must not reference Google Fonts — the HTML export cannot load remote fonts from an override. Declare the font in the template CSS (embedded at export) or in the manifest "fonts".`);
+        }
         if (html.includes("<script")) {
           errors.push(`${label}: override.html must not contain "<script" — script elements are not supported in overrides.`);
         }

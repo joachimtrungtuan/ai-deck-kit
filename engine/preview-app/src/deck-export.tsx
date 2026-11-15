@@ -234,8 +234,8 @@ function PrintDeck({ source }: { source: PreviewSource }) {
   const ready = loader.isAllReady();
   return (
     <div className="print-deck print-deck-capture">
-      {source.slides.map((slide) => (
-        <div className="deck-page" key={slide.id ?? slide.type}>
+      {source.slides.map((slide, index) => (
+        <div className="deck-page" key={`${slide.id ?? slide.type}-${index}`}>
           {ready && (
             <div className={source.deckClass} data-slide-id={slide.id}>
               <slide.Component {...resolveSlideAssets(slide.props, exportAssetTable())} />

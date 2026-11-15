@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { test } from "node:test";
-import { embedGoogleFonts } from "../../skills/presentation-crafting/scripts/export-google-fonts-embed.mjs";
+import { embedGoogleFonts, embedGoogleFontsInStyleBlocks } from "../../skills/presentation-crafting/scripts/export-google-fonts-embed.mjs";
 import { aideckDeckPlugin } from "../../preview-app/vite-deck-plugin.ts";
 
 test("Google CSS imports and font bytes become data URLs", async () => {
@@ -90,5 +90,38 @@ test("production Vite export embeds Google fonts in final index.html", { timeout
     assert.match(html, /font-src[^>]*data:/);
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("dollar sequences in fetched font CSS and style blocks survive embedding literally", async () => {
+  const bytes = readFileSync(new URL("./fixtures/font-license/ofl-real.woff2", import.meta.url));
+  const fetchImpl = async (input: URL | RequestInfo) => String(input).includes("googleapis")
+    ? new Response("@font-face{font-family:\"$&$'\";src:url(https://fonts.gstatic.com/x.woff2)}")
+    : new Response(bytes, { headers: { "content-type": "font/woff2" } });
+  const direct = await embedGoogleFonts('@import url("https://fonts.googleapis.com/css2?family=X");', { fetchImpl });
+  assert.match(direct.css, /font-family:"\$&\$'"/);
+  const html = '<html><head><style a="1">@import url("https://fonts.googleapis.com/css2?family=X");.p{content:"$1"}</style><style>.q{}</style></head></html>';
+  const out = await embedGoogleFontsInStyleBlocks(html, { fetchImpl });
+  assert.match(out, /<style a="1">@font-face\{font-family:"\$&\$'";src:url\(data:font\/woff2;base64,/);
+  assert.ok(out.includes('.p{content:"$1"}</style><style>.q{}</style>'));
+  assert.doesNotMatch(out, /fonts\.googleapis|fonts\.gstatic/);
+});
+
+test("validator rejects Google Fonts referenced from override.css", () => {
+  const engineDir = fileURLToPath(new URL("../..", import.meta.url));
+  const dir = mkdtempSync(join(tmpdir(), "aideck-override-font-"));
+  const deckDir = join(dir, "probe.deck");
+  cpSync(join(engineDir, "examples/showcase.deck"), deckDir, { recursive: true });
+  try {
+    const contentPath = join(deckDir, "content.md");
+    const original = readFileSync(contentPath, "utf8");
+    const line = '  css: "[data-slide-id=\\"slide-29\\"] td { font-variant-numeric: tabular-nums }"';
+    assert.ok(original.includes(line), "fixture no longer has the slide-29 override css line");
+    writeFileSync(contentPath, original.replace(line, '  css: "@import url(https://fonts.googleapis.com/css2?family=Inter); td { font-family: Inter }"'));
+    const result = spawnSync(process.execPath, [join(engineDir, "skills/presentation-crafting/scripts/validate-slide-content.mjs"), deckDir], { encoding: "utf8" });
+    assert.equal(result.status, 1);
+    assert.match(`${result.stdout}${result.stderr}`, /override\.css must not reference Google Fonts/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 });

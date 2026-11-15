@@ -124,6 +124,18 @@ test("a jump re-aims loading at the target, the slides after it, then the rest i
   assert.equal(loader.isSlideReady(37), true);
 });
 
+test("a failed startup asset does not stop the rest of the deck from loading", async () => {
+  const source = manualSource();
+  const loader = new AssetLoader({ slidePaths: fortySlides(), getPayload: source.getPayload, decode: decodeAnything });
+  loader.start();
+  await source.fail(slidePath(0));
+  await source.finish(...[1, 2, 3].map(slidePath));
+  assert.equal(loader.isStartupReady(), false, "the failed slide keeps startup unready");
+  assert.deepEqual(source.requested.slice(4), [4, 5, 6, 7].map(slidePath));
+  await source.finish(...[4, 5, 6, 7].map(slidePath));
+  assert.deepEqual(source.requested.slice(8, 12), [8, 9, 10, 11].map(slidePath));
+});
+
 test("an early jump starts the target before the startup batch settles", async () => {
   const source = manualSource();
   const loader = new AssetLoader({ slidePaths: fortySlides(), getPayload: source.getPayload, decode: decodeAnything });

@@ -54,8 +54,9 @@ export async function decodeImage(src: string): Promise<void> {
 
 /**
  * Loads a deck's images in the order the viewer will need them: the first slides first, then the
- * rest in slide order, re-aimed at whichever slide the viewer jumps to. A failed asset counts as
- * settled, so one missing file never holds the deck back; its slide just renders without it.
+ * rest in slide order, re-aimed at whichever slide the viewer jumps to. A failed asset stays
+ * unready, so its slide is never shown half-rendered; it still counts as settled for ordering, so
+ * one missing file never stops the rest of the deck from loading.
  */
 export class AssetLoader {
   private readonly options: AssetLoaderOptions;
@@ -97,7 +98,7 @@ export class AssetLoader {
     return (this.slidePaths[slideIndex] ?? []).every((path) => this.states.get(path) === "ready");
   }
 
-  /** True once every asset of the startup slides has settled. */
+  /** True once every asset of the startup slides has loaded. */
   isStartupReady(): boolean {
     return this.startupPaths().every((path) => this.states.get(path) === "ready");
   }
@@ -145,6 +146,11 @@ export class AssetLoader {
     return { done: paths.filter((path) => this.settled(path)).length, total: paths.length };
   }
 
+  /** True once every startup asset has finished, loaded or failed: the rest of the deck may start. */
+  private isStartupSettled(): boolean {
+    return this.startupPaths().every((path) => ["ready", "failed"].includes(this.states.get(path) ?? ""));
+  }
+
   private startupPaths(): string[] {
     return [...new Set(this.slidePaths.slice(0, this.startupSlides).flat())];
   }
@@ -157,12 +163,12 @@ export class AssetLoader {
   /** Slide indexes in the order loading should visit them. */
   private order(): number[] {
     const count = this.slidePaths.length;
-    if (this.focus > 0 && !this.isStartupReady()) {
+    if (this.focus > 0 && !this.isStartupSettled()) {
       const prioritised = Array.from({ length: count }, (_, offset) => (this.focus + offset) % count);
       const startup = Array.from({ length: this.startupSlides }, (_, index) => index);
       return [...new Set([...prioritised, ...startup])];
     }
-    if (!this.isStartupReady()) return Array.from({ length: this.startupSlides }, (_, index) => index);
+    if (!this.isStartupSettled()) return Array.from({ length: this.startupSlides }, (_, index) => index);
     return Array.from({ length: count }, (_, offset) => (this.focus + offset) % count);
   }
 
@@ -175,7 +181,7 @@ export class AssetLoader {
   }
 
   private pump(): void {
-    while (this.active < this.concurrency || (this.focus > 0 && !this.isStartupReady() && !this.priorityInFlight)) {
+    while (this.active < this.concurrency || (this.focus > 0 && !this.isStartupSettled() && !this.priorityInFlight)) {
       const path = this.nextPending();
       if (!path) return;
       const priority = this.active >= this.concurrency;

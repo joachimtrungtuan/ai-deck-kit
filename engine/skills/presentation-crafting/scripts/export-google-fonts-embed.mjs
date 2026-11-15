@@ -12,7 +12,7 @@ export async function embedGoogleFonts(css, { fetchImpl = fetch, warn = console.
   for (const match of imports) {
     const url = match[2] ?? match[4];
     if (fetchedCss.has(url)) {
-      output = output.replace(match[0], fetchedCss.get(url));
+      output = output.replace(match[0], () => fetchedCss.get(url));
       continue;
     }
     let response;
@@ -21,7 +21,7 @@ export async function embedGoogleFonts(css, { fetchImpl = fetch, warn = console.
     if (!response.ok) throw new Error(`Could not download Google Font CSS for ${url}: HTTP ${response.status}`);
     const fontCss = await response.text();
     fetchedCss.set(url, fontCss);
-    output = output.replace(match[0], fontCss);
+    output = output.replace(match[0], () => fontCss);
   }
   const urls = [...output.matchAll(/url\(\s*["']?(https:\/\/fonts\.gstatic\.com\/[^\s)'";]+)["']?\s*\)/gi)].map((m) => m[1]);
   for (const url of [...new Set(urls)]) {
@@ -39,6 +39,18 @@ export async function embedGoogleFonts(css, { fetchImpl = fetch, warn = console.
     output = output.replaceAll(url, `data:${mime};base64,${bytes.toString("base64")}`);
   }
   return { css: output, warnings };
+}
+
+/** Embed Google Fonts in every built-HTML <style> block that references fonts.googleapis.com. */
+export async function embedGoogleFontsInStyleBlocks(html, options) {
+  let output = html;
+  for (const match of [...html.matchAll(/<style([^>]*)>([\s\S]*?)<\/style>/gi)]) {
+    if (!match[2].includes("fonts.googleapis.com")) continue;
+    const embedded = await embedGoogleFonts(match[2], options);
+    // Function replacer: font CSS may contain "$&"-style sequences that a string replacement would expand.
+    output = output.replace(match[0], () => `<style${match[1]}>${embedded.css}</style>`);
+  }
+  return output;
 }
 
 export { GOOGLE_ORIGINS };

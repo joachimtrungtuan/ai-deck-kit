@@ -5,3 +5,9 @@ export function runHtmlCspHeadlessCheck(options: {
 }): { skipped: boolean; elapsedMs: number };
 
 export function countExportSlides(htmlPath: string): number;
+
+export function chromeDumpIsJudgeable(result: {
+  error?: (Error & { code?: string }) | undefined;
+  status?: number | null;
+  stdout?: string | null;
+}): boolean;

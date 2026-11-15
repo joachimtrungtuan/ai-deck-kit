@@ -168,6 +168,10 @@ export function parseExportArgs(args) {
     }
     return { ...(deck ? { deck } : {}), ...(mode ? { mode } : {}) };
 }
+// The deck argument may be a slug, `foo.deck` or `decks/foo.deck`; the PDF is always named after the bundle slug.
+export function pdfOutputPath(deckRoot) {
+    return join(deckRoot, ".build", "export", `${basename(deckRoot, ".deck")}.pdf`);
+}
 export function runExport(workspace, format, deck, mode) {
     if (!deck)
         throw new Error(`Usage: aideck export ${format} <deck-id>${format === "html" ? " [--mode single|web]" : ""}`);
@@ -181,7 +185,7 @@ export function runExport(workspace, format, deck, mode) {
         throw new Error("HTML export failed.");
     if (format === "pdf") {
         const pdfScript = join(scriptRoot, "export-pdf.mjs");
-        const pdfResult = spawnSync(process.execPath, [pdfScript, "--html", join(root, ".build", "export", "index.html"), "--out", join(root, ".build", "export", `${deck}.pdf`)], { cwd: workspace.root, stdio: "inherit" });
+        const pdfResult = spawnSync(process.execPath, [pdfScript, "--html", join(root, ".build", "export", "index.html"), "--out", pdfOutputPath(root)], { cwd: workspace.root, stdio: "inherit" });
         if (pdfResult.status !== 0)
             throw new Error("PDF export failed.");
     }
