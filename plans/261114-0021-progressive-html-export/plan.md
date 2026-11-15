@@ -71,7 +71,7 @@ Conditional stop-and-ask (spec §13), raised by phases when hit: S1 progressive 
 - Edits: phase 01 + 05 size gate → reported soft target; phase 07 adds shared `fsType` reader, validator checks, warn-only export; spec FR-5, FR-15, FR-77, AC-1, new FR-78/79, OQ-2/5/6/10/12 closed; stop list drops the font-licence and `assets/` items; PRD §7 amended.
 
 ### Reconciliation — 2026-11-15
-- Phase 02–08 complete; Phase 01 implementation/local 1.4.1 release prepared but publication pending; Phase 09 docs approved but 1.5.0 local release and publication pending.
-- Checklist progress: 53/57 (93.0%); 7/9 phases complete. Overall **in-progress** until both release obligations are fulfilled.
+- Phase 02–08 complete; Phase 01 implementation/local 1.4.1 release prepared but publication pending; Phase 09 docs approved and local 1.5.0 release prepared; publication pending.
+- Checklist progress: 54/57 (94.7%); 7/9 phases complete. Overall **in-progress** until both release obligations are fulfilled.
 - Source `15b453c`: 228/228 tests and build:check/lint/typecheck/validate passed. AC-1..10 accepted with reported soft-size miss and slide-35 equivalent gate; no implementation proof gap remains.
 - Detailed acceptance mapping, evidence and release sequence: [final-plan-status.md](reports/final-plan-status.md). No GitHub publication performed.
