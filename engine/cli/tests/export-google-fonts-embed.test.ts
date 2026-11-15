@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { test } from "node:test";
 import { embedGoogleFonts, embedGoogleFontsInStyleBlocks } from "../../skills/presentation-crafting/scripts/export-google-fonts-embed.mjs";
 import { aideckDeckPlugin } from "../../preview-app/vite-deck-plugin.ts";
+import { exportDeck, workspaceWithDeck } from "./export-deck-fixture.ts";
 
 test("Google CSS imports and font bytes become data URLs", async () => {
   const bytes = readFileSync(new URL("./fixtures/font-license/ofl-real.woff2", import.meta.url));
@@ -50,7 +51,6 @@ test("normal preview never invokes Google embedding", async () => {
 });
 
 test("production Vite export embeds Google fonts in final index.html", { timeout: 120_000 }, async (t) => {
-  const projectRoot = resolve(fileURLToPath(new URL("../../../", import.meta.url)));
   try {
     const probe = await fetch("https://fonts.googleapis.com/css2?family=Inter:wght@400");
     if (!probe.ok) throw new Error(`HTTP ${probe.status}`);
@@ -59,37 +59,24 @@ test("production Vite export embeds Google fonts in final index.html", { timeout
     return;
   }
 
-  const root = mkdtempSync(join(tmpdir(), "aideck-google-export-"));
-  const deck = join(root, "fixture.deck");
-  const template = join(deck, "template");
-  const out = join(root, "export");
+  const { work, deck } = workspaceWithDeck();
   try {
-    symlinkSync(join(projectRoot, "engine", "primitives"), join(root, "primitives"), "dir");
-    cpSync(join(projectRoot, "decks", "presenter-test.deck", "deck.json"), join(deck, "deck.json"));
-    cpSync(join(projectRoot, "decks", "presenter-test.deck", "content.md"), join(deck, "content.md"));
-    cpSync(join(projectRoot, "engine", "templates", "swiss-modern.template"), template, { recursive: true });
-    const dependencies = "node_" + "modules";
-    symlinkSync(join(projectRoot, "engine", dependencies), join(deck, dependencies), "dir");
+    const template = join(deck, "template");
     const designSystem = join(template, "design-system.css");
     const nestedStyles = join(template, "styles");
     mkdirSync(nestedStyles, { recursive: true });
     writeFileSync(join(nestedStyles, "base.css"), '@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400");\n.fixture-font { font-family: Inter; }\n');
     writeFileSync(designSystem, `@import "./styles/base.css";\n${readFileSync(designSystem, "utf8")}`);
 
-    const script = join(projectRoot, "engine", "skills", "presentation-crafting", "scripts", "export-standalone-html.mjs");
-    const result = spawnSync(process.execPath, [script, "--deck", deck, "--out", out, "--mode", "single"], {
-      cwd: projectRoot,
-      encoding: "utf8",
-      timeout: 110_000,
-    });
-    assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
-    const html = readFileSync(join(out, "index.html"), "utf8");
+    const result = exportDeck(work, deck, { mode: "single" });
+    assert.equal(result.status, 0, result.output);
+    const html = readFileSync(join(result.outDir, "index.html"), "utf8");
     assert.doesNotMatch(html, /fonts\.googleapis\.com|fonts\.gstatic\.com/);
     assert.doesNotMatch(html, /@import[^;]*data:font/);
     assert.match(html, /data:font\/woff2;base64,/);
     assert.match(html, /font-src[^>]*data:/);
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    rmSync(work, { recursive: true, force: true });
   }
 });
 
