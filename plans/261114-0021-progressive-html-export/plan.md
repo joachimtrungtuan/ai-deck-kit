@@ -1,7 +1,7 @@
 ---
 title: "Progressive HTML export: asset dedup, single/web modes, loader, CSP"
 description: "Dedup embedded assets (own release), then add --mode single|web, progressive loader + gate, strict meta CSP, source scan and headless CSP check."
-status: in-progress
+status: completed
 priority: P1
 effort: 56h
 branch: feat/progressive-html-export
@@ -18,7 +18,7 @@ Decisions (closed; do not reopen): `plans/reports/advise-261114-0021-progressive
 
 | # | Phase | Covers | Effort | Status |
 |---|-------|--------|--------|--------|
-| 01 | [Asset dedup + patch release](phase-01-asset-dedup-and-patch-release.md) | FR-1..6, AC-1, AC-2 | 8h | in-progress |
+| 01 | [Asset dedup + patch release](phase-01-asset-dedup-and-patch-release.md) | FR-1..6, AC-1, AC-2 | 8h | completed |
 | 02 | [Spikes S1-S7](phase-02-browser-and-csp-spikes.md) | OQ-1,3,4,7,8,9,11,12 | 6h | completed |
 | 03 | [`--mode` flag + output assembly](phase-03-export-mode-flag-and-output-assembly.md) | FR-10..15, AC-5, AC-6 | 4h | completed |
 | 04 | [Asset loader, loader UI, slide gate](phase-04-asset-loader-and-slide-gate.md) | FR-20..26, AC-3, AC-4 | 8h | completed |
@@ -26,7 +26,7 @@ Decisions (closed; do not reopen): `plans/reports/advise-261114-0021-progressive
 | 06 | [Meta CSP + hardening](phase-06-meta-csp-referrer-and-frame-busting.md) | FR-50..52, FR-60..63, AC-7 | 6h | completed |
 | 07 | [Source scan + Google Fonts embed](phase-07-external-source-scan-and-font-embedding.md) | FR-70..79, AC-8 | 9h | completed |
 | 08 | [Headless CSP check](phase-08-headless-csp-check.md) | FR-80..84, AC-9, AC-10 | 5h | completed |
-| 09 | [Docs, changelog, minor release](phase-09-docs-changelog-and-minor-release.md) | all; PRD §7 | 3h | in-progress |
+| 09 | [Docs, changelog, minor release](phase-09-docs-changelog-and-minor-release.md) | all; PRD §7 | 3h | completed |
 
 Dependencies: 01 ships alone (1.4.1). 02 gates 03-08. 03 -> 04 -> 05 -> 06 -> 07 -> 08 -> 09 (1.5.0).
 
@@ -70,8 +70,9 @@ Conditional stop-and-ask (spec §13), raised by phases when hit: S1 progressive 
 - All eight answered; table above. Two differ from the recommendation: d (soft target, not hard limit) and g (licence check moves to template/deck validators; export warn-only).
 - Edits: phase 01 + 05 size gate → reported soft target; phase 07 adds shared `fsType` reader, validator checks, warn-only export; spec FR-5, FR-15, FR-77, AC-1, new FR-78/79, OQ-2/5/6/10/12 closed; stop list drops the font-licence and `assets/` items; PRD §7 amended.
 
-### Reconciliation — 2026-11-15
-- Phase 02–08 complete; Phase 01 implementation/local 1.4.1 release prepared but publication pending; Phase 09 docs approved and local 1.5.0 release prepared; publication pending.
-- Checklist progress: 54/57 (94.7%); 7/9 phases complete. Overall **in-progress** until both release obligations are fulfilled.
-- Source `15b453c`: 228/228 tests and build:check/lint/typecheck/validate passed. AC-1..10 accepted with reported soft-size miss and slide-35 equivalent gate; no implementation proof gap remains.
-- Detailed acceptance mapping, evidence and release sequence: [final-plan-status.md](reports/final-plan-status.md). No GitHub publication performed.
+### Final closure — 2026-11-15
+- User explicitly chose **“Keep releases local”**. GitHub publication is intentionally deferred outside current delivery, not awaiting approval. Original publication procedures remain available for future use.
+- All nine phases complete; implementation, docs, local annotated v1.4.1/v1.5.0 releases, actual package/install/upgrade verification accepted. No external push, workflow, hosted assets or release-note edits claimed.
+- Active checklist: 56/56 (100%); publication tasks moved to explicit non-checkbox deferred records rather than falsely checked.
+- Source `15b453c`: 228/228 tests and all five gates passed; post-bump checks and final local audit approved. AC-1..10 accepted, preserving reported soft-size miss and slide-35 equivalent gate.
+- [Final status](reports/final-plan-status.md), [local release verification](reports/local-release-verification.md), [local review](reports/review-local-release.md). Registry-backed clean installation remains unverified; actual packed install/upgrade passed.

@@ -1,6 +1,6 @@
 # Local release verification — 2026-11-15
 
-Status: DONE. Local preparation complete; publication pending user approval.
+Status: DONE. Local release complete; publication intentionally deferred by user choice (November 15).
 
 ## Local refs
 
@@ -33,6 +33,9 @@ Pack inventory includes all export/font helper scripts and declarations. No priv
 
 ## Publication boundary
 
-No push, workflow invocation, release creation or release-note edit performed. Registry-backed installation remains unverified. After approval: push main before tags; publish existing 1.4.1 then 1.5.0 in ancestry order, allow Engine Release workflows to create releases, verify both attached assets, then edit notes and record actual results. Never use `gh release create`.
+No push, workflow invocation, release creation or release-note edit performed. Registry-backed installation remains unverified. Future publication procedure (outside accepted delivery): push main before tags; publish existing 1.4.1 then 1.5.0 in ancestry order, allow Engine Release workflows to create releases, verify both attached assets, then edit notes and record actual results. Never use `gh release create`.
 
-Unresolved questions: external publication awaits user approval.
+Unresolved questions: none within accepted local delivery.
+
+## Final closure — 2026-11-15
+User explicitly chose **“Keep releases local”**. Local delivery complete; GitHub publication outside current scope, not pending approval. No pushes, workflows, hosted release assets or release-note edits performed. Local notes drafts retained. Plan closes on verified local releases, package and real install/upgrade evidence; registry-backed installation remains unverified. Historical approval-ready review records remain unchanged.

@@ -4,7 +4,7 @@
 - All FRs (documentation of behaviour), decision a (PRD §7 reconciliation). CLAUDE.md "Releases", "Update Logs", AGENTS.md lockstep.
 
 ## Overview
-Priority P1. Status in-progress (documentation and local 1.5.0 preparation complete; publication pending). Last phase.
+Priority P1. Status completed (documentation and local 1.5.0 release complete; publication deferred by user choice). Last phase.
 
 ## Requirements
 - `docs/modules/export-package-module-prd.md` §7 reworded per decision a (single = self-contained; web = folder; export may fetch fonts at build time; page never requests network).
@@ -36,11 +36,13 @@ No new tests; full suite must pass.
 - [x] Changelog draft
 - [x] Documentation review and update log
 - [x] Merge + lockstep bump + annotated tag on main
-- [ ] Published release notes after successful Engine Release workflow
-- [ ] Publication-result update log
+- [x] Local release evidence, notes drafts and update log verified
 
 ## Reconciled evidence — 2026-11-15
-Documentation approved in [review-phase-09-docs.md](reports/review-phase-09-docs.md). All five gates passed at source `15b453c` (228/228 tests). [Manual acceptance](reports/manual-acceptance.md) records AC-1..10; [CLI diagnosis](reports/debug-cli-browser-launch.md) closes the managed-sandbox launch concern. Reviewed documentation committed as `4e0bcda`. Local main merge, 1.5.0 version bump and annotated tag are complete; see [local verification](reports/local-release-verification.md). External publication requires user approval; do not claim released.
+Documentation approved in [review-phase-09-docs.md](reports/review-phase-09-docs.md). All five gates passed at source `15b453c` (228/228 tests). [Manual acceptance](reports/manual-acceptance.md) records AC-1..10; [CLI diagnosis](reports/debug-cli-browser-launch.md) closes the managed-sandbox launch concern. Reviewed documentation committed as `4e0bcda`. Local main merge, 1.5.0 version bump and annotated tag are complete; see [local verification](reports/local-release-verification.md). User explicitly chose **“Keep releases local”** on November 15; local delivery is complete. No public release claimed.
 
 ## Risks / rollback
 Workflow failure after tag → fix on `main`, cut 1.5.1; never re-tag a pushed tag.
+
+## Deferred by user choice — 2026-11-15
+GitHub pushes, Engine Release workflows/assets, hosted release-note edits and publication-result logs remain unexecuted, intentionally outside this delivery. Original steps 4–6 retain the future publication procedure; their external portions no longer gate this accepted local-only scope. Local notes drafts remain available. No further approval is pending for current delivery.

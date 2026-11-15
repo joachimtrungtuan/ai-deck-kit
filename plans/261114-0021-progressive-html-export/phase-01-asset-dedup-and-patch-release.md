@@ -5,7 +5,7 @@
 - Code: `engine/preview-app/vite-deck-plugin.ts` (`inlineDeckAssets` ~L300-315, called L278), `engine/preview-app/src/content-schema-v2.tsx` (`authoringSlideYamlKeys` L36, not exported), `engine/preview-app/src/fixed-slide-canvas.tsx:119`, `engine/preview-app/src/deck-export.tsx:161`, `engine/cli/tests/serve.test.ts` L95-121.
 
 ## Overview
-Priority P1. Status in-progress (implementation complete; publication pending). Shippable alone as 1.4.1 (bug fix: no new flags).
+Priority P1. Status completed (local release; publication deferred by user choice). Shippable alone as 1.4.1 (bug fix: no new flags).
 
 ## Key insights
 - Root cause: regex `/(["'])assets\/([^"']+)\1/g` rewrites every quoted `assets/...` string in raw `content.md` to a data URI, so a file referenced N times is embedded N times, including the authoring-only `assets:` YAML list.
@@ -51,16 +51,16 @@ Manual: `aideck export html` + `aideck export pdf` on Marusei; `ls -l` size reco
 - [x] Resolver + two render sites
 - [x] Tests updated/added
 - [x] Marusei AC-1/AC-2 manual check
-- [ ] 1.4.1 release + update log
+- [x] Local 1.4.1 annotated release and update log verified
 
-## Results (steps 1-7 complete; local release prepared, publication pending)
+## Results (steps 1-7 complete; local release complete; publication deferred by user choice)
 - Marusei deck (40 slides, 43 assets, 10 MB on disk), standalone HTML: 29.5 MB before, 15.8 MB after (15 MB soft target: 0.8 MB over, floor is the unique image bytes as base64). Duplicated assets: 41 before, 0 after (full-base64 count per file).
 - cover-salmon-bowl.jpg full base64: 2 copies before, 1 after. Unreferenced files (prose mention only) absent in both.
 - PDF: 40 pages both; page rasters before vs after match (max 0.5% pixels differ, render noise only); p-17 checked visually.
 - Added: symlink in assets/ pointing outside the deck fails the build (realpath check).
 
 ## Success criteria
-AC-1, AC-2 pass; serve preview unchanged visually; all gates green; tagged release has attached tarball.
+AC-1, AC-2 pass; serve preview unchanged visually; all gates green; annotated local release verified. Original hosted-asset criterion superseded for this delivery by the November 15 local-only decision.
 
 ## Risks / rollback
 - Prop shapes not covered by the walker (e.g. CSS strings) → images vanish. Mitigate by step 1 grep and the PDF check. Rollback: revert the merge commit; table + resolver are additive and isolated.
@@ -73,5 +73,7 @@ Path escape check stays (FR-4). No new network or eval.
 Phase 02 spikes.
 
 ## Reconciled release state — 2026-11-15
-- Local main `72a606b`; annotated `v1.4.1` targets `324532d`; lockstep version and local release preparation complete.
-- GitHub push, Engine Release workflow/assets, published notes and publication-result log remain pending user approval for external writes. Notes draft: `../reports/release-notes-v1.4.1.md`.
+- Annotated local `v1.4.1` remains at `324532d`; verified ancestor of local `v1.5.0` and main.
+- User explicitly chose **“Keep releases local”** on November 15. Local release is complete; external publication is outside this delivery scope.
+- Deferred by user choice: GitHub push, Engine Release workflow/attached assets, hosted release notes and publication-result log. These actions were not executed. Original release procedure above remains the future publication procedure, superseded only as a completion requirement for this delivery.
+- Notes draft remains local: `../reports/release-notes-v1.4.1.md`. See [local verification](reports/local-release-verification.md).

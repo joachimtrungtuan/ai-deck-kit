@@ -1,8 +1,8 @@
 # Final plan status — 2026-11-15
 
-Overall in-progress: 7/9 phases complete; 54/57 tasks (94.7%).
+Overall completed: 9/9 phases; 56/56 active tasks (100%). Publication deferred by explicit user choice.
 
-Phases 02–08 complete. Phase 01 code/local 1.4.1 preparation complete, publication pending (local main 72a606b; annotated v1.4.1 commit 324532d). Phase 09 docs and local 1.5.0 merge/bump/tag complete; publication pending. [Local release verification](local-release-verification.md) records package and real install/upgrade proof. Final appendices of review-phase-04 through review-phase-08 supersede historical findings. [Docs review](review-phase-09-docs.md) approved.
+All phases complete within accepted local-only scope. Annotated local releases and package/install/upgrade proof verified in [local release verification](local-release-verification.md). Final review appendices supersede historical findings; [docs review](review-phase-09-docs.md) and [local review](review-local-release.md) approved.
 
 ## Acceptance mapping
 
@@ -23,17 +23,14 @@ Current [manual acceptance](manual-acceptance.md) and [native CLI verification](
 
 Accepted controller evidence at source 15b453c: 228/228 tests and build:check/lint/typecheck/validate pass. No repeated full suite for plan-only edits. No missing implementation proof identified.
 
-## Remaining release work
+## Final local-only closure — 2026-11-15
 
-1. DONE: reviewed documentation committed; unrelated November 14 end-session note preserved.
-2. DONE: main merge, lockstep 1.5.0 bump, annotated tag, required gates, actual pack and scratch install/upgrade verified.
-3. User approval required before GitHub writes. Publish prepared 1.4.1 then 1.5.0 in correct ancestry/order; push main before tags, let Engine Release create releases, verify workflow/assets, then edit release notes. Never create releases manually.
-4. Record actual workflow/publication results and close Phase 01/09 remaining boxes only when verified; reindex/read back.
+User explicitly chose **“Keep releases local”**. All accepted delivery work complete: 9/9 phases, 56/56 active tasks (100%). Public publication is intentionally deferred outside scope; no approval remains pending for this delivery.
 
-Finish these release obligations: installing users need versioned artifacts, so implementation completion alone cannot close this plan. No external publication performed; local release work is recorded in the verification report.
+Local main before this closure commit: `7058760`; annotated v1.5.0 remains at `160dde7`, v1.4.1 at `324532d`. Package/install/upgrade and final audit verified; 44 user files preserved. Release-note drafts stay local. No pushes, workflow runs, hosted release assets or release-note edits claimed.
 
-## Validation
+Deferred by user choice: future GitHub publication using original procedure (main then tags in ancestry order; Engine Release creates releases/assets, then notes and actual-result log). Phase checklists reflect completed local work, with unexecuted publication tasks moved to non-checkbox deferred records.
 
-Canonical ak plan check completed 02–08; validate valid; status in-progress, 7/9 phases, 54/57 tasks after local release checkbox readback. Temporary AgentKit store reindexed. No explicit global journal.auto=false; local journal required. AgentWiki/social publishing skipped.
+Validation: canonical phase check, plan validate/status, temporary-store reindex/readback, links and diff whitespace. No full suite repeated for records-only closure. AgentWiki/social publishing skipped.
 
-Unresolved questions: none in implementation; external publication awaits user approval.
+Unresolved questions: none within accepted local delivery. Registry-backed clean install remains unverified.
