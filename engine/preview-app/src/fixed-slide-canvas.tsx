@@ -72,7 +72,9 @@ export function FixedSlideCanvas({
       parentRecorder?.(event);
     });
     doc.head.querySelectorAll("[data-deck-style]").forEach((node) => node.remove());
-    document.head.querySelectorAll("style, link[rel='stylesheet']").forEach((node) => {
+    // The whole document, not just <head>: the HTML export places its inlined stylesheet in <body>
+    // so the loader paints before megabytes of embedded fonts are parsed.
+    document.querySelectorAll("style, link[rel='stylesheet']").forEach((node) => {
       const clone = node.cloneNode(true) as HTMLElement;
       clone.setAttribute("data-deck-style", "");
       doc.head.appendChild(clone);
