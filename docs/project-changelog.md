@@ -1,5 +1,23 @@
 # AI Deck Kit — Project Changelog
 
+## 1.5.2 — 2026-11-15
+
+- **HTML exports render with their deck styling again.** Since 1.5.0 the
+  export moves its inlined stylesheet into `<body>` so the loader paints
+  first, but the slide iframe cloned styles only from `<head>`. Slides in
+  `--mode single` and `--mode web` therefore rendered unstyled. The iframe
+  now clones every stylesheet in the document.
+- **The export toolbar lays out correctly.** The button-based slide picker
+  (1.5.0) inherited the 32×32 sizing of the prev/next arrows, so its label
+  wrapped inside a tiny box and collapsed the toolbar. The picker now sizes
+  to its label on one line (capped at 200px with an ellipsis), and the menu
+  width is capped.
+- **Security updates for engine dependencies.** `vite` ^7.3.8 fixes
+  high-severity dev-server advisories. `storybook` / `@storybook/react-vite`
+  ^10.6.7 (dev) fixes a critical dev-server code-injection advisory. In-range
+  and transitive updates are included too. The 4 remaining moderate advisories
+  are dev-only (`glob`/`minimatch` via the Storybook docgen plugin).
+
 ## 1.5.1 — 2026-11-15
 
 - **Large exports pass the CSP check.** The headless check streams Chrome's
