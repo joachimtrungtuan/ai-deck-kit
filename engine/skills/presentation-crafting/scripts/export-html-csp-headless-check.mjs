@@ -40,7 +40,17 @@ function checkDom(dom, url) {
   }
 }
 
-const CHECK_LOCK = join(tmpdir(), "aideck-csp-check.lock");
+// Headless Chrome on macOS can crash ("Trying to load the allocator multiple times") or hang during
+// teardown after dumping a complete DOM. The recorder marker proves the page ran, so that DOM is judged.
+// A hung run is killed by the spawn timeout, so it also needs the export-ready marker to show the dump
+// is the finished page. Any other spawn error, or a dump without the marker, fails closed.
+export function chromeDumpIsJudgeable({ error, status, stdout }) {
+  const ranRecorder = htmlAttribute(stdout ?? "", "data-csp-check") === "ran";
+  if (error) return error.code === "ETIMEDOUT" && ranRecorder && htmlAttribute(stdout ?? "", "data-export-ready") === "true";
+  return status === 0 || ranRecorder;
+}
+
+const CHECK_LOCK =join(tmpdir(), "aideck-csp-check.lock");
 
 function acquireCheckLock(timeoutMs = 60000) {
   const deadline = Date.now() + timeoutMs;
@@ -81,7 +91,7 @@ export function runHtmlCspHeadlessCheck({ htmlPath, chrome: chromeOverride, slid
       try {
         const url = `${pathToFileURL(resolve(htmlPath)).href}${suffix}`;
         const result = spawnSync(chrome, [...baseArgs, `--user-data-dir=${profile}`, `--virtual-time-budget=${budget}`, "--dump-dom", url], { encoding: "utf8", maxBuffer: 32 * 1024 * 1024, timeout: budget + 10000 });
-        if (result.error || result.status !== 0) {
+        if (!chromeDumpIsJudgeable(result)) {
           const details = [result.error?.message, result.stderr?.trim(), result.stdout?.trim()].filter(Boolean).join("\n");
           throw new Error(`Chrome CSP check failed for ${url}${details ? `:\n${details}` : " (runtime failure)"}`);
         }

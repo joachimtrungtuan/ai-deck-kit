@@ -4,7 +4,8 @@ import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import test, { after } from "node:test";
-import { runExport, parseExportArgs } from "../commands/output.ts";
+import { runExport, parseExportArgs, pdfOutputPath } from "../commands/output.ts";
+import { deckPath } from "../lib/deck.ts";
 import type { Workspace } from "../lib/types.ts";
 import { appScriptIsClassicInBody, moveAppScriptIntoBody } from "../../skills/presentation-crafting/scripts/export-html-assembly.mjs";
 import { engineRoot, exportDeck, workspaceWithDeck } from "./export-deck-fixture.ts";
@@ -14,6 +15,13 @@ test("export arguments read the deck and optional mode in either order", () => {
   assert.deepEqual(parseExportArgs(["talk", "--mode", "single"]), { deck: "talk", mode: "single" });
   assert.deepEqual(parseExportArgs(["--mode", "web", "talk"]), { deck: "talk", mode: "web" });
   assert.deepEqual(parseExportArgs([]), {});
+});
+
+test("the PDF is named after the deck slug whichever form the deck argument takes", () => {
+  const workspace = { root: "/w", decksRoot: "/w/decks" } as Workspace;
+  for (const arg of ["foo", "foo.deck", "decks/foo.deck"]) {
+    assert.equal(pdfOutputPath(deckPath(workspace, arg)), join("/w/decks/foo.deck", ".build", "export", "foo.pdf"));
+  }
 });
 
 test("export arguments reject a bad mode, a missing value, a repeat, and stray input", () => {
