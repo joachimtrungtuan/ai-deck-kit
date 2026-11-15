@@ -1,5 +1,16 @@
 # AI Deck Kit — Project Changelog
 
+## 1.5.1 — 2026-11-15
+
+- **Large exports pass the CSP check.** The headless check streams Chrome's
+  DOM dump to a file instead of a 32 MB pipe buffer, so single-file exports
+  with many embedded images no longer fail with `ENOBUFS`. PDF export's
+  capture pass uses the same file-based dump (it had a 64 MB pipe cap).
+- Includes the codebase-review fixes merged after 1.5.0: failed startup
+  assets no longer block deck loading, Google Fonts are embedded across all
+  style blocks, remote fonts in `override.css` are rejected, and the Vite deck
+  plugin is split into focused modules.
+
 ## 1.5.0 — 2026-11-15
 
 - **Progressive HTML startup.** HTML export now prioritizes the first four slides,
